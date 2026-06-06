@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourcePerFileMappings">
-    <file url="file://$PROJECT_DIR$/deploy/nacos-cluster/nacos-cluster.sql" value="66892f28-07c7-4d1e-a1c9-f0068b801480" />
+    <file url="file://$PROJECT_DIR$/deploy/gateway-nacos-cluster/nacos-cluster.sql" value="66892f28-07c7-4d1e-a1c9-f0068b801480" />
     <file url="file://$PROJECT_DIR$/model/src/main/resources/sql/mvp.sql" value="66892f28-07c7-4d1e-a1c9-f0068b801480" />
   </component>
 </project>
