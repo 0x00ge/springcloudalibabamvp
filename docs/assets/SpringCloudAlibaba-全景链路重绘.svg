@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1240" viewBox="0 0 1800 1240" role="img" aria-labelledby="title desc">
+  <title id="title">Spring Cloud Alibaba 全景调用链路重绘图</title>
+  <desc id="desc">基于原始复杂链路图重新绘制，展示客户端、Nginx、Gateway、service-order、service-product、Nacos、Seata、RocketMQ 和 Sentinel 的关系。</desc>
+  <defs>
+    <linearGradient id="pageBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6f8fb"/>
+      <stop offset="0.58" stop-color="#eef5f3"/>
+      <stop offset="1" stop-color="#fbf6ee"/>
+    </linearGradient>
+    <linearGradient id="cardSoft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f8fafc"/>
+    </linearGradient>
+    <linearGradient id="nacosFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf7ff"/>
+      <stop offset="1" stop-color="#eefaf0"/>
+    </linearGradient>
+    <linearGradient id="seataFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef2ff"/>
+      <stop offset="1" stop-color="#f8f0ff"/>
+    </linearGradient>
+    <linearGradient id="mqFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff4f4"/>
+      <stop offset="1" stop-color="#fff9ec"/>
+    </linearGradient>
+    <linearGradient id="sentinelFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eefcf4"/>
+      <stop offset="1" stop-color="#f7fff0"/>
+    </linearGradient>
+    <filter id="shadow" x="-16%" y="-18%" width="132%" height="145%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#334155" flood-opacity="0.14"/>
+    </filter>
+    <filter id="smallShadow" x="-12%" y="-14%" width="124%" height="132%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#334155" flood-opacity="0.10"/>
+    </filter>
+
+    <marker id="arrowReq" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#147a63"/>
+    </marker>
+    <marker id="arrowResp" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#4b5563"/>
+    </marker>
+    <marker id="arrowRegistry" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#a15c16"/>
+    </marker>
+    <marker id="arrowTx" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#6d5bd0"/>
+    </marker>
+    <marker id="arrowMq" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#d04f45"/>
+    </marker>
+    <marker id="arrowSentinel" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#1f8f56"/>
+    </marker>
+
+    <style>
+      svg {
+        font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Hiragino Sans GB", Arial, sans-serif;
+        text-rendering: geometricPrecision;
+      }
+      .title { font-size: 34px; font-weight: 800; fill: #172033; }
+      .subtitle { font-size: 16px; fill: #667085; }
+      .section { font-size: 18px; font-weight: 760; fill: #314155; }
+      .card-title { font-size: 21px; font-weight: 760; fill: #172033; }
+      .card-subtitle { font-size: 14px; font-weight: 650; fill: #475569; }
+      .text { font-size: 14px; fill: #4b5563; }
+      .small { font-size: 13px; fill: #64748b; }
+      .tiny { font-size: 12px; fill: #64748b; }
+      .micro { font-size: 11px; fill: #667085; }
+      .strong { font-size: 14px; font-weight: 740; fill: #223044; }
+      .chip-text { font-size: 13px; font-weight: 760; fill: #ffffff; }
+      .label-main { font-size: 13px; font-weight: 740; fill: #223044; }
+      .label-sub { font-size: 12px; fill: #526070; }
+      .lane { fill: rgba(255,255,255,0.76); stroke: rgba(148,163,184,0.55); stroke-width: 1.3; }
+      .card { fill: url(#cardSoft); stroke-width: 2; filter: url(#shadow); }
+      .card-minor { fill: #ffffff; stroke: rgba(148,163,184,0.45); stroke-width: 1.2; filter: url(#smallShadow); }
+      .client { stroke: #d8a62e; }
+      .nginx { stroke: #dd7b26; }
+      .gateway { stroke: #2f9a73; }
+      .order { stroke: #d45b58; }
+      .product { stroke: #4e86c6; }
+      .edge-label { fill: #ffffff; stroke: rgba(148,163,184,0.72); stroke-width: 1; }
+      .request { fill: none; stroke: #147a63; stroke-width: 4; stroke-linecap: round; marker-end: url(#arrowReq); }
+      .response { fill: none; stroke: #4b5563; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrowResp); }
+      .registry { fill: none; stroke: #a15c16; stroke-width: 2.2; stroke-dasharray: 8 8; stroke-linecap: round; marker-end: url(#arrowRegistry); }
+      .tx { fill: none; stroke: #6d5bd0; stroke-width: 2.4; stroke-dasharray: 10 6; stroke-linecap: round; marker-end: url(#arrowTx); }
+      .mq { fill: none; stroke: #d04f45; stroke-width: 2.8; stroke-linecap: round; marker-end: url(#arrowMq); }
+      .sentinel { fill: none; stroke: #1f8f56; stroke-width: 2.1; stroke-dasharray: 4 7; stroke-linecap: round; marker-end: url(#arrowSentinel); }
+      .connector-muted { fill: none; stroke: rgba(100,116,139,0.42); stroke-width: 1.5; stroke-dasharray: 5 7; }
+      .legend-line { stroke-linecap: round; }
+      .table-row { fill: rgba(255,255,255,0.72); stroke: rgba(148,163,184,0.50); stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="1240" fill="url(#pageBg)"/>
+  <g opacity="0.22">
+    <path d="M0 110 H1800 M0 330 H1800 M0 550 H1800 M0 770 H1800 M0 990 H1800" stroke="#cbd5e1" stroke-width="1"/>
+    <path d="M180 0 V1240 M420 0 V1240 M660 0 V1240 M900 0 V1240 M1140 0 V1240 M1380 0 V1240 M1620 0 V1240" stroke="#cbd5e1" stroke-width="1"/>
+  </g>
+
+  <g transform="translate(64 58)">
+    <text class="title" x="0" y="0">Spring Cloud Alibaba 全景调用链路重绘</text>
+    <text class="subtitle" x="0" y="34">把原图中的同步调用、注册发现、分布式事务、异步消息和流量治理拆成清晰分层，减少交叉线。</text>
+  </g>
+
+  <g transform="translate(1350 42)">
+    <rect class="card-minor" x="0" y="0" width="365" height="86" rx="14"/>
+    <text class="strong" x="22" y="30">阅读方式</text>
+    <text class="small" x="22" y="55">绿色实线：业务请求；灰色实线：业务响应</text>
+    <text class="small" x="22" y="74">棕色虚线：注册发现；紫/红/绿分别对应事务、MQ、Sentinel</text>
+  </g>
+
+  <g id="main-lane" transform="translate(55 145)">
+    <rect class="lane" x="0" y="0" width="1690" height="315" rx="20"/>
+    <text class="section" x="28" y="40">主业务链路：请求向右，响应向左</text>
+  </g>
+
+  <g id="main-components">
+    <g transform="translate(82 240)">
+      <rect class="card client" x="0" y="0" width="190" height="138" rx="16"/>
+      <circle cx="45" cy="45" r="17" fill="#ffe08a" stroke="#c08a19" stroke-width="2"/>
+      <path d="M25 92 C29 68,61 68,66 92" fill="none" stroke="#c08a19" stroke-width="5" stroke-linecap="round"/>
+      <text class="card-title" x="88" y="42">客户端</text>
+      <text class="card-subtitle" x="88" y="70">App / Web / 第三方</text>
+      <text class="small" x="24" y="113">发起订单相关 HTTP 请求</text>
+    </g>
+
+    <g transform="translate(335 240)">
+      <rect class="card nginx" x="0" y="0" width="220" height="138" rx="16"/>
+      <rect x="30" y="33" width="50" height="60" rx="8" fill="#fff2df" stroke="#dd7b26" stroke-width="2"/>
+      <path d="M40 49 H70 M40 65 H70 M40 81 H62" stroke="#dd7b26" stroke-width="4" stroke-linecap="round"/>
+      <text class="card-title" x="100" y="40">Nginx</text>
+      <text class="card-subtitle" x="100" y="68">反向代理 + 负载均衡</text>
+      <text class="small" x="24" y="108">nginx-1 / nginx-2</text>
+      <text class="tiny" x="24" y="126">入口流量分发</text>
+    </g>
+
+    <g transform="translate(620 218)">
+      <rect class="card gateway" x="0" y="0" width="250" height="180" rx="16"/>
+      <path d="M38 54 H82 M60 34 V92 M38 92 H82" fill="none" stroke="#2f9a73" stroke-width="5" stroke-linecap="round"/>
+      <text class="card-title" x="104" y="43">Gateway 集群</text>
+      <text class="card-subtitle" x="104" y="72">gateway-1 / gateway-2 / gateway-3</text>
+      <text class="text" x="25" y="113">内置 LoadBalancer</text>
+      <text class="text" x="25" y="137">选择 service-order 实例</text>
+      <text class="small" x="25" y="162">网关限流、熔断、降级入口</text>
+    </g>
+
+    <g transform="translate(955 205)">
+      <rect class="card order" x="0" y="0" width="292" height="206" rx="16"/>
+      <rect x="32" y="34" width="58" height="68" rx="9" fill="#fff1f0" stroke="#d45b58" stroke-width="2"/>
+      <path d="M44 54 H78 M44 72 H78 M44 90 H68" stroke="#d45b58" stroke-width="4" stroke-linecap="round"/>
+      <text class="card-title" x="108" y="42">service-order 集群</text>
+      <text class="card-subtitle" x="108" y="71">order-1 / order-2 / order-3</text>
+      <text class="text" x="25" y="118">Feign + LoadBalancer</text>
+      <text class="text" x="25" y="142">Seata 全局事务发起方</text>
+      <text class="text" x="25" y="166">RocketMQ Producer</text>
+      <text class="small" x="25" y="190">创建订单、协调库存、更新状态</text>
+    </g>
+
+    <g transform="translate(1350 228)">
+      <rect class="card product" x="0" y="0" width="286" height="172" rx="16"/>
+      <path d="M35 59 L64 42 L93 59 V95 L64 112 L35 95 Z" fill="#e9f2ff" stroke="#4e86c6" stroke-width="2"/>
+      <path d="M35 59 L64 76 L93 59 M64 76 V111" fill="none" stroke="#4e86c6" stroke-width="2"/>
+      <text class="card-title" x="112" y="43">service-product 集群</text>
+      <text class="card-subtitle" x="112" y="72">product-1 / product-2 / product-3</text>
+      <text class="text" x="25" y="118">Seata 事务参与者</text>
+      <text class="text" x="25" y="142">RocketMQ Consumer</text>
+      <text class="small" x="25" y="162">查询商品、扣减库存、回传结果</text>
+    </g>
+  </g>
+
+  <g id="main-arrows">
+    <path class="request" d="M272 286 C296 276,315 276,335 286"/>
+    <path class="request" d="M555 286 C580 276,595 276,620 286"/>
+    <path class="request" d="M870 286 C902 274,923 274,955 286"/>
+    <path class="request" d="M1247 286 C1282 274,1315 274,1350 286"/>
+
+    <path class="response" d="M1350 352 C1315 368,1282 368,1247 352"/>
+    <path class="response" d="M955 352 C923 368,902 368,870 352"/>
+    <path class="response" d="M620 352 C595 368,580 368,555 352"/>
+    <path class="response" d="M335 352 C315 368,296 368,272 352"/>
+
+    <g transform="translate(276 248)">
+      <rect class="edge-label" x="0" y="0" width="72" height="29" rx="14"/>
+      <text class="label-main" x="36" y="19" text-anchor="middle">① HTTP</text>
+    </g>
+    <g transform="translate(565 248)">
+      <rect class="edge-label" x="0" y="0" width="116" height="29" rx="14"/>
+      <text class="label-main" x="58" y="19" text-anchor="middle">② 反向代理</text>
+    </g>
+    <g transform="translate(880 248)">
+      <rect class="edge-label" x="0" y="0" width="152" height="29" rx="14"/>
+      <text class="label-main" x="76" y="19" text-anchor="middle">⑦ 选 order 实例</text>
+    </g>
+    <g transform="translate(1266 248)">
+      <rect class="edge-label" x="0" y="0" width="160" height="29" rx="14"/>
+      <text class="label-main" x="80" y="19" text-anchor="middle">⑩ Feign 调 product</text>
+    </g>
+
+    <g transform="translate(1258 373)">
+      <rect class="edge-label" x="0" y="0" width="134" height="29" rx="14"/>
+      <text class="label-main" x="67" y="19" text-anchor="middle">⑫ 商品/库存结果</text>
+    </g>
+    <g transform="translate(900 373)">
+      <rect class="edge-label" x="0" y="0" width="105" height="29" rx="14"/>
+      <text class="label-main" x="52" y="19" text-anchor="middle">⑬ 订单结果</text>
+    </g>
+    <g transform="translate(568 373)">
+      <rect class="edge-label" x="0" y="0" width="78" height="29" rx="14"/>
+      <text class="label-main" x="39" y="19" text-anchor="middle">⑭ 响应</text>
+    </g>
+    <g transform="translate(278 373)">
+      <rect class="edge-label" x="0" y="0" width="78" height="29" rx="14"/>
+      <text class="label-main" x="39" y="19" text-anchor="middle">⑮ 响应</text>
+    </g>
+  </g>
+
+  <g id="nacos-panel" transform="translate(75 520)">
+    <rect class="lane" x="0" y="0" width="445" height="420" rx="20"/>
+    <text class="section" x="28" y="40">Nacos 集群：注册中心</text>
+    <rect x="42" y="72" width="360" height="305" rx="18" fill="url(#nacosFill)" stroke="#6aa0b8" stroke-width="2" filter="url(#shadow)"/>
+    <ellipse cx="222" cy="106" rx="148" ry="24" fill="#dff0f8" stroke="#6aa0b8" stroke-width="2"/>
+    <path d="M74 106 V160 C74 176,140 188,222 188 C304 188,370 176,370 160 V106" fill="#eaf7fb" stroke="#6aa0b8" stroke-width="2"/>
+    <text class="card-title" x="222" y="113" text-anchor="middle">Nacos Server 集群</text>
+    <text class="small" x="222" y="147" text-anchor="middle">只维护服务实例名单</text>
+    <text class="small" x="222" y="169" text-anchor="middle">不承载业务流量，不替服务做负载均衡</text>
+
+    <g transform="translate(68 215)">
+      <rect class="table-row" x="0" y="0" width="308" height="38" rx="9"/>
+      <text class="strong" x="14" y="24">gateway</text>
+      <text class="tiny" x="106" y="24">10.0.0.1 / 10.0.0.2 / 10.0.0.3</text>
+    </g>
+    <g transform="translate(68 261)">
+      <rect class="table-row" x="0" y="0" width="308" height="38" rx="9"/>
+      <text class="strong" x="14" y="24">order</text>
+      <text class="tiny" x="106" y="24">10.0.1.1 / 10.0.1.2 / 10.0.1.3</text>
+    </g>
+    <g transform="translate(68 307)">
+      <rect class="table-row" x="0" y="0" width="308" height="38" rx="9"/>
+      <text class="strong" x="14" y="24">product</text>
+      <text class="tiny" x="106" y="24">10.0.2.1 / 10.0.2.2 / 10.0.2.3</text>
+    </g>
+    <text class="small" x="68" y="368">注册、心跳、健康检查、实例列表查询</text>
+  </g>
+
+  <g id="seata-panel" transform="translate(570 525)">
+    <rect class="lane" x="0" y="0" width="420" height="330" rx="20"/>
+    <text class="section" x="28" y="40">Seata 集群：分布式事务</text>
+    <rect x="54" y="72" width="310" height="220" rx="18" fill="url(#seataFill)" stroke="#6d5bd0" stroke-width="2" filter="url(#shadow)"/>
+    <ellipse cx="209" cy="105" rx="112" ry="21" fill="#edf2ff" stroke="#6d5bd0" stroke-width="2"/>
+    <path d="M97 105 V156 C97 172,147 184,209 184 C271 184,321 172,321 156 V105" fill="#f7f5ff" stroke="#6d5bd0" stroke-width="2"/>
+    <text class="card-title" x="209" y="112" text-anchor="middle">Seata Server</text>
+    <text class="small" x="209" y="146" text-anchor="middle">TC 事务协调器</text>
+    <text class="text" x="82" y="213">AT：自动回滚</text>
+    <text class="text" x="82" y="239">TCC：两阶段提交</text>
+    <text class="text" x="82" y="265">Saga：长事务补偿</text>
+    <text class="small" x="82" y="306">全局提交、全局回滚、事务日志、故障恢复</text>
+  </g>
+
+  <g id="mq-panel" transform="translate(1065 505)">
+    <rect class="lane" x="0" y="0" width="650" height="405" rx="20"/>
+    <text class="section" x="28" y="40">RocketMQ 集群：异步解耦与最终一致性</text>
+    <rect x="388" y="72" width="220" height="278" rx="18" fill="url(#mqFill)" stroke="#d04f45" stroke-width="2" filter="url(#shadow)"/>
+    <ellipse cx="498" cy="104" rx="82" ry="20" fill="#fff0ef" stroke="#d04f45" stroke-width="2"/>
+    <path d="M416 104 V150 C416 164,452 176,498 176 C544 176,580 164,580 150 V104" fill="#fff6eb" stroke="#d04f45" stroke-width="2"/>
+    <text class="card-title" x="498" y="111" text-anchor="middle">RocketMQ</text>
+    <text class="small" x="498" y="145" text-anchor="middle">NameServer + Broker</text>
+    <line x1="428" y1="194" x2="568" y2="194" stroke="#d04f45" stroke-width="1.5"/>
+    <text class="strong" x="430" y="223">Topics</text>
+    <text class="text" x="430" y="250">order-create</text>
+    <text class="text" x="430" y="274">stock-deducted</text>
+    <text class="text" x="430" y="298">order-notify</text>
+    <text class="text" x="430" y="322">order-timeout</text>
+    <text class="small" x="430" y="363">异步解耦、削峰填谷、最终一致性</text>
+
+    <rect class="card-minor" x="35" y="94" width="290" height="115" rx="14"/>
+    <text class="strong" x="58" y="125">消息生产</text>
+    <text class="small" x="58" y="152">service-order 发送创建订单、延迟超时消息</text>
+    <text class="small" x="58" y="176">service-product 发送库存扣减结果</text>
+    <rect class="card-minor" x="35" y="235" width="290" height="90" rx="14"/>
+    <text class="strong" x="58" y="266">消费与补偿</text>
+    <text class="small" x="58" y="293">ACK、重试、死信、订单状态回查</text>
+  </g>
+
+  <g id="sentinel-panel" transform="translate(915 960)">
+    <rect class="lane" x="0" y="0" width="800" height="210" rx="20"/>
+    <text class="section" x="28" y="40">Sentinel 集群：流控、熔断、降级</text>
+    <rect x="455" y="54" width="300" height="128" rx="18" fill="url(#sentinelFill)" stroke="#1f8f56" stroke-width="2" filter="url(#shadow)"/>
+    <ellipse cx="605" cy="84" rx="105" ry="18" fill="#e7faed" stroke="#1f8f56" stroke-width="2"/>
+    <path d="M500 84 V123 C500 137,547 148,605 148 C663 148,710 137,710 123 V84" fill="#f3fff5" stroke="#1f8f56" stroke-width="2"/>
+    <text class="card-title" x="605" y="91" text-anchor="middle">Sentinel Dashboard</text>
+    <text class="small" x="605" y="123" text-anchor="middle">规则管理与实时监控</text>
+    <text class="tiny" x="605" y="151" text-anchor="middle">QPS / RT / 异常 / 线程数</text>
+    <text class="tiny" x="605" y="169" text-anchor="middle">限流、熔断、热点参数、系统保护</text>
+
+    <rect class="card-minor" x="38" y="70" width="340" height="78" rx="14"/>
+    <text class="strong" x="62" y="100">规则覆盖目标</text>
+    <text class="small" x="62" y="126">Gateway、service-order、service-product</text>
+  </g>
+
+  <g id="nacos-arrows">
+    <path class="registry" d="M445 240 C390 300,318 396,295 520"/>
+    <path class="registry" d="M302 520 C322 404,388 318,445 378"/>
+    <g transform="translate(232 438)">
+      <rect class="edge-label" x="0" y="0" width="180" height="50" rx="13"/>
+      <text class="label-main" x="90" y="21" text-anchor="middle">③/④ 拉取 gateway</text>
+      <text class="label-sub" x="90" y="39" text-anchor="middle">实例列表返回给 Nginx</text>
+    </g>
+
+    <path class="registry" d="M745 398 C681 474,565 562,520 640"/>
+    <path class="registry" d="M525 642 C615 548,704 474,745 398"/>
+    <g transform="translate(575 455)">
+      <rect class="edge-label" x="0" y="0" width="184" height="50" rx="13"/>
+      <text class="label-main" x="92" y="21" text-anchor="middle">⑤ 注册 / 心跳</text>
+      <text class="label-sub" x="92" y="39" text-anchor="middle">Gateway 上报健康状态</text>
+    </g>
+
+    <path class="registry" d="M780 398 C714 542,605 670,520 744"/>
+    <path class="registry" d="M526 744 C640 650,724 532,806 398"/>
+    <g transform="translate(560 705)">
+      <rect class="edge-label" x="0" y="0" width="190" height="50" rx="13"/>
+      <text class="label-main" x="95" y="21" text-anchor="middle">⑥ 拉取 order 列表</text>
+      <text class="label-sub" x="95" y="39" text-anchor="middle">Gateway 本地负载均衡</text>
+    </g>
+
+    <path class="registry" d="M1068 411 C905 560,690 690,520 835"/>
+    <path class="registry" d="M530 835 C750 720,936 590,1110 411"/>
+    <g transform="translate(758 805)">
+      <rect class="edge-label" x="0" y="0" width="205" height="50" rx="13"/>
+      <text class="label-main" x="102" y="21" text-anchor="middle">⑧/⑨ 拉取 product</text>
+      <text class="label-sub" x="102" y="39" text-anchor="middle">order Feign 侧负载均衡</text>
+    </g>
+
+    <path class="registry" d="M1470 400 C1285 602,830 844,520 884"/>
+    <g transform="translate(1164 812)">
+      <rect class="edge-label" x="0" y="0" width="174" height="32" rx="16"/>
+      <text class="label-main" x="87" y="21" text-anchor="middle">product 注册 / 心跳</text>
+    </g>
+  </g>
+
+  <g id="seata-arrows">
+    <path class="tx" d="M1048 411 C1000 486,932 536,890 598"/>
+    <path class="tx" d="M1358 400 C1215 520,1020 602,935 680"/>
+    <path class="tx" d="M915 685 C990 596,1034 502,1100 411"/>
+    <g transform="translate(883 463)">
+      <rect class="edge-label" x="0" y="0" width="196" height="50" rx="13"/>
+      <text class="label-main" x="98" y="21" text-anchor="middle">⑨ 开启全局事务</text>
+      <text class="label-sub" x="98" y="39" text-anchor="middle">注册分支、提交或回滚</text>
+    </g>
+    <g transform="translate(1032 605)">
+      <rect class="edge-label" x="0" y="0" width="190" height="50" rx="13"/>
+      <text class="label-main" x="95" y="21" text-anchor="middle">⑪ product 扣库存</text>
+      <text class="label-sub" x="95" y="39" text-anchor="middle">加入同一个全局事务</text>
+    </g>
+  </g>
+
+  <g id="mq-arrows">
+    <path class="mq" d="M1215 411 C1280 452,1352 514,1455 576"/>
+    <g transform="translate(1240 445)">
+      <rect class="edge-label" x="0" y="0" width="150" height="46" rx="13"/>
+      <text class="label-main" x="75" y="19" text-anchor="middle">⑯ order-create</text>
+      <text class="label-sub" x="75" y="36" text-anchor="middle">创建订单事件</text>
+    </g>
+
+    <path class="mq" d="M1455 630 C1410 554,1390 475,1460 400"/>
+    <g transform="translate(1390 456)">
+      <rect class="edge-label" x="0" y="0" width="184" height="46" rx="13"/>
+      <text class="label-main" x="92" y="19" text-anchor="middle">⑰ 消费创建消息</text>
+      <text class="label-sub" x="92" y="36" text-anchor="middle">扣减库存并 ACK</text>
+    </g>
+
+    <path class="mq" d="M1480 400 C1478 514,1420 660,1210 668"/>
+    <g transform="translate(1246 655)">
+      <rect class="edge-label" x="0" y="0" width="190" height="46" rx="13"/>
+      <text class="label-main" x="95" y="19" text-anchor="middle">⑱ stock-deducted</text>
+      <text class="label-sub" x="95" y="36" text-anchor="middle">库存结果回调</text>
+    </g>
+
+    <path class="mq" d="M1125 411 C1215 575,1335 720,1455 740"/>
+    <path class="mq" d="M1488 740 C1360 760,1235 732,1130 411"/>
+    <g transform="translate(1190 740)">
+      <rect class="edge-label" x="0" y="0" width="210" height="50" rx="13"/>
+      <text class="label-main" x="105" y="21" text-anchor="middle">⑳ order-timeout 延迟消息</text>
+      <text class="label-sub" x="105" y="39" text-anchor="middle">30 分钟后检查并取消</text>
+    </g>
+  </g>
+
+  <g id="sentinel-arrows">
+    <path class="sentinel" d="M744 398 C810 650,1035 845,1360 960"/>
+    <path class="sentinel" d="M1095 411 C1130 620,1244 815,1405 960"/>
+    <path class="sentinel" d="M1498 400 C1510 612,1510 790,1470 960"/>
+    <path class="sentinel" d="M1450 960 C1345 820,1180 650,774 398"/>
+    <g transform="translate(990 900)">
+      <rect class="edge-label" x="0" y="0" width="205" height="50" rx="13"/>
+      <text class="label-main" x="102" y="21" text-anchor="middle">Sentinel 规则与指标</text>
+      <text class="label-sub" x="102" y="39" text-anchor="middle">QPS / RT / 异常 / 降级</text>
+    </g>
+  </g>
+
+  <g id="callouts" transform="translate(75 980)">
+    <rect class="card-minor" x="0" y="0" width="770" height="190" rx="18"/>
+    <text class="section" x="28" y="38">关键结论</text>
+    <text class="text" x="28" y="74">1. Nacos 负责注册发现，业务请求不会流经 Nacos。</text>
+    <text class="text" x="28" y="104">2. 负载均衡发生在 Nginx、Gateway 和 Feign 调用侧，各自选择下一跳实例。</text>
+    <text class="text" x="28" y="134">3. Seata 管同步事务边界；RocketMQ 管异步事件、延迟消息和最终一致性补偿。</text>
+    <text class="text" x="28" y="164">4. Sentinel 对网关和服务分别下发限流、熔断、降级规则，并采集实时指标。</text>
+  </g>
+
+  <g id="legend" transform="translate(80 1194)">
+    <line class="legend-line" x1="0" y1="0" x2="56" y2="0" stroke="#147a63" stroke-width="4"/>
+    <text class="small" x="68" y="5">业务请求</text>
+    <line class="legend-line" x1="160" y1="0" x2="216" y2="0" stroke="#4b5563" stroke-width="3"/>
+    <text class="small" x="228" y="5">业务响应</text>
+    <line class="legend-line" x1="320" y1="0" x2="376" y2="0" stroke="#a15c16" stroke-width="2.2" stroke-dasharray="8 8"/>
+    <text class="small" x="388" y="5">注册发现 / 心跳</text>
+    <line class="legend-line" x1="536" y1="0" x2="592" y2="0" stroke="#6d5bd0" stroke-width="2.4" stroke-dasharray="10 6"/>
+    <text class="small" x="604" y="5">Seata 事务</text>
+    <line class="legend-line" x1="720" y1="0" x2="776" y2="0" stroke="#d04f45" stroke-width="2.8"/>
+    <text class="small" x="788" y="5">RocketMQ 消息</text>
+    <line class="legend-line" x1="930" y1="0" x2="986" y2="0" stroke="#1f8f56" stroke-width="2.1" stroke-dasharray="4 7"/>
+    <text class="small" x="998" y="5">Sentinel 规则 / 指标</text>
+  </g>
+</svg>

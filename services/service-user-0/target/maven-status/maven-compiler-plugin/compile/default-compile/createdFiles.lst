@@ -1,0 +1,5 @@
+com/mvp/user/UserApplication.class
+com/mvp/user/controller/UserController.class
+com/mvp/user/mapper/UserMapper.class
+com/mvp/user/service/impl/UserServiceImpl.class
+com/mvp/user/service/UserService.class

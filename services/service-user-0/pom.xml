@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.mvp</groupId>
+        <artifactId>services</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>service-user-0</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- Nacos Config：读取用户服务环境配置。 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+
+        <!-- Nacos Discovery：把用户服务注册到 Nacos，供 gateway 路由。 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- Spring MVC Web：提供 UserController 等 HTTP 接口。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- MyBatis-Plus：UserMapper、UserServiceImpl 的数据访问基础。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- dynamic-datasource：根据配置管理 master/slave 数据源。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>dynamic-datasource-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- MySQL Driver：连接本地 master/slave MySQL 实例。 -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+
+        <!-- model：复用 User 实体、ResultVO 等共享模型。 -->
+        <dependency>
+            <groupId>com.mvp</groupId>
+            <artifactId>model</artifactId>
+        </dependency>
+
+        <!-- common：保留 JWT 工具，并复用 UUIDv7 工具。 -->
+        <dependency>
+            <groupId>com.mvp</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

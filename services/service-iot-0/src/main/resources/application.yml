@@ -1,0 +1,27 @@
+server:
+  port: 8300
+
+spring:
+  application:
+    name: service-iot-0
+  profiles:
+    active: dev
+  config:
+    import: optional:nacos:${spring.application.name}-${spring.profiles.active}.yml
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      discovery:
+        ip: 127.0.0.1
+
+mqtt:
+  broker-url: tcp://127.0.0.1:1883 # MQTT Broker 地址，本地可使用 EMQX 或 Mosquitto
+  client-id: service-iot-0 # MQTT clientId，同一个 Broker 下必须唯一
+  username: # Broker 未开启认证时留空
+  password: # Broker 未开启认证时留空
+  qos: 1 # QoS 1 表示至少送达一次，消费端需要能接受重复消息
+  completion-timeout: 5000
+  temperature-topics:
+    - mvp/iot/device/+/temperature # 设备温度上报 topic，+ 匹配单层 deviceId
+  humidity-topics:
+    - mvp/iot/device/+/humidity # 设备湿度上报 topic，+ 匹配单层 deviceId

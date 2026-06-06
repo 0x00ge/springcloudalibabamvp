@@ -1,0 +1,5 @@
+/Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/model/src/main/java/com/mvp/model/controller/BaseController.java
+/Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/model/src/main/java/com/mvp/model/dto/user/UserDto.java
+/Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/model/src/main/java/com/mvp/model/entity/user/User.java
+/Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/model/src/main/java/com/mvp/model/enums/ResultCode.java
+/Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/model/src/main/java/com/mvp/model/vo/ResultVO.java
