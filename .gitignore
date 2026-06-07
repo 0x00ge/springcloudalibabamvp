@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+
+# Java / Maven build output
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Runtime logs and local process files
+logs/
+pids/
+*.log
+
+# Local environment files
+.env
+.env.*
+!.env.example
