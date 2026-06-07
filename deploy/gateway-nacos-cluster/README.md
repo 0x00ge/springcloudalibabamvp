@@ -37,14 +37,15 @@ deploy/nacos-cluster/nacos-cluster.sql
 mvn -pl gateway -am -DskipTests package
 ```
 
-创建环境配置：
+进入部署目录：
 
 ```bash
 cd deploy/gateway-nacos-cluster
-cp .env.example .env
 ```
 
-根据本机数据库修改 `.env` 中的账号和密码。
+Nacos 数据库、Nacos 端口和 Gateway 入口端口已经直接写在 `docker-compose.yml` 中。
+如果本机 MySQL 账号密码不是 `root/rootroot`，直接修改 `docker-compose.yml` 里的
+`MYSQL_SERVICE_USER` 和 `MYSQL_SERVICE_PASSWORD`。
 
 ## 启动
 

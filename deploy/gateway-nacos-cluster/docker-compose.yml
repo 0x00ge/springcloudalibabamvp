@@ -11,16 +11,16 @@ x-nacos-common: &nacos-common
     SPRING_DATASOURCE_PLATFORM: mysql
     MYSQL_SERVICE_HOST: host.docker.internal
     MYSQL_SERVICE_PORT: "3306"
-    MYSQL_SERVICE_DB_NAME: ${NACOS_DB_NAME:-nacos_config}
-    MYSQL_SERVICE_USER: ${NACOS_DB_USER:-root}
-    MYSQL_SERVICE_PASSWORD: ${NACOS_DB_PASSWORD:-rootroot}
+    MYSQL_SERVICE_DB_NAME: nacos_config
+    MYSQL_SERVICE_USER: root
+    MYSQL_SERVICE_PASSWORD: rootroot
     MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=3000&socketTimeout=10000&autoReconnect=true&useSSL=false&serverTimezone=Asia/Shanghai
 
     # 本地演示默认关闭鉴权；生产环境应开启并更换密钥。
-    NACOS_AUTH_ENABLE: ${NACOS_AUTH_ENABLE:-false}
-    NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY:-mvpNacosIdentityKey}
-    NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE:-mvpNacosIdentityValue}
-    NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN:-TXZwTmFjb3NBdXRoVG9rZW5DaGFuZ2VNZTIwMjZNdXN0QmVMb25nRW5vdWdo}
+    NACOS_AUTH_ENABLE: false
+    NACOS_AUTH_IDENTITY_KEY: mvpNacosIdentityKey
+    NACOS_AUTH_IDENTITY_VALUE: mvpNacosIdentityValue
+    NACOS_AUTH_TOKEN: TXZwTmFjb3NBdXRoVG9rZW5DaGFuZ2VNZTIwMjZNdXN0QmVMb25nRW5vdWdo
 
     JVM_XMS: 512m
     JVM_XMX: 512m
@@ -72,8 +72,8 @@ services:
     hostname: nacos-1
     ports:
       # 只暴露第一个节点，供宿主机打开 Nacos 控制台。
-      - "${NACOS_CONSOLE_PORT:-8848}:8848"
-      - "${NACOS_GRPC_PORT:-9848}:9848"
+      - "8848:8848"
+      - "9848:9848"
     volumes:
       - nacos-1-logs:/home/nacos/logs
       - nacos-1-data:/home/nacos/data
@@ -117,7 +117,7 @@ services:
         --spring.cloud.nacos.discovery.ip=$$(hostname -i | awk '{print $$1}')
 
   nginx-gateway:
-    image: nginx:1.27-alpine
+    image: nginx:1.30-alpine
     container_name: mvp-nginx-gateway
     restart: unless-stopped
     depends_on:
@@ -125,7 +125,7 @@ services:
       - gateway-2
     ports:
       # 前端和外部调用只访问这个统一入口。
-      - "${GATEWAY_PORT:-8000}:8000"
+      - "8000:8000"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:

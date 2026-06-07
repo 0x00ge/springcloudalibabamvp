@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.mvp.model.enums.ResultCode;
 import com.mvp.model.vo.ResultVO;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.ResolvableType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,6 +35,8 @@ import java.io.Serializable;
  * @param <D> dto 类型
  */
 public abstract class BaseController<E, D> {
+
+    private static final Logger log = LoggerFactory.getLogger(BaseController.class);
 
     /**
      * 父类持有的通用 Service。
@@ -62,10 +66,13 @@ public abstract class BaseController<E, D> {
      */
     @GetMapping("/{id}")
     public ResultVO<D> getById(@PathVariable String id) {
+        log.info("{} 查询{}详情，id={}", controllerName(), entityName(), id);
         E entity = baseService.getById(id);
         if (entity == null) {
+            log.warn("{} 查询{}详情未命中，id={}", controllerName(), entityName(), id);
             return ResultVO.build(ResultCode.NOT_FOUND);
         }
+        log.debug("{} 查询{}详情成功，id={}", controllerName(), entityName(), id);
         return ResultVO.ok(entity2Dto(entity));
     }
 
@@ -79,8 +86,12 @@ public abstract class BaseController<E, D> {
     @GetMapping("/page")
     public ResultVO<IPage<D>> page(@RequestParam(defaultValue = "1") Long page,
                                    @RequestParam(defaultValue = "10") Long size) {
+        log.info("{} 分页查询{}，page={}, size={}", controllerName(), entityName(), page, size);
         Page<E> query = new Page<>(page, size);
-        return ResultVO.ok(baseService.page(query).convert(this::entity2Dto));
+        IPage<D> result = baseService.page(query).convert(this::entity2Dto);
+        log.debug("{} 分页查询{}完成，page={}, size={}, total={}",
+                controllerName(), entityName(), page, size, result.getTotal());
+        return ResultVO.ok(result);
     }
 
     /**
@@ -95,9 +106,12 @@ public abstract class BaseController<E, D> {
      */
     @PostMapping
     public ResultVO<Serializable> save(@Valid @RequestBody D dto) {
+        log.info("{} 新增{}", controllerName(), entityName());
         E entity = dto2Entity(dto);
         baseService.save(entity);
-        return ResultVO.ok(getIdValue(entity));
+        Serializable id = getIdValue(entity);
+        log.info("{} 新增{}成功，id={}", controllerName(), entityName(), id);
+        return ResultVO.ok(id);
     }
 
     /**
@@ -109,14 +123,17 @@ public abstract class BaseController<E, D> {
      */
     @PutMapping("/{id}")
     public ResultVO<Void> update(@PathVariable String id, @Valid @RequestBody D dto) {
+        log.info("{} 修改{}，id={}", controllerName(), entityName(), id);
         E exist = baseService.getById(id);
         if (exist == null) {
+            log.warn("{} 修改{}失败，数据不存在，id={}", controllerName(), entityName(), id);
             return ResultVO.build(ResultCode.NOT_FOUND);
         }
 
         E entity = dto2Entity(dto);
         setIdValue(entity, id);
         baseService.updateById(entity);
+        log.info("{} 修改{}成功，id={}", controllerName(), entityName(), id);
         return ResultVO.ok();
     }
 
@@ -128,12 +145,15 @@ public abstract class BaseController<E, D> {
      */
     @DeleteMapping("/{id}")
     public ResultVO<Void> delete(@PathVariable String id) {
+        log.info("{} 删除{}，id={}", controllerName(), entityName(), id);
         E exist = baseService.getById(id);
         if (exist == null) {
+            log.warn("{} 删除{}失败，数据不存在，id={}", controllerName(), entityName(), id);
             return ResultVO.build(ResultCode.NOT_FOUND);
         }
 
         baseService.removeById(id);
+        log.info("{} 删除{}成功，id={}", controllerName(), entityName(), id);
         return ResultVO.ok();
     }
 
@@ -241,5 +261,13 @@ public abstract class BaseController<E, D> {
      */
     private TableInfo getTableInfo() {
         return TableInfoHelper.getTableInfo(baseService.getEntityClass());
+    }
+
+    private String controllerName() {
+        return getClass().getSimpleName();
+    }
+
+    private String entityName() {
+        return baseService.getEntityClass().getSimpleName();
     }
 }
