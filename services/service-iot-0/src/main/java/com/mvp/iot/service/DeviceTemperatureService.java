@@ -1,8 +1,7 @@
 package com.mvp.iot.service;
 
 import com.mvp.iot.dto.TemperatureReport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -13,10 +12,9 @@ import java.math.BigDecimal;
  *
  * <p>当前先打印日志，后续可以在这里扩展：写入 MySQL、写入 Redis 时序缓存、触发温度告警等。</p>
  */
+@Slf4j
 @Service
 public class DeviceTemperatureService {
-
-    private static final Logger log = LoggerFactory.getLogger(DeviceTemperatureService.class);
 
     /** 高温告警阈值，单位摄氏度。 */
     private static final BigDecimal HIGH_TEMPERATURE_THRESHOLD = BigDecimal.valueOf(80);

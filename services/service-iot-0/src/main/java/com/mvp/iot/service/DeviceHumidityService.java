@@ -1,8 +1,7 @@
 package com.mvp.iot.service;
 
 import com.mvp.iot.dto.HumidityReport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -13,10 +12,9 @@ import java.math.BigDecimal;
  *
  * <p>当前先打印日志，后续可以在这里扩展：写入 MySQL、写入 Redis 时序缓存、触发湿度告警等。</p>
  */
+@Slf4j
 @Service
 public class DeviceHumidityService {
-
-    private static final Logger log = LoggerFactory.getLogger(DeviceHumidityService.class);
 
     /** 高湿度告警阈值。 */
     private static final BigDecimal HIGH_HUMIDITY_THRESHOLD = BigDecimal.valueOf(90);

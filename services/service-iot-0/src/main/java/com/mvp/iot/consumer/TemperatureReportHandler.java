@@ -5,8 +5,7 @@ import com.mvp.iot.config.MqttConfig;
 import com.mvp.iot.dto.TemperatureReport;
 import com.mvp.iot.service.DeviceTemperatureService;
 import com.mvp.iot.util.MqttMessageSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
@@ -19,10 +18,9 @@ import org.springframework.util.StringUtils;
  * <p>订阅 topic：{@code mvp/iot/device/+/temperature}。
  * 设备发布 topic 示例：{@code mvp/iot/device/device-001/temperature}。</p>
  */
+@Slf4j
 @Component
 public class TemperatureReportHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(TemperatureReportHandler.class);
 
     private final DeviceTemperatureService deviceTemperatureService;
 

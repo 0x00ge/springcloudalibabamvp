@@ -8,8 +8,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.mvp.model.enums.ResultCode;
 import com.mvp.model.vo.ResultVO;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.ResolvableType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,9 +33,8 @@ import java.io.Serializable;
  * @param <E> 实体类型
  * @param <D> dto 类型
  */
+@Slf4j
 public abstract class BaseController<E, D> {
-
-    private static final Logger log = LoggerFactory.getLogger(BaseController.class);
 
     /**
      * 父类持有的通用 Service。
