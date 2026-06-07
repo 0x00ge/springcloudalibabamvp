@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- 注册 Spring Boot 提供的 %clr 颜色转换器，否则自定义 logback 配置中无法识别 %clr(...)。 -->
+    <conversionRule conversionWord="clr"
+                    converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+
     <!-- 从 Spring 配置中读取应用名，用于区分不同服务的日志目录。 -->
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="service-user-0"/>
 
     <property name="LOG_PATH" value="logs/${APP_NAME}"/>
-    <property name="LOG_PATTERN"
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level) %clr([%thread]){faint} %clr(%logger{36}){cyan} - %msg%n"/>
+    <property name="FILE_LOG_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
 
     <!-- 控制台日志：开发时直接在终端查看。 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
@@ -19,7 +25,7 @@
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/app.log</file>
         <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">

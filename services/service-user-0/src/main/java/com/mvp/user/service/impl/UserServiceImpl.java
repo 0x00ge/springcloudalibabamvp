@@ -4,12 +4,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mvp.model.entity.user.User;
 import com.mvp.user.service.UserService;
 import com.mvp.user.mapper.UserMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
  * 用户业务 Service 实现类。
  *
  */
+@Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
