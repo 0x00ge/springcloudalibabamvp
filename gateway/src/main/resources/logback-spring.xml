@@ -24,6 +24,13 @@
     <!-- 文件日志：按天和大小滚动，避免单个日志文件无限增长。 -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/app.log</file>
+        <!--
+            文件日志刷新策略：
+            1. 开发环境建议保持 true，tail -f logs/.../app.log 时能更快看到最新日志，方便排查请求链路；
+            2. 生产环境 true 更不容易因为服务异常退出而丢日志，但高并发下会增加磁盘刷写压力，
+               后续如果接入集中式日志采集并且吞吐很高，可以再评估是否改为 false。
+        -->
+        <immediateFlush>true</immediateFlush>
         <encoder>
             <pattern>${FILE_LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
