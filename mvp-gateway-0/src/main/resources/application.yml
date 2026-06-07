@@ -1,9 +1,9 @@
 server:
-  port: 8000 # gateway 对外暴露端口，前端和外部调用统一访问这里
+  port: 8001 # gateway 对外暴露端口，前端和外部调用统一访问这里
 
 spring:
   application:
-    name: mvp-gateway # 注册到 Nacos 的服务名
+    name: mvp-gateway-0 # 注册到 Nacos 的服务名
   profiles:
     active: dev # 默认使用开发环境配置；生产环境可以通过启动参数覆盖
     include: route # 额外加载 application-route.yml 中的路由规则

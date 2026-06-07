@@ -1,13 +1,20 @@
+# 本 compose 只负责 Docker 内的基础设施：
+# 1. Nacos 三节点集群；
+# 2. Nginx 作为对外统一入口，把请求转发到宿主机上的两个 gateway 实例。
+#
+# 注意：gateway-1、gateway-2 暂时不放进 Docker，需要在宿主机分别启动 8001、8002 端口。
+
 x-nacos-common: &nacos-common
   image: nacos/nacos-server:v2.5.2
   restart: unless-stopped
   environment:
-    # 三个 Nacos 节点通过 Docker 服务名直接组成集群。
+    # Nacos 集群模式，三个节点通过 Docker 网络内的 hostname 互相通信。
     MODE: cluster
     PREFER_HOST_MODE: hostname
     NACOS_SERVERS: nacos-1:8848 nacos-2:8848 nacos-3:8848
 
-    # Nacos 集群连接宿主机现有 MySQL。
+    # Nacos 集群使用宿主机已有 MySQL。
+    # 在容器内不能用 127.0.0.1 访问宿主机 MySQL，因为 127.0.0.1 指的是当前容器自己。
     SPRING_DATASOURCE_PLATFORM: mysql
     MYSQL_SERVICE_HOST: host.docker.internal
     MYSQL_SERVICE_PORT: "3306"
@@ -16,54 +23,31 @@ x-nacos-common: &nacos-common
     MYSQL_SERVICE_PASSWORD: rootroot
     MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=3000&socketTimeout=10000&autoReconnect=true&useSSL=false&serverTimezone=Asia/Shanghai
 
-    # 本地演示默认关闭鉴权；生产环境应开启并更换密钥。
+    # 本地开发默认关闭 Nacos 鉴权；生产环境建议开启鉴权，并更换 identity/token。
     NACOS_AUTH_ENABLE: false
     NACOS_AUTH_IDENTITY_KEY: mvpNacosIdentityKey
     NACOS_AUTH_IDENTITY_VALUE: mvpNacosIdentityValue
     NACOS_AUTH_TOKEN: TXZwTmFjb3NBdXRoVG9rZW5DaGFuZ2VNZTIwMjZNdXN0QmVMb25nRW5vdWdo
 
+    # 本地开发的 JVM 配置，机器内存紧张时可以继续调小。
     JVM_XMS: 512m
     JVM_XMX: 512m
     JVM_XMN: 256m
     TIME_ZONE: Asia/Shanghai
   extra_hosts:
-    # Docker Desktop 自动提供该域名；该配置同时兼容 Linux Docker。
+    # Docker Desktop 默认支持 host.docker.internal；
+    # Linux Docker 通过 host-gateway 映射到宿主机网关地址。
     - "host.docker.internal:host-gateway"
   expose:
-    # 8848: HTTP；9848: 客户端 gRPC；7848/9849: Nacos 节点内部通信。
+    # 8848: Nacos HTTP 控制台/API；
+    # 9848: Nacos 客户端 gRPC；
+    # 9849/7848: Nacos 节点内部通信。
     - "7848"
     - "8848"
     - "9848"
     - "9849"
   networks:
-    - mvp-cluster
-
-x-gateway-common: &gateway-common
-  image: eclipse-temurin:17-jre-alpine
-  restart: unless-stopped
-  working_dir: /app
-  environment:
-    SERVER_PORT: "8000"
-    SPRING_PROFILES_ACTIVE: dev
-
-    # Gateway 不经过 Nginx，直接连接三个 Nacos 节点。
-    SPRING_CLOUD_NACOS_SERVER_ADDR: nacos-1:8848,nacos-2:8848,nacos-3:8848
-    SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos-1:8848,nacos-2:8848,nacos-3:8848
-    SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos-1:8848,nacos-2:8848,nacos-3:8848
-
-    JAVA_TOOL_OPTIONS: -Xms256m -Xmx512m
-    TZ: Asia/Shanghai
-  volumes:
-    # 启动前先执行：mvn -pl gateway -am -DskipTests package
-    - ../../gateway/target/gateway-0.0.1-SNAPSHOT.jar:/app/gateway.jar:ro
-  depends_on:
-    - nacos-1
-    - nacos-2
-    - nacos-3
-  expose:
-    - "8000"
-  networks:
-    - mvp-cluster
+    - mvp-network
 
 services:
   nacos-1:
@@ -71,75 +55,59 @@ services:
     container_name: mvp-nacos-1
     hostname: nacos-1
     ports:
-      # 只暴露第一个节点，供宿主机打开 Nacos 控制台。
+      # 宿主机访问第 1 个 Nacos 节点：http://127.0.0.1:8848/nacos/
       - "8848:8848"
+      # Nacos 客户端访问 127.0.0.1:8848 时，会自动使用 9848 做 gRPC 通信。
       - "9848:9848"
     volumes:
-      - nacos-1-logs:/home/nacos/logs
-      - nacos-1-data:/home/nacos/data
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-1/logs:/home/nacos/logs
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-1/data:/home/nacos/data
 
   nacos-2:
     <<: *nacos-common
     container_name: mvp-nacos-2
     hostname: nacos-2
+    ports:
+      # 宿主机访问第 2 个 Nacos 节点：http://127.0.0.1:8849/nacos/
+      # 容器内仍然监听 8848，只是映射到宿主机 8849，避免端口冲突。
+      - "8849:8848"
+      # 对应 8849 的客户端 gRPC 端口是 9849，映射到容器内 9848。
+      - "9849:9848"
     volumes:
-      - nacos-2-logs:/home/nacos/logs
-      - nacos-2-data:/home/nacos/data
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-2/logs:/home/nacos/logs
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-2/data:/home/nacos/data
 
   nacos-3:
     <<: *nacos-common
     container_name: mvp-nacos-3
     hostname: nacos-3
-    volumes:
-      - nacos-3-logs:/home/nacos/logs
-      - nacos-3-data:/home/nacos/data
-
-  gateway-1:
-    <<: *gateway-common
-    container_name: mvp-gateway-1
-    hostname: gateway-1
-    command:
-      - /bin/sh
-      - -c
-      - >
-        exec java -jar /app/gateway.jar
-        --spring.cloud.nacos.discovery.ip=$$(hostname -i | awk '{print $$1}')
-
-  gateway-2:
-    <<: *gateway-common
-    container_name: mvp-gateway-2
-    hostname: gateway-2
-    command:
-      - /bin/sh
-      - -c
-      - >
-        exec java -jar /app/gateway.jar
-        --spring.cloud.nacos.discovery.ip=$$(hostname -i | awk '{print $$1}')
-
-  nginx-gateway:
-    image: nginx:1.30-alpine
-    container_name: mvp-nginx-gateway
-    restart: unless-stopped
-    depends_on:
-      - gateway-1
-      - gateway-2
     ports:
-      # 前端和外部调用只访问这个统一入口。
+      # 宿主机访问第 3 个 Nacos 节点：http://127.0.0.1:8850/nacos/
+      - "8850:8848"
+      # 对应 8850 的客户端 gRPC 端口是 9850，映射到容器内 9848。
+      - "9850:9848"
+    volumes:
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-3/logs:/home/nacos/logs
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-3/data:/home/nacos/data
+
+  nginx:
+    image: nginx:1.30-alpine
+    container_name: mvp-nginx
+    restart: unless-stopped
+    ports:
+      # 对外统一入口。
+      # 前端和外部调用访问 127.0.0.1:8000，再由 Nginx 转发到宿主机 gateway 8001/8002。
       - "8000:8000"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      # 左边是宿主机当前目录下的 nginx.conf，右边是容器内 Nginx 实际读取的配置文件。
+      - /Users/zhongtao/.my_docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      # Nginx 在容器里访问宿主机 gateway 时，要使用 host.docker.internal。
+      - "host.docker.internal:host-gateway"
     networks:
-      - mvp-cluster
+      - mvp-network
 
 networks:
-  mvp-cluster:
-    name: mvp-cluster
+  mvp-network:
+    name: mvp-network
     driver: bridge
-
-volumes:
-  nacos-1-logs:
-  nacos-1-data:
-  nacos-2-logs:
-  nacos-2-data:
-  nacos-3-logs:
-  nacos-3-data:

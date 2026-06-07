@@ -1,85 +1,139 @@
-# Nacos 三节点和 Gateway 双节点集群
+# 本地 Docker 开发环境
 
-本目录只部署：
+本目录只在 Docker 中启动：
 
 - Nacos 三节点集群
-- Gateway 两个实例
-- Nginx Gateway 统一入口
+- Nginx 网关入口
 
-不包含 service-user 和 MySQL 容器。Nacos 使用宿主机现有的 MySQL
-`host.docker.internal:3306`。
+两个 Java `gateway` 实例暂时在宿主机启动，不放进 Docker。
 
 ## 请求链路
 
 ```text
-客户端 -> nginx-gateway:8000 -> gateway-1/gateway-2
-                                      |
-                                      +-> 直接连接 nacos-1/2/3
+客户端
+  -> 127.0.0.1:8000
+  -> Docker: nginx-gateway
+  -> 宿主机: gateway-1 127.0.0.1:8001
+  -> 宿主机: gateway-2 127.0.0.1:8002
+  -> Docker: nacos-1/nacos-2/nacos-3
 ```
 
-Nginx 不代理 Nacos。Gateway 直接使用：
+Nginx 只负责把业务请求转发到两个宿主机 gateway。  
+Nacos 不经过 Nginx，宿主机 gateway 直接连接 Nacos 三个映射端口。
+
+## 端口说明
+
+| 组件 | 宿主机访问地址 | 容器内地址 | 说明 |
+| --- | --- | --- | --- |
+| nginx-gateway | `127.0.0.1:8000` | `nginx-gateway:8000` | 对外统一入口 |
+| nacos-1 | `127.0.0.1:8848` | `nacos-1:8848` | Nacos 节点 1 |
+| nacos-2 | `127.0.0.1:8849` | `nacos-2:8848` | Nacos 节点 2 |
+| nacos-3 | `127.0.0.1:8850` | `nacos-3:8848` | Nacos 节点 3 |
+| gateway-1 | `127.0.0.1:8001` | 宿主机进程 | 手动启动 |
+| gateway-2 | `127.0.0.1:8002` | 宿主机进程 | 手动启动 |
+
+## 启动 Docker 中的 Nacos 和 Nginx
+
+确保宿主机 MySQL 已创建 `nacos_config` 数据库，并导入：
 
 ```text
-nacos-1:8848,nacos-2:8848,nacos-3:8848
+deploy/docker-dev/nacos-cluster.sql
 ```
 
-## 启动前准备
-
-确保宿主机 MySQL 中已经创建 `nacos_config` 并导入：
-
-```text
-deploy/nacos-cluster/nacos-cluster.sql
-```
-
-重新打包 Gateway：
+启动：
 
 ```bash
-mvn -pl gateway -am -DskipTests package
-```
-
-进入部署目录：
-
-```bash
-cd deploy/gateway-nacos-cluster
-```
-
-Nacos 数据库、Nacos 端口和 Gateway 入口端口已经直接写在 `docker-compose.yml` 中。
-如果本机 MySQL 账号密码不是 `root/rootroot`，直接修改 `docker-compose.yml` 里的
-`MYSQL_SERVICE_USER` 和 `MYSQL_SERVICE_PASSWORD`。
-
-## 启动
-
-```bash
+cd deploy/docker-dev
 docker compose up -d
 ```
 
-查看状态和日志：
+查看状态：
 
 ```bash
 docker compose ps
+```
+
+查看日志：
+
+```bash
 docker compose logs -f nacos-1
-docker compose logs -f gateway-1
+docker compose logs -f nacos-2
+docker compose logs -f nacos-3
 docker compose logs -f nginx-gateway
 ```
 
-## 访问
+访问：
 
 ```text
-Gateway 统一入口：http://127.0.0.1:8000
 Nginx 健康检查：http://127.0.0.1:8000/nginx-health
 Nacos 控制台：http://127.0.0.1:8848/nacos/
 ```
 
-## 停止
+## 在宿主机启动两个 Gateway
 
-保留日志和 Nacos 本地数据：
+先回到项目根目录打包：
 
 ```bash
+cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP
+mvn -pl gateway -am -DskipTests package
+```
+
+Nacos 集群地址：
+
+```bash
+NACOS_ADDR=127.0.0.1:8848,127.0.0.1:8849,127.0.0.1:8850
+```
+
+启动第一个 gateway：
+
+```bash
+java -jar gateway/target/gateway-0.0.1-SNAPSHOT.jar \
+  --server.port=8001 \
+  --spring.cloud.nacos.server-addr=${NACOS_ADDR} \
+  --spring.cloud.nacos.config.server-addr=${NACOS_ADDR} \
+  --spring.cloud.nacos.discovery.server-addr=${NACOS_ADDR} \
+  --spring.cloud.nacos.discovery.ip=127.0.0.1 \
+  --spring.cloud.nacos.discovery.port=8001
+```
+
+再开一个终端，启动第二个 gateway：
+
+```bash
+java -jar gateway/target/gateway-0.0.1-SNAPSHOT.jar \
+  --server.port=8002 \
+  --spring.cloud.nacos.server-addr=${NACOS_ADDR} \
+  --spring.cloud.nacos.config.server-addr=${NACOS_ADDR} \
+  --spring.cloud.nacos.discovery.server-addr=${NACOS_ADDR} \
+  --spring.cloud.nacos.discovery.ip=127.0.0.1 \
+  --spring.cloud.nacos.discovery.port=8002
+```
+
+访问业务入口：
+
+```bash
+curl -i http://127.0.0.1:8000/user/page?page=1\&size=10
+```
+
+如果经过 gateway，会看到响应头：
+
+```text
+X-Gateway-Route: service-user-route
+X-Gateway-Service: service-user-0
+```
+
+## 停止
+
+停止 Docker 中的 Nacos 和 Nginx：
+
+```bash
+cd deploy/docker-dev
 docker compose down
 ```
 
-同时删除 Compose 数据卷：
+同时删除 Nacos 数据卷：
 
 ```bash
 docker compose down -v
 ```
+
+宿主机上两个 gateway 进程需要在对应终端按 `Ctrl+C` 停止。
