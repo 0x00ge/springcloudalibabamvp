@@ -4,7 +4,6 @@
 # IDE
 .idea/
 *.iml
-*.xml
 
 # Java / Maven build output
 target/

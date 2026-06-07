@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.mvp</groupId>
+        <artifactId>SpringCloudAlibabaMVP</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>mvp-gateway-1</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- Nacos Config：从配置中心加载网关环境配置。 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+
+        <!-- Nacos Discovery：发现下游服务实例，支持 lb://service-name 路由。 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- Spring Cloud Gateway：网关路由、过滤器、跨域与转发能力。 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+
+        <!-- LoadBalancer：让 Gateway 的 lb:// 路由按服务实例负载均衡。 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
+        <!-- common：保留 JWT payload、配置和签发/验签工具。 -->
+        <dependency>
+            <groupId>com.mvp</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
+        <!-- Lombok：GatewayAccessLogFilter 使用 @Slf4j 输出网关访问日志。 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

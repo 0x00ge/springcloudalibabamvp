@@ -71,11 +71,11 @@ Nacos 控制台：http://127.0.0.1:8848/nacos/
 
 ## 在宿主机启动两个 Gateway
 
-先回到项目根目录打包：
+先回到项目根目录打包两个 gateway 模块：
 
 ```bash
 cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP
-mvn -pl gateway -am -DskipTests package
+mvn -pl mvp-gateway-0,mvp-gateway-1 -am -DskipTests package
 ```
 
 Nacos 集群地址：
@@ -84,11 +84,10 @@ Nacos 集群地址：
 NACOS_ADDR=127.0.0.1:8848,127.0.0.1:8849,127.0.0.1:8850
 ```
 
-启动第一个 gateway：
+启动第一个 gateway，也就是 `mvp-gateway-0`，默认端口是 `8001`：
 
 ```bash
-java -jar gateway/target/gateway-0.0.1-SNAPSHOT.jar \
-  --server.port=8001 \
+java -jar mvp-gateway-0/target/mvp-gateway-0-0.0.1-SNAPSHOT.jar \
   --spring.cloud.nacos.server-addr=${NACOS_ADDR} \
   --spring.cloud.nacos.config.server-addr=${NACOS_ADDR} \
   --spring.cloud.nacos.discovery.server-addr=${NACOS_ADDR} \
@@ -96,11 +95,10 @@ java -jar gateway/target/gateway-0.0.1-SNAPSHOT.jar \
   --spring.cloud.nacos.discovery.port=8001
 ```
 
-再开一个终端，启动第二个 gateway：
+再开一个终端，启动第二个 gateway，也就是 `mvp-gateway-1`，默认端口是 `8002`：
 
 ```bash
-java -jar gateway/target/gateway-0.0.1-SNAPSHOT.jar \
-  --server.port=8002 \
+java -jar mvp-gateway-1/target/mvp-gateway-1-0.0.1-SNAPSHOT.jar \
   --spring.cloud.nacos.server-addr=${NACOS_ADDR} \
   --spring.cloud.nacos.config.server-addr=${NACOS_ADDR} \
   --spring.cloud.nacos.discovery.server-addr=${NACOS_ADDR} \
