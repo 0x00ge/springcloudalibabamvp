@@ -19,10 +19,10 @@
             <artifactId>spring-boot</artifactId>
         </dependency>
 
-        <!-- MyBatis-Plus：UserMapper、UserServiceImpl 的数据访问基础。 -->
+        <!-- MyBatis-Plus Core：UUIDv7 主键生成器只需要 IdentifierGenerator 接口，不引入数据源自动配置。 -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <artifactId>mybatis-plus-core</artifactId>
         </dependency>
 
         <!-- Fastjson2：JWT header/payload JSON 序列化和反序列化。 -->

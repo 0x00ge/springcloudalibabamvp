@@ -5,7 +5,7 @@
                     class="org.springframework.boot.logging.logback.ColorConverter"/>
 
     <!-- 从 Spring 配置中读取应用名，用于区分不同服务的日志目录。 -->
-    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="service-user-0"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="mvp-gateway"/>
 
     <property name="LOG_PATH" value="logs/${APP_NAME}"/>
     <property name="CONSOLE_LOG_PATTERN"

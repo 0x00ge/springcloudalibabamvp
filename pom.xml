@@ -67,10 +67,17 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- MyBatis-Plus：实体映射、Mapper、ServiceImpl 等数据访问能力。 -->
+            <!-- MyBatis-Plus Starter：业务服务的数据访问自动配置，会触发数据源、Mapper 等能力。 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <!-- MyBatis-Plus Core：公共模块只依赖核心接口时使用，不触发数据源自动配置。 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-core</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
