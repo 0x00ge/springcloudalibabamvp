@@ -12,7 +12,7 @@
 ```text
 客户端
   -> 127.0.0.1:8000
-  -> Docker: nginx-gateway
+  -> Docker: nginx
   -> 宿主机: gateway-1 127.0.0.1:8001
   -> 宿主机: gateway-2 127.0.0.1:8002
   -> Docker: nacos-1/nacos-2/nacos-3
@@ -25,7 +25,7 @@ Nacos 不经过 Nginx，宿主机 gateway 直接连接 Nacos 三个映射端口�
 
 | 组件 | 宿主机访问地址 | 容器内地址 | 说明 |
 | --- | --- | --- | --- |
-| nginx-gateway | `127.0.0.1:8000` | `nginx-gateway:8000` | 对外统一入口 |
+| nginx | `127.0.0.1:8000` | `nginx:8000` | 对外统一入口 |
 | nacos-1 | `127.0.0.1:8848` | `nacos-1:8848` | Nacos 节点 1 |
 | nacos-2 | `127.0.0.1:8849` | `nacos-2:8848` | Nacos 节点 2 |
 | nacos-3 | `127.0.0.1:8850` | `nacos-3:8848` | Nacos 节点 3 |
@@ -59,7 +59,7 @@ docker compose ps
 docker compose logs -f nacos-1
 docker compose logs -f nacos-2
 docker compose logs -f nacos-3
-docker compose logs -f nginx-gateway
+docker compose logs -f nginx
 ```
 
 访问：
