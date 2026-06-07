@@ -11,6 +11,7 @@
         <module name="common" />
         <module name="service-iot-0" />
         <module name="mvp-gateway-0" />
+        <module name="mvp-gateway-1" />
         <module name="service-user-0" />
       </profile>
     </annotationProcessing>
@@ -24,6 +25,7 @@
       <module name="common" options="-parameters" />
       <module name="model" options="-parameters" />
       <module name="mvp-gateway-0" options="-parameters" />
+      <module name="mvp-gateway-1" options="-parameters" />
       <module name="service-iot-0" options="-parameters" />
       <module name="service-order-0" options="-parameters" />
       <module name="service-product-0" options="-parameters" />

@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        # 路由说明：
+        # 1. predicates 先根据请求路径判断是否命中路由；
+        # 2. uri 使用 lb://服务名，表示通过 Spring Cloud LoadBalancer 从 Nacos 选择服务实例；
+        # 3. 命中路由后转发到对应下游服务。
+
+        # 用户服务路由
+        - id: service-user-route # 路由唯一标识
+          uri: lb://service-user-0 # 通过 Nacos 服务名进行负载均衡转发
+          predicates:
+            - Path=/user/** # 匹配用户接口

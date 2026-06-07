@@ -10,6 +10,7 @@
         <option value="$PROJECT_DIR$/model/pom.xml" />
         <option value="$PROJECT_DIR$/gateway/pom.xml" />
         <option value="$PROJECT_DIR$/services/service-user-0/pom.xml" />
+        <option value="$PROJECT_DIR$/mvp-gateway-1/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
