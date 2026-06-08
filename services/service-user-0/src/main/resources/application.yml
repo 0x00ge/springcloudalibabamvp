@@ -23,6 +23,11 @@ spring:
           url: jdbc:mysql://127.0.0.1:3307/mvp?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
           username: root
           password: rootroot
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
   cloud:
     nacos:
       server-addr: 127.0.0.1:8848,127.0.0.1:8849,127.0.0.1:8850
@@ -35,4 +40,9 @@ mybatis-plus:
 jwt:
   # demo 密钥。真实项目请放到配置中心或环境变量中，并保证足够长、定期轮换。
   secret: mvp-jwt-demo-secret-key-change-me-please-2026
-  access-token-seconds: 1800
+  access-token-seconds: 30
+  refresh-token-seconds: 60
+
+auth:
+  blacklist-key-prefix: 'auth:blacklist:'
+  refresh-key-prefix: 'auth:refresh:'

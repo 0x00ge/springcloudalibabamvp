@@ -9,6 +9,11 @@ spring:
     include: route # 额外加载 application-route.yml 中的路由规则
   config:
     import: optional:nacos:${spring.application.name}-${spring.profiles.active}.yml # 可选导入 Nacos 中的 gateway-dev.yml
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
   cloud:
     gateway:
       globalcors:
@@ -25,3 +30,16 @@ spring:
       server-addr: 127.0.0.1:8848,127.0.0.1:8849,127.0.0.1:8850 # 宿主机访问 Docker Nacos 三节点集群
       discovery:
         ip: 127.0.0.1
+
+jwt:
+  # demo 密钥，需要和 service-user-0 保持一致。
+  secret: mvp-jwt-demo-secret-key-change-me-please-2026
+  access-token-seconds: 30
+  refresh-token-seconds: 60
+
+auth:
+  whitelist:
+    - /auth/register
+    - /auth/login
+    - /auth/refresh
+  blacklist-key-prefix: 'auth:blacklist:'
