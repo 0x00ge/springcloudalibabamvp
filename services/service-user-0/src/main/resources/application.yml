@@ -48,3 +48,7 @@ auth:
   refresh-key-prefix: 'auth:refresh:'
   register-sms-code-key-prefix: 'auth:register:sms:'
   register-sms-code-seconds: 300
+  refresh-token-cookie-name: refreshToken
+  refresh-token-cookie-path: /
+  refresh-token-cookie-same-site: Lax
+  refresh-token-cookie-secure: false
