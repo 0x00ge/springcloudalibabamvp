@@ -8,7 +8,7 @@ import { sendRegisterSmsCode } from '@/api/authApi.ts'
 import { useUserStore } from '@/stores/userStore.ts'
 
 interface LoginForm {
-  username: string
+  phone: string
   password: string
 }
 
@@ -34,7 +34,7 @@ const authMode = ref<AuthMode>('login')
 let countdownTimer: number | undefined
 
 const loginForm = reactive<LoginForm>({
-  username: '',
+  phone: '',
   password: '',
 })
 
@@ -47,7 +47,10 @@ const registerForm = reactive<RegisterForm>({
 })
 
 const loginRules: FormRules<LoginForm> = {
-  username: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
+  ],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
 
@@ -87,7 +90,7 @@ const handleLogin = async () => {
   try {
     // 登录逻辑交给 Pinia 的 userStore 统一处理：接口请求、保存 token 都放在一起。
     await userStore.loginAction({
-      username: loginForm.username,
+      phone: loginForm.phone,
       password: loginForm.password,
     })
 
@@ -149,8 +152,10 @@ const handleRegister = async () => {
       name: registerForm.name || undefined,
     })
 
-    ElMessage.success('注册成功')
-    redirectToTarget()
+    loginForm.phone = registerForm.phone
+    loginForm.password = ''
+    authMode.value = 'login'
+    ElMessage.success('注册成功，请登录')
   } finally {
     loading.value = false
   }
@@ -199,8 +204,8 @@ onBeforeUnmount(() => {
         size="large"
         @keyup.enter="handleSubmit"
       >
-        <el-form-item prop="username">
-          <el-input v-model="loginForm.username" placeholder="请输入账号" :prefix-icon="User" />
+        <el-form-item prop="phone">
+          <el-input v-model="loginForm.phone" placeholder="请输入手机号" :prefix-icon="Cellphone" />
         </el-form-item>
 
         <el-form-item prop="password">
