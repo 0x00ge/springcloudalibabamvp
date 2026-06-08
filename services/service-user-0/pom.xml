@@ -50,6 +50,12 @@
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
 
+        <!-- Redis：保存 refreshToken 白名单和 accessToken 登出黑名单。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- model：复用 User 实体、ResultVO 等共享模型。 -->
         <dependency>
             <groupId>com.mvp</groupId>

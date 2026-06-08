@@ -38,6 +38,12 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
+        <!-- Reactive Redis：Gateway 使用 WebFlux，鉴权时异步检查 accessToken 黑名单。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+        </dependency>
+
         <!-- common：保留 JWT payload、配置和签发/验签工具。 -->
         <dependency>
             <groupId>com.mvp</groupId>
