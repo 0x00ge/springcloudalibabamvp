@@ -5,7 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { fetchLayoutData } from '../api/dashboard'
 import { useUserStore } from '@/stores/userStore.ts'
-import type { BreadcrumbItem, MenuItem, UserInfo } from '../types/types'
+import type { BreadcrumbItem, MenuItem } from '../types/types'
 import AppMain from './components/LayoutMain.vue'
 import AppMenu from './components/LayoutMenu.vue'
 import AppTopbar from './components/LayoutTopbar.vue'
@@ -14,7 +14,6 @@ import AppTopbar from './components/LayoutTopbar.vue'
 // AppMenu 只负责展示菜单，AppTopbar 只负责触发折叠事件，避免兄弟组件互相依赖。
 const isCollapse = ref(false)
 const menus = ref<MenuItem[]>([])
-const user = ref<UserInfo>()
 const loading = ref(false)
 const logoutLoading = ref(false)
 const route = useRoute()
@@ -24,8 +23,8 @@ const userStore = useUserStore()
 // Element Plus 的 el-aside 通过 width 控制宽度，折叠时保持 64px，展开时保持 220px。
 const asideWidth = computed(() => (isCollapse.value ? '64px' : '220px'))
 
-// 顶部栏用户展示只使用布局接口返回的数据；登录流程不再额外请求用户信息接口。
-const currentUser = computed(() => user.value)
+// 顶部栏用户展示统一使用真实 /auth/me 接口返回的数据。
+const currentUser = computed(() => userStore.currentUserInfo)
 
 // 根据当前路由 matched 记录生成面包屑，不再依赖 Mock 中写死的 breadcrumbs。
 const breadcrumbs = computed<BreadcrumbItem[]>(() =>
@@ -72,14 +71,19 @@ const handleLogout = async () => {
   }
 }
 
-// 页面初始化时通过 mock api 拉取布局数据，避免菜单、用户写死在组件中。
+// 页面初始化时菜单暂用布局接口；当前用户统一走真实 /auth/me 鉴权接口。
 onMounted(async () => {
   loading.value = true
-  const layoutData = await fetchLayoutData()
+  try {
+    const [layoutData] = await Promise.all([
+      fetchLayoutData(),
+      userStore.loadCurrentAuthAction(),
+    ])
 
-  menus.value = layoutData.menus
-  user.value = layoutData.user
-  loading.value = false
+    menus.value = layoutData.menus
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 

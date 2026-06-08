@@ -59,7 +59,7 @@ let isHandleTokenExpired = false
 
 
 
-const AUTH_API_PATHS = ['/auth/login', '/auth/refresh', '/auth/register', '/auth/register/code']
+const NO_AUTO_REFRESH_AUTH_API_PATHS = ['/auth/login', '/auth/refresh', '/auth/register', '/auth/register/code']
 
 // 统一把请求地址转成 pathname，方便兼容下面几种写法：
 // - /auth/login
@@ -78,10 +78,10 @@ const getRequestPath = (url = '') => {
 // /auth/login：登录时还没有 token，不需要刷新。
 // /auth/refresh：它自己就是刷新 token 的接口，不能再触发刷新自己。
 // /auth/logout 需要携带 Authorization，让后端能拉黑当前 accessToken。
-const isAuthApi = (url = '') => {
+const isNoAutoRefreshAuthApi = (url = '') => {
     const requestPath = getRequestPath(url)
 
-    return AUTH_API_PATHS.some((path) => requestPath === path || requestPath === `/api${path}`)
+    return NO_AUTO_REFRESH_AUTH_API_PATHS.some((path) => requestPath === path || requestPath === `/api${path}`)
 }
 
 const isRefreshApi = (url = '') => {
@@ -100,7 +100,7 @@ const isRefreshApi = (url = '') => {
 const getOrRefreshAccessToken = async (url?: string) => {
     // 登录、刷新接口不走自动刷新逻辑，也不携带旧的 Authorization。
     // 例如：用户重新登录时，如果请求头还带着旧 accessToken，部分后端可能会误判。
-    if (isAuthApi(url)) return undefined
+    if (isNoAutoRefreshAuthApi(url)) return undefined
 
     const accessToken = getAccessToken()
 
@@ -235,7 +235,7 @@ axiosInstance.interceptors.response.use(
             }
 
             // 登录这类认证接口自己的 401，只展示后端错误，不当成“业务登录态失效”重复跳转。
-            if (isAuthApi(response.config.url)) {
+            if (isNoAutoRefreshAuthApi(response.config.url)) {
                 ElNotification({
                     title: '错误',
                     message: response.data.message,
@@ -259,6 +259,8 @@ axiosInstance.interceptors.response.use(
             return Promise.reject(response.data)
         }
 
+        isHandleTokenExpired = false
+
         // 业务成功时，把完整 response 交给 http.ts。
         // http.ts 会继续取 response.data.data 返回给页面。
         return response
@@ -273,7 +275,7 @@ axiosInstance.interceptors.response.use(
             }
 
             // 登录这类认证接口自己的 HTTP 401，只展示错误，不重复走登录失效跳转。
-            if (isAuthApi(error.config?.url)) {
+            if (isNoAutoRefreshAuthApi(error.config?.url)) {
                 ElNotification({
                     title: '错误',
                     message: error.message,

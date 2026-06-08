@@ -1,4 +1,4 @@
-import {postParams} from '@/utils/http/http.ts'
+import { get, postParams } from '@/utils/http/http.ts'
 
 import type {
     CurrentAuth,
@@ -48,6 +48,12 @@ export const register = (data: RegisterParams) => {
 
     return postParams<CurrentAuth>('/auth/register', request)
 }
+
+// 当前登录用户：
+// 1. 前端只携带 Authorization: Bearer accessToken。
+// 2. Gateway 校验 token 后把用户 ID 透传成 X-User-Id。
+// 3. user 服务读取 X-User-Id，并返回 CurrentAuthDTO。
+export const fetchCurrentAuth = () => get<CurrentAuth>('/auth/me')
 
 // 刷新 accessToken：
 // 1. accessToken 过期后，axios 拦截器会调用这个接口。

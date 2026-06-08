@@ -1,8 +1,8 @@
 import {computed, ref} from 'vue'
 import {defineStore} from 'pinia'
 
-import {login, logout, refreshAccessToken, register} from '@/api/authApi.ts'
-import type {LoginParams, RegisterParams} from '@/types/types.ts'
+import { fetchCurrentAuth, login, logout, refreshAccessToken, register } from '@/api/authApi.ts'
+import type { CurrentAuth, LoginParams, RegisterParams, UserInfo } from '@/types/types.ts'
 import {
     clearStoredAuthInfo,
     getAccessToken,
@@ -12,15 +12,30 @@ import {
 export const useUserStore = defineStore('user', () => {
     // accessToken：短期 token，只保存在 Pinia/内存里，会被 axios.ts 放到 Authorization 请求头中。
     const accessToken = ref(getAccessToken())
+    const currentAuth = ref<CurrentAuth>()
 
     // 是否已登录：只看当前页面运行时是否已经拿到 accessToken。
     const isLogin = computed(() => Boolean(accessToken.value))
 
     const hasValidLogin = () => Boolean(accessToken.value || getAccessToken())
 
+    const currentUserInfo = computed<UserInfo | undefined>(() => {
+        if (!currentAuth.value) return undefined
+
+        const displayName = currentAuth.value.name || currentAuth.value.phone || '用户'
+
+        return {
+            userId: currentAuth.value.id,
+            phone: currentAuth.value.phone,
+            name: displayName,
+            avatarText: displayName.slice(0, 1).toUpperCase(),
+        }
+    })
+
     // 清理 Pinia 状态和内存缓存，只负责前端状态，不调用后端接口。
     const clearLoginState = () => {
         accessToken.value = ''
+        currentAuth.value = undefined
         clearStoredAuthInfo()
     }
 
@@ -43,6 +58,15 @@ export const useUserStore = defineStore('user', () => {
     // 3. 注册成功后不自动登录，由页面提示用户再登录。
     const registerAction = async (params: RegisterParams) => {
         return register(params)
+    }
+
+    // 查询当前用户：
+    // 1. 前端只访问真实 /auth/me。
+    // 2. X-User-Id 不由前端伪造，而是由 gateway 校验 accessToken 后透传给 user 服务。
+    const loadCurrentAuthAction = async () => {
+        currentAuth.value = await fetchCurrentAuth()
+
+        return currentAuth.value
     }
 
     // 恢复登录态：
@@ -85,11 +109,14 @@ export const useUserStore = defineStore('user', () => {
 
     return {
         accessToken,
+        currentAuth,
+        currentUserInfo,
         isLogin,
         hasValidLogin,
         clearLoginState,
         loginAction,
         registerAction,
+        loadCurrentAuthAction,
         refreshLoginStateAction,
         logoutAction,
     }
