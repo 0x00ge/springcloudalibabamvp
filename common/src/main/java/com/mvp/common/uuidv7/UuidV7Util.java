@@ -1,4 +1,4 @@
-package com.mvp.common.util;
+package com.mvp.common.uuidv7;
 
 import java.security.SecureRandom;
 import java.util.UUID;

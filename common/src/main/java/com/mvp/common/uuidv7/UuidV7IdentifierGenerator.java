@@ -1,4 +1,4 @@
-package com.mvp.common.util;
+package com.mvp.common.uuidv7;
 
 import com.baomidou.mybatisplus.core.incrementer.DefaultIdentifierGenerator;
 import com.baomidou.mybatisplus.core.incrementer.IdentifierGenerator;
