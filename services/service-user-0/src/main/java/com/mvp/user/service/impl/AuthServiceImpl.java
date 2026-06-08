@@ -88,33 +88,33 @@ public class AuthServiceImpl implements AuthService {
      * <p>注册接口当前不直接返回 token，注册成功后前端可以继续调用登录接口获取双 token。</p>
      */
     @Override
-    public CurrentAuthDTO register(String phone, String name, String password, String confirmPassword, String smsCode) {
+    public CurrentAuthDTO register(CurrentAuthDTO currentAuthDTO) {
         // 1. 校验短信验证码，验证码错误或过期都不允许注册。
-        validateRegisterSmsCode(phone, smsCode);
+        validateRegisterSmsCode(currentAuthDTO.getPhone(), currentAuthDTO.getSmsCode());
 
         // 2. 校验两次密码是否一致，避免用户误输入。
-        if (!password.equals(confirmPassword)) {
+        if (!currentAuthDTO.getPassword().equals(currentAuthDTO.getConfirmPassword())) {
             throw new IllegalArgumentException("两次密码不一致");
         }
 
         // 3. 校验手机号是否已经注册，手机号在用户表中必须唯一。
-        boolean exists = userService.count(Wrappers.<User>lambdaQuery().eq(User::getPhone, phone)) > 0;
+        boolean exists = userService.count(Wrappers.<User>lambdaQuery().eq(User::getPhone, currentAuthDTO.getPhone())) > 0;
         if (exists) {
             throw new IllegalArgumentException(ResultCode.PHONE_EXIST.getMessage());
         }
 
         // 4. 构建用户实体，密码必须先 BCrypt 加密，再保存到数据库。
         User user = new User();
-        user.setPhone(phone);
-        user.setPasswordHash(passwordEncoder.encode(password));
-        user.setName(name);
+        user.setPhone(currentAuthDTO.getPhone());
+        user.setPasswordHash(passwordEncoder.encode(currentAuthDTO.getPassword()));
+        user.setName(currentAuthDTO.getName());
         user.setGender(0);
         user.setStatus(USER_STATUS_NORMAL);
 
         // 5. 保存用户，并删除已使用的验证码，避免同一个验证码重复注册。
         userService.save(user);
-        stringRedisTemplate.delete(registerSmsCodeKey(phone));
-        log.info("用户注册成功 userId={} phone={}", user.getId(), phone);
+        stringRedisTemplate.delete(registerSmsCodeKey(currentAuthDTO.getPhone()));
+        log.info("用户注册成功 userId={} phone={}", user.getId(), currentAuthDTO.getPhone());
         return toCurrentAuthDTO(user);
     }
 

@@ -10,12 +10,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -67,28 +67,15 @@ public class AuthController {
      *
      * <p>请求路径：POST /auth/register</p>
      * <p>是否需要登录：否，注册接口在网关白名单中。</p>
-     * <p>传参方式：请求参数传参，不使用 JSON body。</p>
+     * <p>传参方式：使用 CurrentAuthDTO JSON body 入参。</p>
      *
-     * @param phone 手机号，作为注册和登录的主账号
-     * @param name 用户名称
-     * @param password 登录密码，服务端会使用 BCrypt 加密后保存
-     * @param confirmPassword 确认密码，必须和 password 一致
-     * @param smsCode 手机短信验证码
+     * @param currentAuthDTO 注册入参，包含手机号、姓名、密码、确认密码和短信验证码
      * @return 当前注册成功的用户基础信息，不直接返回 token
      */
     @PostMapping("/register")
-    public ResultVO<CurrentAuthDTO> register(
-            @RequestParam @Validated @NotBlank(message = "手机号不能为空")
-            @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确") String phone,
-            @RequestParam @Validated @NotBlank(message = "用户名称不能为空")
-            @Size(max = 50, message = "用户名称长度不能超过50") String name,
-            @RequestParam @Validated @NotBlank(message = "密码不能为空")
-            @Size(min = 6, max = 32, message = "密码长度必须在6到32位之间") String password,
-            @RequestParam @Validated @NotBlank(message = "确认密码不能为空") String confirmPassword,
-            @RequestParam @Validated @NotBlank(message = "验证码不能为空")
-            @Pattern(regexp = "^\\d{6}$", message = "验证码必须是6位数字") String smsCode) {
+    public ResultVO<CurrentAuthDTO> register(@RequestBody @Validated CurrentAuthDTO currentAuthDTO) {
         // 调用鉴权服务完成验证码校验、注册校验、密码加密和用户入库。
-        return ResultVO.ok(authService.register(phone, name, password, confirmPassword, smsCode));
+        return ResultVO.ok(authService.register(currentAuthDTO));
     }
 
     /**

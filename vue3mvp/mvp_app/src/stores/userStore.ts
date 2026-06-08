@@ -1,8 +1,9 @@
 import {computed, ref} from 'vue'
 import {defineStore} from 'pinia'
 
-import { fetchCurrentAuth, login, logout, refreshAccessToken, register } from '@/api/authApi.ts'
-import type { CurrentAuth, LoginParams, RegisterParams, UserInfo } from '@/types/types.ts'
+import { getCurrentAuth, login, logout, refreshAccessToken, register } from '@/api/authApi.ts'
+import type { CurrentAuth, CurrentAuthDTO, LoginParams } from '@/types/authType.ts'
+import type { UserInfo } from '@/types/types.ts'
 import {
     clearStoredAuthInfo,
     getAccessToken,
@@ -56,7 +57,7 @@ export const useUserStore = defineStore('user', () => {
     // 1. 页面先调用 /auth/register/code 发送短信验证码。
     // 2. 用户提交手机号、验证码、密码后调用 /auth/register。
     // 3. 注册成功后不自动登录，由页面提示用户再登录。
-    const registerAction = async (params: RegisterParams) => {
+    const registerAction = async (params: CurrentAuthDTO) => {
         return register(params)
     }
 
@@ -64,7 +65,7 @@ export const useUserStore = defineStore('user', () => {
     // 1. 前端只访问真实 /auth/me。
     // 2. X-User-Id 不由前端伪造，而是由 gateway 校验 accessToken 后透传给 user 服务。
     const loadCurrentAuthAction = async () => {
-        currentAuth.value = await fetchCurrentAuth()
+        currentAuth.value = await getCurrentAuth()
 
         return currentAuth.value
     }

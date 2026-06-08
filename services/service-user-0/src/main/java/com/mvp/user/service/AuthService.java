@@ -25,14 +25,10 @@ public interface AuthService {
      *
      * <p>注册时会校验短信验证码、两次密码是否一致、手机号是否已存在，并把明文密码加密为 BCrypt 密文后保存。</p>
      *
-     * @param phone 手机号，用户登录主账号
-     * @param name 用户名称
-     * @param password 明文密码
-     * @param confirmPassword 确认密码
-     * @param smsCode 手机短信验证码
+     * @param currentAuthDTO 注册入参
      * @return 注册成功后的用户基础信息
      */
-    CurrentAuthDTO register(String phone, String name, String password, String confirmPassword, String smsCode);
+    CurrentAuthDTO register(CurrentAuthDTO currentAuthDTO);
 
     /**
      * 用户登录。

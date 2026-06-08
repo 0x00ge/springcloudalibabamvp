@@ -1,27 +1,24 @@
 import axiosInstance from '@/utils/http/axios.ts'
 
-type RequestParams = object
-type RequestData = unknown
-
 interface ResponseData<T> {
   code: number
   message: string
   data: T
 }
 
-export async function get<T>(url: string, params?: RequestParams): Promise<T> {
+export async function get<T>(url: string, params?: any): Promise<T> {
   const response = await axiosInstance.get<ResponseData<T>>(url, { params })
 
   return response.data.data
 }
 
-export async function post<T>(url: string, data?: RequestData): Promise<T> {
+export async function post<T>(url: string, data?: any): Promise<T> {
   const response = await axiosInstance.post<ResponseData<T>>(url, data)
 
   return response.data.data
 }
 
-export async function postParams<T>(url: string, params?: RequestParams): Promise<T> {
+export async function postParams<T>(url: string, params?: any): Promise<T> {
   const response = await axiosInstance.post<ResponseData<T>>(url, undefined, { params })
 
   return response.data.data

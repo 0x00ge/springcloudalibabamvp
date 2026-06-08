@@ -7,7 +7,7 @@ import axios, {
 import {ElNotification} from 'element-plus'
 
 import {BUSINESS_CODE, HTTP_STATUS} from '@/constants/httpCode.ts'
-import type {RefreshTokenResult} from '@/types/types.ts'
+import type {RefreshTokenResult} from '@/types/authType.ts'
 import {
     clearStoredAuthInfo,
     getAccessToken,

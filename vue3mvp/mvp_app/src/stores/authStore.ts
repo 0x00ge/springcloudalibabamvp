@@ -1,4 +1,4 @@
-import type { TokenResult } from '@/types/types.ts'
+import type { TokenResult } from '@/types/authType.ts'
 
 interface AuthRuntimeState {
   accessToken: string
