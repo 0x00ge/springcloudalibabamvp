@@ -29,6 +29,9 @@ public class JwtUtil {
     /** accessToken：访问业务接口使用。 */
     public static final String TYPE_ACCESS = "access";
 
+    /** refreshToken：换取新 accessToken 使用。 */
+    public static final String TYPE_REFRESH = "refresh";
+
     /** JWT 当前使用的签名算法，对应 header.alg=HS256。 */
     private static final String HMAC_SHA256 = "HmacSHA256";
 
@@ -46,6 +49,13 @@ public class JwtUtil {
      */
     public String createAccessToken(String userId) {
         return createToken(userId, TYPE_ACCESS, jwtProperties.getAccessTokenSeconds());
+    }
+
+    /**
+     * 创建 refresh 类型 token。
+     */
+    public String createRefreshToken(String userId) {
+        return createToken(userId, TYPE_REFRESH, jwtProperties.getRefreshTokenSeconds());
     }
 
     public JwtPayload parseAndValidate(String token) {
@@ -99,6 +109,10 @@ public class JwtUtil {
 
     public long getAccessTokenSeconds() {
         return jwtProperties.getAccessTokenSeconds();
+    }
+
+    public long getRefreshTokenSeconds() {
+        return jwtProperties.getRefreshTokenSeconds();
     }
 
     private String createToken(String userId,
