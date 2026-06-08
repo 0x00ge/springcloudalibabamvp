@@ -39,6 +39,7 @@ jwt:
 
 auth:
   whitelist:
+    - /auth/register/code
     - /auth/register
     - /auth/login
     - /auth/refresh
