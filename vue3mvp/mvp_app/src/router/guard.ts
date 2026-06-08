@@ -21,7 +21,7 @@ export const guard = (router: Router) => {
       userStore.clearLoginState()
     }
 
-    // 访问受保护页面时，先尝试从内存 accessToken 或 HttpOnly Cookie 恢复登录态。
+    // 访问受保护页面时，先尝试从内存 accessToken 或 refreshToken 恢复登录态。
     if (to.meta.requiresAuth) {
       try {
         await userStore.refreshLoginStateAction()

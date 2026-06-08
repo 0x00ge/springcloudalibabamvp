@@ -71,6 +71,10 @@ const registerRules: FormRules<RegisterForm> = {
     { required: true, message: '请再次输入密码', trigger: 'blur' },
     { min: 6, message: '密码至少 6 位', trigger: 'blur' },
   ],
+  name: [
+    { required: true, message: '请输入姓名', trigger: 'blur' },
+    { max: 50, message: '姓名长度不能超过 50 位', trigger: 'blur' },
+  ],
 }
 
 const redirectToTarget = () => {
@@ -149,7 +153,7 @@ const handleRegister = async () => {
       password: registerForm.password,
       confirmPassword: registerForm.confirmPassword,
       smsCode: registerForm.smsCode,
-      name: registerForm.name || undefined,
+      name: registerForm.name,
     })
 
     loginForm.phone = registerForm.phone

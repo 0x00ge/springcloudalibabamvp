@@ -106,7 +106,7 @@ export interface RegisterParams {
   /** 手机短信验证码。 */
   smsCode: string
   /** 用户名称。 */
-  name?: string
+  name: string
 }
 
 /**

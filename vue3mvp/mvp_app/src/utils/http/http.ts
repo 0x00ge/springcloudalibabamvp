@@ -1,6 +1,6 @@
 import axiosInstance from '@/utils/http/axios.ts'
 
-type RequestParams = Record<string, unknown>
+type RequestParams = object
 type RequestData = unknown
 
 interface ResponseData<T> {
