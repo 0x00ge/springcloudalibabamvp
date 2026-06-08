@@ -11,9 +11,7 @@ import type {RefreshTokenResult} from '@/types/types.ts'
 import {
     clearStoredAuthInfo,
     getAccessToken,
-    getRefreshToken,
     isAccessTokenExpired,
-    isRefreshTokenExpired,
     setAuthTokens,
 } from '@/stores/authStore.ts'
 
@@ -24,8 +22,8 @@ import {
  * 3. get/post 使用这里创建的 axiosInstance 发请求。
  * 4. 请求拦截器先检查内存中的 accessToken 是否可用。
  * 5. accessToken 可用：直接放到 Authorization 请求头。
- * 6. accessToken 缺失或过期：携带 refreshToken 参数调用 /auth/refresh。
- * 7. refreshToken 无效：清理内存状态，并跳回登录页。
+ * 6. accessToken 缺失或过期：调用 /auth/refresh，浏览器自动携带 HttpOnly refreshToken Cookie。
+ * 7. refreshToken Cookie 无效：清理内存状态，并跳回登录页。
  * 8. 业务接口返回 401：直接认为登录态失效，清理内存状态，并跳回登录页。
  * 9. 其他错误：统一使用 Element Plus 消息提示。
  */
@@ -44,6 +42,7 @@ const baseURL = import.meta.env.VITE_API_URL || '/api'
 const axiosInstance: AxiosInstance = axios.create({
     baseURL,
     timeout: 5000,
+    withCredentials: true,
 })
 
 // 刷新 token 的共享 Promise。
@@ -105,7 +104,7 @@ const getOrRefreshAccessToken = async (url?: string) => {
 
     const accessToken = getAccessToken()
 
-    // accessToken 缺失或过期时，尝试用内存中的 refreshToken 恢复。
+    // accessToken 缺失或过期时，尝试用 HttpOnly Cookie 中的 refreshToken 恢复。
     if (!accessToken || isAccessTokenExpired()) {
         return handleRefreshAccessToken()
     }
@@ -117,8 +116,8 @@ const getOrRefreshAccessToken = async (url?: string) => {
  * 刷新 accessToken。
  *
  * 1. 如果当前已经有刷新请求在进行中，直接复用 refreshPromise。
- * 2. 刷新请求通过 params 传 refreshToken，不使用 JSON body。
- * 3. 刷新成功后保存新的 accessToken 和 refreshToken。
+ * 2. 刷新请求不传 refreshToken 参数，浏览器会自动携带 HttpOnly Cookie。
+ * 3. 刷新成功后保存新的 accessToken；新的 refreshToken 继续由后端写 Cookie。
  *
  * 注意：
  * 这里故意使用 axios.post，而不是 axiosInstance.post。
@@ -128,11 +127,6 @@ const getOrRefreshAccessToken = async (url?: string) => {
 const handleRefreshAccessToken = async () => {
     // refreshPromise 为空，说明当前没有刷新请求在进行中，需要新发起一次。
     if (!refreshPromise) {
-        const refreshToken = getRefreshToken()
-        if (!refreshToken || isRefreshTokenExpired()) {
-            throw new Error('refreshToken 已失效')
-        }
-
         refreshPromise = axios
             .post<ResponseData<RefreshTokenResult>>(
                 '/auth/refresh',
@@ -140,7 +134,7 @@ const handleRefreshAccessToken = async () => {
                 {
                     baseURL,
                     timeout: 5000,
-                    params: {refreshToken},
+                    withCredentials: true,
                 },
             )
             .then((response) => {
@@ -168,7 +162,7 @@ const handleRefreshAccessToken = async () => {
  * 2. 并跳回登录页。
  */
 const handleTokenExpired = () => {
-    // 清理内存中的 accessToken 和 refreshToken。
+    // 清理内存中的 accessToken；refreshToken Cookie 由后端清理或自然过期。
     clearStoredAuthInfo()
 
     // 如果已经在处理登录失效，就不重复弹通知、不重复修改 location。
@@ -235,7 +229,7 @@ axiosInstance.interceptors.response.use(
         // accessToken 过期的正常刷新已经在“请求拦截器”里提前处理了；
         // 如果接口仍然返回 401，说明后端已经明确拒绝当前登录态，继续请求没有意义。
         if (response.data.code === BUSINESS_CODE.UNAUTHORIZED) {
-            // refresh 失败通常只是表示 refreshToken 不存在或已失效，交给调用方决定是否跳登录页。
+            // refresh 失败通常只是表示 Cookie 不存在或已失效，交给调用方决定是否跳登录页。
             if (isRefreshApi(response.config.url)) {
                 return Promise.reject(response.data)
             }
@@ -273,7 +267,7 @@ axiosInstance.interceptors.response.use(
         // HTTP 状态码为 401：直接认为登录态失效。
         // 这里也不再尝试刷新 token，避免后端已经拒绝后前端继续重复请求。
         if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
-            // refresh 失败通常只是表示 refreshToken 不存在或已失效，交给调用方决定是否跳登录页。
+            // refresh 失败通常只是表示 Cookie 不存在或已失效，交给调用方决定是否跳登录页。
             if (isRefreshApi(error.config?.url)) {
                 return Promise.reject(error)
             }

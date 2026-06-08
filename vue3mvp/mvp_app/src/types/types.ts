@@ -128,19 +128,17 @@ export interface CurrentAuth {
 export interface TokenResult {
   /** 短期访问令牌，只保存在 Pinia/内存里，请求接口时放到 Authorization 请求头。 */
   accessToken: string
-  /** 换取新 accessToken 使用的刷新令牌。 */
-  refreshToken: string
   /** accessToken 类型，通常为 Bearer。 */
   tokenType: string
   /** accessToken 过期秒数。 */
   accessTokenExpiresIn: number
-  /** refreshToken 过期秒数。 */
+  /** refreshToken Cookie 过期秒数，前端只用于调试或展示，不保存 refreshToken 原值。 */
   refreshTokenExpiresIn: number
 }
 
 /**
  * 刷新 accessToken 接口返回值。
- * 后端采用 refreshToken 轮换策略，响应体返回新的 accessToken 和 refreshToken。
+ * 后端采用 HttpOnly Cookie refreshToken 轮换策略，响应体只返回新的 accessToken 信息。
  */
 export type RefreshTokenResult = TokenResult
 

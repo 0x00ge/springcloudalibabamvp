@@ -12,8 +12,8 @@ import type {
 
 // 登录接口：
 // 1. 用户输入账号密码后，Login.vue 会调用这个方法。
-// 2. 后端校验成功后返回 accessToken 和 refreshToken。
-// 3. 前端保存双 token；业务接口只把 accessToken 放到 Authorization 请求头。
+// 2. 后端校验成功后，响应体返回 accessToken，并通过 HttpOnly Cookie 写入 refreshToken。
+// 3. 前端只保存 accessToken；业务接口只把 accessToken 放到 Authorization 请求头。
 export const login = (data: LoginParams) => {
     const request: LoginParams = {
         phone: data.phone,
@@ -51,10 +51,9 @@ export const register = (data: RegisterParams) => {
 
 // 刷新 accessToken：
 // 1. accessToken 过期后，axios 拦截器会调用这个接口。
-// 2. refreshToken 通过请求参数传给后端。
-// 3. 后端轮换双 token，前端保存新的 accessToken 和 refreshToken。
-export const refreshAccessToken = (refreshToken: string) =>
-    postParams<RefreshTokenResult>('/auth/refresh', {refreshToken})
+// 2. refreshToken 由浏览器自动携带 HttpOnly Cookie。
+// 3. 后端轮换 refreshToken Cookie，响应体返回新的 accessToken。
+export const refreshAccessToken = () => postParams<RefreshTokenResult>('/auth/refresh')
 
-// 登出接口：后端从 Authorization 请求头读取 accessToken，并通过 refreshToken 删除刷新白名单。
-export const logout = (refreshToken: string) => postParams<void>('/auth/logout', {refreshToken})
+// 登出接口：后端从 Authorization 请求头读取 accessToken，并从 Cookie 读取 refreshToken。
+export const logout = () => postParams<void>('/auth/logout')

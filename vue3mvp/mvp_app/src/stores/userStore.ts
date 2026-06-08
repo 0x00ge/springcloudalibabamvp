@@ -6,9 +6,6 @@ import type {LoginParams, RegisterParams} from '@/types/types.ts'
 import {
     clearStoredAuthInfo,
     getAccessToken,
-    getRefreshToken,
-    isAccessTokenExpired,
-    isRefreshTokenExpired,
     setAuthTokens,
 } from '@/stores/authStore.ts'
 
@@ -28,8 +25,8 @@ export const useUserStore = defineStore('user', () => {
     }
 
     // 登录流程：
-    // 1. 调用 /auth/login，后端返回 accessToken 和 refreshToken。
-    // 2. 前端保存双 token；后续业务接口只用 accessToken 放到 Authorization 请求头。
+    // 1. 调用 /auth/login，后端响应体返回 accessToken，并通过 HttpOnly Cookie 写入 refreshToken。
+    // 2. 前端只保存 accessToken；后续业务接口只用 accessToken 放到 Authorization 请求头。
     // 3. 登录流程不再额外请求用户信息接口。
     const loginAction = async (params: LoginParams) => {
         const tokenResult = await login(params)
@@ -51,7 +48,7 @@ export const useUserStore = defineStore('user', () => {
     // 恢复登录态：
     // 1. 如果内存里还有 accessToken，直接认为当前前端运行态可用。
     // 2. 如果页面刷新导致 accessToken 丢失，则调用 /auth/refresh。
-    // 3. refreshToken 通过请求参数传给后端，后端返回新的双 token。
+    // 3. 浏览器自动携带 HttpOnly refreshToken Cookie，后端返回新的 accessToken。
     const refreshLoginStateAction = async () => {
         if (accessToken.value || getAccessToken()) {
             accessToken.value = getAccessToken()
@@ -60,12 +57,7 @@ export const useUserStore = defineStore('user', () => {
         }
 
         try {
-            const refreshToken = getRefreshToken()
-            if (!refreshToken || isRefreshTokenExpired()) {
-                throw new Error('refreshToken 已失效')
-            }
-
-            const tokenResult = await refreshAccessToken(refreshToken)
+            const tokenResult = await refreshAccessToken()
 
             accessToken.value = tokenResult.accessToken
             setAuthTokens(tokenResult)
@@ -79,23 +71,12 @@ export const useUserStore = defineStore('user', () => {
     }
 
     // 退出登录：
-    // 1. 如果 accessToken 已过期但 refreshToken 还可用，先刷新一次，让后端能校验登出请求。
-    // 2. 调用 /auth/logout，让后端拉黑当前 accessToken 并删除 refreshToken。
-    // 3. 不管后端接口成功还是失败，finally 都会清理前端 Pinia/内存状态。
+    // 1. 如果存在 accessToken，调用 /auth/logout，让后端拉黑当前 accessToken、删除 refreshToken 白名单并清 Cookie。
+    // 2. 不管后端接口成功还是失败，finally 都会清理前端 Pinia/内存状态。
     const logoutAction = async () => {
         try {
-            let refreshToken = getRefreshToken()
-            if (!refreshToken || isRefreshTokenExpired()) return
-
-            if (!accessToken.value || isAccessTokenExpired()) {
-                const tokenResult = await refreshAccessToken(refreshToken)
-                accessToken.value = tokenResult.accessToken
-                setAuthTokens(tokenResult)
-                refreshToken = tokenResult.refreshToken
-            }
-
             if (accessToken.value) {
-                await logout(refreshToken)
+                await logout()
             }
         } finally {
             clearLoginState()
