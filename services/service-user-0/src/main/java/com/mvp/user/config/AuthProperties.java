@@ -21,4 +21,14 @@ public class AuthProperties {
      * refreshToken 白名单 key 前缀。
      */
     private String refreshKeyPrefix = "auth:refresh:";
+
+    /**
+     * 注册短信验证码 key 前缀。
+     */
+    private String registerSmsCodeKeyPrefix = "auth:register:sms:";
+
+    /**
+     * 注册短信验证码有效期，单位秒。
+     */
+    private long registerSmsCodeSeconds = 300;
 }
