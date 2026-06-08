@@ -82,6 +82,13 @@
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
+            <!-- MyBatis-Plus JSqlParser：分页拦截器 PaginationInnerInterceptor 所需依赖。 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
             <!-- dynamic-datasource：用户服务的 master/slave 数据源路由。 -->
             <dependency>
                 <groupId>com.baomidou</groupId>

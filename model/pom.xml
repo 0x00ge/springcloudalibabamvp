@@ -25,6 +25,12 @@
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
         </dependency>
 
+        <!-- MyBatis-Plus 分页插件：BaseController.page() 需要该依赖生成物理分页 SQL。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+
         <!-- Lombok：Entity、DTO、VO 使用 @Data 等注解减少样板代码。 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
