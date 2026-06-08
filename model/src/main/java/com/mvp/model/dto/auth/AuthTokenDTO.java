@@ -15,6 +15,9 @@ public class AuthTokenDTO {
 
     /**
      * 换取新 accessToken 使用的长期 token。
+     *
+     * <p>当前接口会把 refreshToken 写入 HttpOnly Cookie；Controller 写完 Cookie 后会把该字段置空，
+     * 避免响应体把 refreshToken 暴露给前端 JS。</p>
      */
     private String refreshToken;
 
