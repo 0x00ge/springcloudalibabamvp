@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/mvp-gateway-0/mvp-gateway-0.iml" filepath="$PROJECT_DIR$/mvp-gateway-0/mvp-gateway-0.iml" />
+      <module fileurl="file://$PROJECT_DIR$/gateway/mvp-gateway-0.iml" filepath="$PROJECT_DIR$/gateway/mvp-gateway-0.iml" />
       <module fileurl="file://$PROJECT_DIR$/services/service-order/service-order-0.iml" filepath="$PROJECT_DIR$/services/service-order/service-order-0.iml" />
       <module fileurl="file://$PROJECT_DIR$/services/service-product/service-product-0.iml" filepath="$PROJECT_DIR$/services/service-product/service-product-0.iml" />
       <module fileurl="file://$PROJECT_DIR$/services/service-user-0/service-user-0.iml" filepath="$PROJECT_DIR$/services/service-user-0/service-user-0.iml" />
