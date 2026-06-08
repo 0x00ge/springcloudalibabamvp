@@ -78,8 +78,8 @@ export interface LayoutMockData {
  * Login.vue 表单提交时会传给 /auth/login。
  */
 export interface LoginParams {
-  /** 登录账号。 */
-  username: string
+  /** 登录手机号。 */
+  phone: string
   /** 登录密码。 */
   password: string
 }
@@ -94,7 +94,7 @@ export interface SendRegisterSmsCodeParams {
 
 /**
  * 注册接口入参。
- * 注册成功后后端会直接返回 accessToken，并通过 HttpOnly Cookie 写入 refreshToken。
+ * 注册成功后后端返回当前注册用户基础信息。
  */
 export interface RegisterParams {
   /** 注册手机号。 */
@@ -110,22 +110,37 @@ export interface RegisterParams {
 }
 
 /**
+ * 当前鉴权用户基础信息。
+ * 后端 CurrentAuthDTO 返回 id、name、phone 三个字段。
+ */
+export interface CurrentAuth {
+  /** 用户 ID。 */
+  id: string
+  /** 用户名称。 */
+  name: string
+  /** 手机号。 */
+  phone: string
+}
+
+/**
  * 后端登录/刷新 token 接口返回值。
  */
 export interface TokenResult {
   /** 短期访问令牌，只保存在 Pinia/内存里，请求接口时放到 Authorization 请求头。 */
   accessToken: string
+  /** 换取新 accessToken 使用的刷新令牌。 */
+  refreshToken: string
   /** accessToken 类型，通常为 Bearer。 */
   tokenType: string
   /** accessToken 过期秒数。 */
-  expiresIn: number
-  /** refreshToken Cookie 过期秒数，前端只用于展示或调试，不保存 refreshToken 值。 */
-  refreshExpiresIn: number
+  accessTokenExpiresIn: number
+  /** refreshToken 过期秒数。 */
+  refreshTokenExpiresIn: number
 }
 
 /**
  * 刷新 accessToken 接口返回值。
- * 后端采用 refreshToken Cookie 轮换策略，响应体只返回新的 accessToken。
+ * 后端采用 refreshToken 轮换策略，响应体返回新的 accessToken 和 refreshToken。
  */
 export type RefreshTokenResult = TokenResult
 

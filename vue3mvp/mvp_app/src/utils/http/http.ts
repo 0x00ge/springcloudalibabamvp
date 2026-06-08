@@ -20,3 +20,9 @@ export async function post<T>(url: string, data?: RequestData): Promise<T> {
 
   return response.data.data
 }
+
+export async function postParams<T>(url: string, params?: RequestParams): Promise<T> {
+  const response = await axiosInstance.post<ResponseData<T>>(url, undefined, { params })
+
+  return response.data.data
+}

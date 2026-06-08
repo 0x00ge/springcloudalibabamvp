@@ -1,6 +1,7 @@
-import {post} from '@/utils/http/http.ts'
+import {postParams} from '@/utils/http/http.ts'
 
 import type {
+    CurrentAuth,
     LoginParams,
     RefreshTokenResult,
     RegisterParams,
@@ -11,15 +12,15 @@ import type {
 
 // 登录接口：
 // 1. 用户输入账号密码后，Login.vue 会调用这个方法。
-// 2. 后端校验成功后返回 accessToken，并通过 HttpOnly Cookie 写入 refreshToken。
-// 3. 前端只保存 accessToken；refreshToken 由浏览器 Cookie 自动保存。
+// 2. 后端校验成功后返回 accessToken 和 refreshToken。
+// 3. 前端保存双 token；业务接口只把 accessToken 放到 Authorization 请求头。
 export const login = (data: LoginParams) => {
     const request: LoginParams = {
-        username: data.username,
+        phone: data.phone,
         password: data.password,
     }
 
-    return post<TokenResult>('/auth/login', request)
+    return postParams<TokenResult>('/auth/login', request)
 }
 
 // 发送注册短信验证码：
@@ -30,12 +31,12 @@ export const sendRegisterSmsCode = (data: SendRegisterSmsCodeParams) => {
         phone: data.phone,
     }
 
-    return post<void>('/auth/register/code', request)
+    return postParams<void>('/auth/register/code', request)
 }
 
 // 注册接口：
 // 1. 注册前必须先调用 sendRegisterSmsCode 获取验证码。
-// 2. 注册成功后和登录一样返回 accessToken，并写入 refreshToken Cookie。
+// 2. 注册成功后返回当前用户基础信息，前端再调用登录接口获取双 token。
 export const register = (data: RegisterParams) => {
     const request: RegisterParams = {
         phone: data.phone,
@@ -45,14 +46,15 @@ export const register = (data: RegisterParams) => {
         name: data.name,
     }
 
-    return post<TokenResult>('/auth/register', request)
+    return postParams<CurrentAuth>('/auth/register', request)
 }
 
 // 刷新 accessToken：
 // 1. accessToken 过期后，axios 拦截器会调用这个接口。
-// 2. refreshToken 由 HttpOnly Cookie 自动携带，前端不传 body。
-// 3. 后端会轮换 refreshToken Cookie，前端只保存新的 accessToken。
-export const refreshAccessToken = () => post<RefreshTokenResult>('/auth/refresh')
+// 2. refreshToken 通过请求参数传给后端。
+// 3. 后端轮换双 token，前端保存新的 accessToken 和 refreshToken。
+export const refreshAccessToken = (refreshToken: string) =>
+    postParams<RefreshTokenResult>('/auth/refresh', {refreshToken})
 
-// 登出接口：后端从 Authorization 请求头读取 accessToken，并拉黑当前 token。
-export const logout = () => post<void>('/auth/logout')
+// 登出接口：后端从 Authorization 请求头读取 accessToken，并通过 refreshToken 删除刷新白名单。
+export const logout = (refreshToken: string) => postParams<void>('/auth/logout', {refreshToken})
