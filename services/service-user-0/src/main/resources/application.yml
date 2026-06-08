@@ -46,3 +46,5 @@ jwt:
 auth:
   blacklist-key-prefix: 'auth:blacklist:'
   refresh-key-prefix: 'auth:refresh:'
+  register-sms-code-key-prefix: 'auth:register:sms:'
+  register-sms-code-seconds: 300
