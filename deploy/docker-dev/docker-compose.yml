@@ -1,6 +1,7 @@
 # 本 compose 只负责 Docker 内的基础设施：
 # 1. Nacos 三节点集群；
-# 2. Nginx 作为对外统一入口，把请求转发到宿主机上的两个 gateway 实例。
+# 2. RocketMQ 本地开发集群；
+# 3. Nginx 作为对外统一入口，把请求转发到宿主机上的两个 gateway 实例。
 #
 # 注意：gateway-1、gateway-2 暂时不放进 Docker，需要在宿主机分别启动 8001、8002 端口。
 
@@ -49,6 +50,16 @@ x-nacos-common: &nacos-common
   networks:
     - mvp-network
 
+x-rocketmq-common: &rocketmq-common
+  image: apache/rocketmq:5.3.4
+  restart: unless-stopped
+  environment:
+    # 本地开发压低内存占用；生产环境需要按消息量和机器规格重新设置。
+    JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+    TZ: Asia/Shanghai
+  networks:
+    - mvp-network
+
 services:
   nacos-1:
     <<: *nacos-common
@@ -89,6 +100,100 @@ services:
     volumes:
       - /Users/zhongtao/.my_docker/nacos-cluster/nacos-3/logs:/home/nacos/logs
       - /Users/zhongtao/.my_docker/nacos-cluster/nacos-3/data:/home/nacos/data
+
+  rocketmq-namesrv-1:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-namesrv-1
+    hostname: rocketmq-namesrv-1
+    command: sh mqnamesrv
+    ports:
+      # 宿主机访问第 1 个 RocketMQ NameServer。
+      - "9876:9876"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/namesrv-1/logs:/home/rocketmq/logs
+
+  rocketmq-namesrv-2:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-namesrv-2
+    hostname: rocketmq-namesrv-2
+    command: sh mqnamesrv
+    ports:
+      # 宿主机访问第 2 个 RocketMQ NameServer。
+      - "9877:9876"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/namesrv-2/logs:/home/rocketmq/logs
+
+  rocketmq-broker-a:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-broker-a
+    hostname: rocketmq-broker-a
+    depends_on:
+      - rocketmq-namesrv-1
+      - rocketmq-namesrv-2
+    environment:
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      TZ: Asia/Shanghai
+    command: sh mqbroker -c /home/rocketmq/conf/broker-a.conf
+    ports:
+      # 10911: Broker remoting；10909: VIP 通道；10912: HA 通道。
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    extra_hosts:
+      # Broker 注册给宿主机 Java 进程访问的地址使用 host.docker.internal。
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-a.conf:/home/rocketmq/conf/broker-a.conf:ro
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-a/store:/home/rocketmq/store
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-a/logs:/home/rocketmq/logs
+
+  rocketmq-broker-b:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-broker-b
+    hostname: rocketmq-broker-b
+    depends_on:
+      - rocketmq-namesrv-1
+      - rocketmq-namesrv-2
+    environment:
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      TZ: Asia/Shanghai
+    command: sh mqbroker -c /home/rocketmq/conf/broker-b.conf
+    ports:
+      # broker-b 使用另一组端口，避免和 broker-a 冲突。
+      - "10919:10919"
+      - "10921:10921"
+      - "10922:10922"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-b.conf:/home/rocketmq/conf/broker-b.conf:ro
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-b/store:/home/rocketmq/store
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-b/logs:/home/rocketmq/logs
+
+  rocketmq-proxy:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-proxy
+    hostname: rocketmq-proxy
+    depends_on:
+      - rocketmq-namesrv-1
+      - rocketmq-namesrv-2
+      - rocketmq-broker-a
+      - rocketmq-broker-b
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      TZ: Asia/Shanghai
+    command: sh mqproxy
+    ports:
+      # RocketMQ 5.x proxy 端口，新版 Java SDK 通常连接 8081。
+      - "8080:8080"
+      - "8081:8081"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/proxy/logs:/home/rocketmq/logs
 
   nginx:
     image: nginx:1.30-alpine
