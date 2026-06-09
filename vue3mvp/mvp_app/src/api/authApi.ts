@@ -46,7 +46,7 @@ export const login = (data: LoginParams) => {
         password: data.password,
     }
 
-    return postParams<TokenResult>('/auth/login', request)
+    return post<TokenResult>('/auth/login', request)
 }
 
 // 当前登录用户：

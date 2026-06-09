@@ -1,5 +1,6 @@
 package com.mvp.user.controller;
 
+import com.mvp.model.dto.auth.LoginDTO;
 import com.mvp.model.vo.ResultVO;
 import com.mvp.model.dto.auth.AuthTokenDTO;
 import com.mvp.model.dto.auth.CurrentAuthDTO;
@@ -85,19 +86,15 @@ public class AuthController {
      * <p>是否需要登录：否，登录接口在网关白名单中。</p>
      * <p>传参方式：请求参数传参，不使用 JSON body。</p>
      *
-     * @param phone 手机号
-     * @param password 登录密码
+     * @param loginDTO 登录参数
      * @param response HTTP 响应，用于写入 HttpOnly refreshToken Cookie
      * @return accessToken 信息；refreshToken 通过 HttpOnly Cookie 返回，前端 JS 不能读取
      */
     @PostMapping("/login")
-    public ResultVO<AuthTokenDTO> login(
-            @RequestParam @Validated @NotBlank(message = "手机号不能为空")
-            @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确") String phone,
-            @RequestParam @Validated @NotBlank(message = "密码不能为空") String password,
-            HttpServletResponse response) {
+    public ResultVO<AuthTokenDTO> login(@RequestBody @Validated LoginDTO  loginDTO,
+                                        HttpServletResponse response) {
         // 调用鉴权服务完成账号校验、密码校验和双 token 签发。
-        AuthTokenDTO tokenDTO = authService.login(phone, password);
+        AuthTokenDTO tokenDTO = authService.login(loginDTO.getPhone(), loginDTO.getPassword());
 
         // 把 refreshToken 写入 HttpOnly Cookie，然后清空 DTO 字段，响应体只返回 accessToken。
         writeRefreshTokenCookie(response, tokenDTO.getRefreshToken(), tokenDTO.getRefreshTokenExpiresIn());
