@@ -37,6 +37,7 @@ Nacos 和 RocketMQ 不经过 Nginx，宿主机 Java 进程直接连接对应的�
 | rocketmq-broker-a | `127.0.0.1:10911` | `rocketmq-broker-a:10911` | RocketMQ Broker A |
 | rocketmq-broker-b | `127.0.0.1:10921` | `rocketmq-broker-b:10921` | RocketMQ Broker B |
 | rocketmq-proxy | `127.0.0.1:8081` | `rocketmq-proxy:8081` | RocketMQ 5.x Proxy |
+| rocketmq-dashboard | `127.0.0.1:8088` | `rocketmq-dashboard:8080` | RocketMQ 控制台 |
 | gateway-1 | `127.0.0.1:8001` | 宿主机进程 | 手动启动 |
 | gateway-2 | `127.0.0.1:8002` | 宿主机进程 | 手动启动 |
 
@@ -70,6 +71,7 @@ docker compose logs -f nacos-3
 docker compose logs -f rocketmq-namesrv-1
 docker compose logs -f rocketmq-broker-a
 docker compose logs -f rocketmq-proxy
+docker compose logs -f rocketmq-dashboard
 docker compose logs -f nginx
 ```
 
@@ -78,6 +80,7 @@ docker compose logs -f nginx
 ```text
 Nginx 健康检查：http://127.0.0.1:8000/nginx-health
 Nacos 控制台：http://127.0.0.1:8848/nacos/
+RocketMQ 控制台：http://127.0.0.1:8088
 ```
 
 RocketMQ NameServer 地址：
