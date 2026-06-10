@@ -208,8 +208,8 @@ services:
       JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876"
       TZ: Asia/Shanghai
     ports:
-      # Dashboard 容器内端口是 8080；宿主机用 8088，避免和 RocketMQ Proxy 的 8080 冲突。
-      - "8088:8080"
+      # Dashboard 2.1.0 容器内端口是 8082；宿主机用 8088，避免和 RocketMQ Proxy 冲突。
+      - "8088:8082"
     networks:
       - mvp-network
 
