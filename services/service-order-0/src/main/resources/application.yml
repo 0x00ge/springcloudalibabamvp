@@ -1,0 +1,38 @@
+server:
+  port: 8500
+
+spring:
+  application:
+    name: service-order-0
+  config:
+    import: optional:nacos:${spring.application.name}-${spring.profiles.active}.yml
+  profiles:
+    active: dev
+  datasource:
+    dynamic:
+      primary: master
+      strict: false
+      datasource:
+        master:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://127.0.0.1:3306/mvp?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+          username: root
+          password: rootroot
+        slave1:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://127.0.0.1:3307/mvp?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+          username: root
+          password: rootroot
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848,127.0.0.1:8849,127.0.0.1:8850
+      discovery:
+        ip: 127.0.0.1
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
