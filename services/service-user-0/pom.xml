@@ -56,13 +56,7 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- model：复用 User 实体、ResultVO 等共享模型。 -->
-        <dependency>
-            <groupId>com.mvp</groupId>
-            <artifactId>model</artifactId>
-        </dependency>
-
-        <!-- common：保留 JWT 工具，并复用 UUIDv7 工具。 -->
+        <!-- common：复用 User 之外的共享能力（ResultVO、BaseController、auth DTO、JWT、UUIDv7）。 -->
         <dependency>
             <groupId>com.mvp</groupId>
             <artifactId>common</artifactId>

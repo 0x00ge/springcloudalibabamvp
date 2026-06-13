@@ -10,7 +10,6 @@
         <module name="common" />
         <module name="mvp-gateway-0" />
         <module name="mvp-gateway-1" />
-        <module name="model" />
         <module name="service-order-0" />
         <module name="service-iot-0" />
         <module name="service-goods-0" />
@@ -18,6 +17,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="model" target="17" />
       <module name="service-product-0" target="17" />
       <module name="service-seckill-local-0" target="17" />
     </bytecodeTargetLevel>

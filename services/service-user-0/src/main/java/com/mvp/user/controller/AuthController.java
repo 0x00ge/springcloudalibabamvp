@@ -1,9 +1,9 @@
 package com.mvp.user.controller;
 
-import com.mvp.model.dto.auth.LoginDTO;
-import com.mvp.model.vo.ResultVO;
-import com.mvp.model.dto.auth.AuthTokenDTO;
-import com.mvp.model.dto.auth.CurrentAuthDTO;
+import com.mvp.common.dto.auth.LoginDTO;
+import com.mvp.common.vo.ResultVO;
+import com.mvp.common.dto.auth.AuthTokenDTO;
+import com.mvp.common.dto.auth.CurrentAuthDTO;
 import com.mvp.user.config.AuthProperties;
 import com.mvp.user.service.AuthService;
 import jakarta.servlet.http.Cookie;

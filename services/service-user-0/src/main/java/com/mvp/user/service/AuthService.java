@@ -1,7 +1,7 @@
 package com.mvp.user.service;
 
-import com.mvp.model.dto.auth.AuthTokenDTO;
-import com.mvp.model.dto.auth.CurrentAuthDTO;
+import com.mvp.common.dto.auth.AuthTokenDTO;
+import com.mvp.common.dto.auth.CurrentAuthDTO;
 
 /**
  * 用户鉴权 Service。

@@ -1,10 +1,10 @@
 package com.mvp.user.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.mvp.model.controller.BaseController;
+import com.mvp.common.controller.BaseController;
 import com.mvp.user.dto.UserDto;
 import com.mvp.user.entity.User;
-import com.mvp.model.vo.ResultVO;
+import com.mvp.common.vo.ResultVO;
 import com.mvp.user.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;

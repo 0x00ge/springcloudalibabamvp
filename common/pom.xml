@@ -25,6 +25,38 @@
             <artifactId>mybatis-plus-core</artifactId>
         </dependency>
 
+        <!-- Spring Web：BaseController 使用 @GetMapping/@PostMapping 等 Web 注解。
+             仅引入 spring-web（注解与 HTTP 抽象），不含 DispatcherServlet，
+             因此传递到网关（WebFlux）也不会把应用判定成 Servlet Web 类型。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+
+        <!-- MyBatis-Plus Starter：BaseController 依赖 IService/ServiceImpl/Page，
+             MybatisPlusAutoConfiguration 依赖 MybatisPlusInterceptor，二者都在扩展包里。
+             标记为 optional：common 自身编译可用，但不向下游传递——
+             避免网关（仅做路由）被动引入 spring-boot-starter-jdbc 触发数据源自动配置而启动失败。
+             各业务服务（user/goods/order）已各自显式声明该 starter，不受影响。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- MyBatis-Plus JSqlParser：分页拦截器 PaginationInnerInterceptor 运行期所需，
+             无自动配置、对网关无害，正常向业务服务传递。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+
+        <!-- Validation：BaseController.save/update 使用 @Valid，DTO 上使用 Bean Validation 注解。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
         <!-- Fastjson2：JWT header/payload JSON 序列化和反序列化。 -->
         <dependency>
             <groupId>com.alibaba.fastjson2</groupId>
