@@ -1,4 +1,4 @@
-package com.mvp.model.entity.user;
+package com.mvp.user.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;

@@ -3,7 +3,7 @@ package com.mvp.user.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.mvp.common.jwt.JwtPayload;
 import com.mvp.common.jwt.JwtUtil;
-import com.mvp.model.entity.user.User;
+import com.mvp.user.entity.User;
 import com.mvp.model.enums.ResultCode;
 import com.mvp.model.dto.auth.AuthTokenDTO;
 import com.mvp.model.dto.auth.CurrentAuthDTO;

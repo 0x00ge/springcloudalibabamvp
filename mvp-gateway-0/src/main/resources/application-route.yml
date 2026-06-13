@@ -18,3 +18,15 @@ spring:
           uri: lb://service-user-0
           predicates:
             - Path=/auth/**
+
+        # 秒杀商品服务路由
+        - id: service-goods-route # 秒杀商品配置管理接口
+          uri: lb://service-goods-0
+          predicates:
+            - Path=/goods/**
+
+        # 秒杀订单服务路由
+        - id: service-order-route # 秒杀下单和结果查询接口
+          uri: lb://service-order-0
+          predicates:
+            - Path=/order/**

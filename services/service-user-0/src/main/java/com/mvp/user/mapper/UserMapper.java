@@ -1,6 +1,6 @@
 package com.mvp.user.mapper;
 
-import com.mvp.model.entity.user.User;
+import com.mvp.user.entity.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -16,7 +16,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @author zhongtao
 * @description 针对表【t_user(用户表)】的数据库操作Mapper
 * @createDate 2026-06-06 17:18:05
-* @Entity com.mvp.model.entity.user.User
+* @Entity com.mvp.user.entity.User
 */
 public interface UserMapper extends BaseMapper<User> {
 

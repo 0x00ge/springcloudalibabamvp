@@ -6,9 +6,11 @@
     <file url="file://$PROJECT_DIR$/model/src/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/mvp-gateway-0/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/mvp-gateway-1/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/service-goods-0/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/service-iot-0/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/service-order-0/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/service-product-0/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/service-seckill-local-0/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/service-user-0/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/src/main/resources" charset="UTF-8" />

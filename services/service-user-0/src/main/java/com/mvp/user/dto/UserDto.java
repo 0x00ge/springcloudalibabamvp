@@ -1,4 +1,4 @@
-package com.mvp.model.dto.user;
+package com.mvp.user.dto;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;

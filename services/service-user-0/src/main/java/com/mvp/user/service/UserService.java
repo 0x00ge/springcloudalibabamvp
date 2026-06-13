@@ -1,7 +1,7 @@
 package com.mvp.user.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.mvp.model.entity.user.User;
+import com.mvp.user.entity.User;
 
 /**
  * 用户业务 Service。

@@ -7,17 +7,19 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="model" />
         <module name="common" />
-        <module name="service-iot-0" />
         <module name="mvp-gateway-0" />
         <module name="mvp-gateway-1" />
+        <module name="model" />
+        <module name="service-order-0" />
+        <module name="service-iot-0" />
+        <module name="service-goods-0" />
         <module name="service-user-0" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="service-order-0" target="17" />
       <module name="service-product-0" target="17" />
+      <module name="service-seckill-local-0" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
@@ -26,9 +28,11 @@
       <module name="model" options="-parameters" />
       <module name="mvp-gateway-0" options="-parameters" />
       <module name="mvp-gateway-1" options="-parameters" />
+      <module name="service-goods-0" options="-parameters" />
       <module name="service-iot-0" options="-parameters" />
       <module name="service-order-0" options="-parameters" />
       <module name="service-product-0" options="-parameters" />
+      <module name="service-seckill-local-0" options="-parameters" />
       <module name="service-user-0" options="-parameters" />
     </option>
   </component>

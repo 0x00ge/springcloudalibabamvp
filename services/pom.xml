@@ -16,6 +16,8 @@
     <modules>
         <module>service-iot-0</module>
         <module>service-user-0</module>
+        <module>service-goods-0</module>
+        <module>service-order-0</module>
     </modules>
 
 </project>
