@@ -56,10 +56,11 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- Redis：保存用户防重标记和秒杀结果缓存。 -->
+        <!-- Redisson：提供用户防重标记和结果缓存所需的分布式对象。 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+            <version>3.37.0</version>
         </dependency>
 
         <!-- common：复用 User 之外的共享能力（ResultVO、BaseController、auth DTO、JWT、UUIDv7）。 -->
@@ -74,12 +75,7 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.redisson</groupId>
-            <artifactId>redisson</artifactId>
-            <version>3.37.0</version>
-            <scope>test</scope>
-        </dependency>
+
     </dependencies>
 
 </project>
