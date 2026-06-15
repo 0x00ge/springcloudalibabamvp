@@ -1,7 +1,0 @@
-server:
-  port: 8002
-
-spring:
-  output:
-    ansi:
-      enabled: always

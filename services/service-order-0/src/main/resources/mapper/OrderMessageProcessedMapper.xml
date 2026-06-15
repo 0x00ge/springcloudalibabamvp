@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mvp.order.mapper.OrderMessageProcessedMapper">
+
+    <!-- 通用结果映射 -->
+    <resultMap id="BaseResultMap" type="com.mvp.order.entity.OrderMessageProcessed">
+        <id column="id" property="id" jdbcType="CHAR"/>
+        <result column="message_id" property="messageId" jdbcType="VARCHAR"/>
+        <result column="business_key" property="businessKey" jdbcType="VARCHAR"/>
+        <result column="processed_at" property="processedAt" jdbcType="TIMESTAMP"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 通用查询列 -->
+    <sql id="Base_Column_List">
+        id, message_id, business_key, processed_at, created_at
+    </sql>
+</mapper>

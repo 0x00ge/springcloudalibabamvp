@@ -23,13 +23,13 @@
 ```
 SpringCloudAlibabaMVP (pom)
 ├── common               跨模块共享:BaseController、ResultVO、ResultCode、
-│                        auth DTO、JWT 工具、UUIDv7、MyBatis-Plus 分页自动配置、SQL
-├── mvp-gateway-0 / 1    网关(鉴权 + 路由 + 透传 X-User-Id),两个实例
+│                        JWT 工具、UUIDv7、MyBatis-Plus 分页自动配置、SQL
+├── mvp-gateway-0        网关(鉴权 + 路由 + 透传 X-User-Id)，可启动多实例
 └── services
     ├── service-user-0   用户与鉴权(注册/登录/刷新/登出)
     ├── service-iot-0    IoT 设备数据(MQTT 温湿度上报)
     ├── service-goods-0  秒杀商品配置 + 库存权威
-    └── service-order-0  秒杀下单 + 订单 + 结果查询
+    └── service-order-0  秒杀下单 + 订单 + RocketMQ 异步处理
 ```
 
 模块依赖关系:

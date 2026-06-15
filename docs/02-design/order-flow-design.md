@@ -23,7 +23,7 @@
 - 库存权威完全在 goods 服务的 Redis 原子计数,数据库 `total_stock` 仅作初始化种子。
 - 防超卖:Redis 原子扣减 + 订单唯一索引。
 - 防重:Redis 用户标记 + 数据库订单查询 + 订单唯一索引,三层。
-- 同步落单,暂未接入 RocketMQ。
+- **已接入 RocketMQ 异步落单**：支持同步模式（降级）和异步模式，详见 `rocketmq-async-order.md`。
 
 ## 2. 参与组件
 
