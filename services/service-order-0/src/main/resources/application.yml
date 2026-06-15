@@ -38,7 +38,9 @@ mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
 
 rocketmq:
-  name-server: 127.0.0.1:9876;127.0.0.1:9877
+  # RocketMQ 5.x 推荐通过 Proxy 访问，简化客户端配置
+  # Proxy 会自动路由到 Broker-A/B，无需客户端直接连接 NameServer
+  name-server: 127.0.0.1:8081
   producer:
     group: order-producer-group
     send-message-timeout: 3000
