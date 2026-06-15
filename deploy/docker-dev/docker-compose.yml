@@ -1,9 +1,14 @@
 # 本 compose 只负责 Docker 内的基础设施：
 # 1. Nacos 三节点集群；
 # 2. RocketMQ 本地开发集群；
-# 3. Nginx 作为对外统一入口，把请求转发到宿主机上的两个 gateway 实例。
+# 3. Nginx 作为对外统一入口，把请求转发到宿主机上的 gateway 实例。
 #
-# 注意：gateway-1、gateway-2 暂时不放进 Docker，需要在宿主机分别启动 8001、8002 端口。
+# 注意：gateway 暂时不放进 Docker，需要在宿主机启动 8001 端口。
+#
+# RocketMQ 说明：
+# - 应用服务使用 rocketmq-spring-boot-starter（Remoting 协议），直连 NameServer（9876/9877）
+# - Proxy（8080/8081）是 RocketMQ 5.x 新增组件，供 gRPC 协议的新版 SDK 使用
+# - 当前项目不使用 Proxy，保留它是为了将来升级 SDK 时备用
 
 x-nacos-common: &nacos-common
   image: nacos/nacos-server:v2.5.2
