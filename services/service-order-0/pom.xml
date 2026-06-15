@@ -62,13 +62,7 @@
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
 
-        <!-- Redis：保存用户防重标记和秒杀结果缓存。 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-
-        <!-- Redisson：提供用户防重标记和结果缓存所需的分布式对象。 -->
+        <!-- Redisson：提供分布式锁、用户防重标记和秒杀结果缓存所需的分布式对象，已包含 spring-data-redis。 -->
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
