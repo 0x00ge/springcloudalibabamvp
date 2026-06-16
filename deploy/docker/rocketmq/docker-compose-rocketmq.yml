@@ -1,0 +1,163 @@
+x-rocketmq-common: &rocketmq-common
+  image: apache/rocketmq:5.5.0
+  restart: unless-stopped
+  environment:
+    JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+    TZ: Asia/Shanghai
+  networks:
+    - mvp-network
+
+services:
+  rocketmq-namesrv-1:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-namesrv-1
+    hostname: rocketmq-namesrv-1
+    command: sh mqnamesrv
+    ports:
+      - "9876:9876"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/namesrv-1/logs:/home/rocketmq/logs
+
+  rocketmq-namesrv-2:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-namesrv-2
+    hostname: rocketmq-namesrv-2
+    command: sh mqnamesrv
+    ports:
+      - "9877:9876"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/namesrv-2/logs:/home/rocketmq/logs
+
+  rocketmq-broker-master1:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-broker-master1
+    hostname: rocketmq-broker-master1
+    depends_on:
+      - rocketmq-namesrv-1
+      - rocketmq-namesrv-2
+    environment:
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      TZ: Asia/Shanghai
+    command: sh mqbroker -c /home/rocketmq/conf/broker-master1.conf
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-master1.conf:/home/rocketmq/conf/broker-master1.conf:ro
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master1/store:/home/rocketmq/store
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master1/logs:/home/rocketmq/logs
+
+  rocketmq-broker-slave1:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-broker-slave1
+    hostname: rocketmq-broker-slave1
+    depends_on:
+      - rocketmq-namesrv-1
+      - rocketmq-namesrv-2
+      - rocketmq-broker-master1
+    environment:
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      TZ: Asia/Shanghai
+    command: sh mqbroker -c /home/rocketmq/conf/broker-slave1.conf
+    ports:
+      - "10919:10919"
+      - "10921:10921"
+      - "10922:10922"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-slave1.conf:/home/rocketmq/conf/broker-slave1.conf:ro
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave1/store:/home/rocketmq/store
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave1/logs:/home/rocketmq/logs
+
+  rocketmq-broker-master2:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-broker-master2
+    hostname: rocketmq-broker-master2
+    depends_on:
+      - rocketmq-namesrv-1
+      - rocketmq-namesrv-2
+    environment:
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      TZ: Asia/Shanghai
+    command: sh mqbroker -c /home/rocketmq/conf/broker-master2.conf
+    ports:
+      - "10929:10929"
+      - "10931:10931"
+      - "10932:10932"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-master2.conf:/home/rocketmq/conf/broker-master2.conf:ro
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master2/store:/home/rocketmq/store
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master2/logs:/home/rocketmq/logs
+
+  rocketmq-broker-slave2:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-broker-slave2
+    hostname: rocketmq-broker-slave2
+    depends_on:
+      - rocketmq-namesrv-1
+      - rocketmq-namesrv-2
+      - rocketmq-broker-master2
+    environment:
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      TZ: Asia/Shanghai
+    command: sh mqbroker -c /home/rocketmq/conf/broker-slave2.conf
+    ports:
+      - "10939:10939"
+      - "10941:10941"
+      - "10942:10942"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-slave2.conf:/home/rocketmq/conf/broker-slave2.conf:ro
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/store:/home/rocketmq/store
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/logs:/home/rocketmq/logs
+
+  rocketmq-proxy:
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-proxy
+    hostname: rocketmq-proxy
+    depends_on:
+      - rocketmq-broker-master1
+      - rocketmq-broker-master2
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      TZ: Asia/Shanghai
+    command: sh mqproxy
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/proxy/logs:/home/rocketmq/logs
+
+  rocketmq-dashboard:
+    image: apacherocketmq/rocketmq-dashboard:2.1.0
+    container_name: mvp-rocketmq-dashboard
+    restart: unless-stopped
+    depends_on:
+      - rocketmq-broker-master1
+      - rocketmq-broker-master2
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876"
+      TZ: Asia/Shanghai
+    ports:
+      - "8088:8082"
+    networks:
+      - mvp-network
+
+networks:
+  mvp-network:
+    name: mvp-network
+    driver: bridge

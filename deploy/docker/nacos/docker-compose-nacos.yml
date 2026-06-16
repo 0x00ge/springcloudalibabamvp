@@ -1,0 +1,70 @@
+x-nacos-common: &nacos-common
+  image: nacos/nacos-server:v2.5.2
+  restart: unless-stopped
+  environment:
+    MODE: cluster
+    PREFER_HOST_MODE: hostname
+    NACOS_SERVERS: nacos-1:8848 nacos-2:8848 nacos-3:8848
+    SPRING_DATASOURCE_PLATFORM: mysql
+    MYSQL_SERVICE_HOST: host.docker.internal
+    MYSQL_SERVICE_PORT: "3306"
+    MYSQL_SERVICE_DB_NAME: nacos_config
+    MYSQL_SERVICE_USER: root
+    MYSQL_SERVICE_PASSWORD: rootroot
+    MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=3000&socketTimeout=10000&autoReconnect=true&useSSL=false&serverTimezone=Asia/Shanghai
+    NACOS_AUTH_ENABLE: false
+    NACOS_AUTH_IDENTITY_KEY: mvpNacosIdentityKey
+    NACOS_AUTH_IDENTITY_VALUE: mvpNacosIdentityValue
+    NACOS_AUTH_TOKEN: TXZwTmFjb3NBdXRoVG9rZW5DaGFuZ2VNZTIwMjZNdXN0QmVMb25nRW5vdWdo
+    JVM_XMS: 512m
+    JVM_XMX: 512m
+    JVM_XMN: 256m
+    TIME_ZONE: Asia/Shanghai
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  expose:
+    - "7848"
+    - "8848"
+    - "9848"
+    - "9849"
+  networks:
+    - mvp-network
+
+services:
+  nacos-1:
+    <<: *nacos-common
+    container_name: mvp-nacos-1
+    hostname: nacos-1
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-1/logs:/home/nacos/logs
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-1/data:/home/nacos/data
+
+  nacos-2:
+    <<: *nacos-common
+    container_name: mvp-nacos-2
+    hostname: nacos-2
+    ports:
+      - "8849:8848"
+      - "9849:9848"
+    volumes:
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-2/logs:/home/nacos/logs
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-2/data:/home/nacos/data
+
+  nacos-3:
+    <<: *nacos-common
+    container_name: mvp-nacos-3
+    hostname: nacos-3
+    ports:
+      - "8850:8848"
+      - "9850:9848"
+    volumes:
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-3/logs:/home/nacos/logs
+      - /Users/zhongtao/.my_docker/nacos-cluster/nacos-3/data:/home/nacos/data
+
+networks:
+  mvp-network:
+    name: mvp-network
+    driver: bridge
