@@ -115,6 +115,10 @@ services:
       NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-master1.conf
+    ports:
+      # 直连模式：暴露 Broker 端口，允许宿主机应用直连
+      - "10911:10911"  # Remoting 通信端口
+      - "10912:10912"  # HA 主从同步端口
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-master1.conf:/home/rocketmq/conf/broker-master1.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master1/store:/home/rocketmq/store
@@ -150,6 +154,10 @@ services:
       NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-master2.conf
+    ports:
+      # 直连模式：暴露 Broker 端口，允许宿主机应用直连
+      - "10931:10931"  # Remoting 通信端口
+      - "10932:10932"  # HA 主从同步端口
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-master2.conf:/home/rocketmq/conf/broker-master2.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master2/store:/home/rocketmq/store
