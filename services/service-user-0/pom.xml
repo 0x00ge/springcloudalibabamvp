@@ -14,6 +14,12 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <!-- common：复用 ResultVO、BaseController、auth DTO、JWT、UUIDv7 等共享能力。 -->
+        <dependency>
+            <groupId>com.mvp</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
         <!-- Nacos Config：读取用户服务环境配置。 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -50,33 +56,18 @@
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
 
-        <!-- Redisson：提供用户防重标记和结果缓存所需的分布式对象，已包含 spring-data-redis。 -->
+        <!-- Redisson：提供 Token 黑名单和刷新令牌缓存所需的分布式对象，已包含 spring-data-redis。 -->
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
             <version>3.37.0</version>
         </dependency>
 
-        <!-- common：复用 User 之外的共享能力（ResultVO、BaseController、auth DTO、JWT、UUIDv7）。 -->
-        <dependency>
-            <groupId>com.mvp</groupId>
-            <artifactId>common</artifactId>
-        </dependency>
-
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <!-- JUnit 5 -->
-<!--        <dependency>-->
-<!--            <groupId>org.junit.jupiter</groupId>-->
-<!--            <artifactId>junit-jupiter</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-
     </dependencies>
 
 </project>

@@ -14,6 +14,12 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <!-- common：保留 JWT payload、配置和签发/验签工具。 -->
+        <dependency>
+            <groupId>com.mvp</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
         <!-- Nacos Config：从配置中心加载网关环境配置。 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -42,12 +48,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
-        </dependency>
-
-        <!-- common：保留 JWT payload、配置和签发/验签工具。 -->
-        <dependency>
-            <groupId>com.mvp</groupId>
-            <artifactId>common</artifactId>
         </dependency>
 
         <!-- Lombok：GatewayAccessLogFilter 使用 @Slf4j 输出网关访问日志。 -->

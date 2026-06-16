@@ -14,6 +14,12 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <!-- common：复用 ResultVO、UUIDv7、Dubbo API 接口等共享能力。 -->
+        <dependency>
+            <groupId>com.mvp</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
         <!-- Nacos Config：读取订单服务环境配置。 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -67,12 +73,6 @@
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
             <version>3.37.0</version>
-        </dependency>
-
-        <!-- common：复用 ResultVO、UUIDv7 等共享能力。 -->
-        <dependency>
-            <groupId>com.mvp</groupId>
-            <artifactId>common</artifactId>
         </dependency>
 
         <!-- RocketMQ：异步落单的消息队列支持。 -->
