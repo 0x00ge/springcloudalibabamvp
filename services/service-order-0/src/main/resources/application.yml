@@ -38,8 +38,9 @@ mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
 
 rocketmq:
-  # rocketmq-spring-boot-starter 使用 Remoting 协议，直连 NameServer
-  name-server: 127.0.0.1:9876;127.0.0.1:9877
+  # Proxy 模式：应用连 Proxy gRPC 端口（8081），不直连 NameServer
+  # 使用 name-server 配置指向 Proxy 地址
+  name-server: 127.0.0.1:8081
   producer:
     group: order-producer-group
     send-message-timeout: 3000

@@ -6,8 +6,8 @@ spring:
     name: rocketmq-demo
 
 rocketmq:
-  # 连接你已有的 RocketMQ
-  name-server: 127.0.0.1:9876;127.0.0.1:9877
+  # Proxy 模式：应用连 Proxy gRPC 端口（8081），不直连 NameServer
+  name-server: 127.0.0.1:8081
   producer:
     group: demo-producer-group
     send-message-timeout: 3000

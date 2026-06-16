@@ -72,14 +72,13 @@
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
-            <version>3.37.0</version>
         </dependency>
 
-        <!-- RocketMQ：异步落单的消息队列支持。 -->
+        <!-- RocketMQ Spring Boot Starter：封装 RocketMQTemplate 生产者和 @RocketMQMessageListener 消费者，
+             2.3.x 起支持 Proxy gRPC 模式（rocketmq.proxy.grpc-endpoints），当前使用 Proxy 连接 RocketMQ 集群。 -->
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-spring-boot-starter</artifactId>
-            <version>2.3.1</version>
         </dependency>
     </dependencies>
 

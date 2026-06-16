@@ -28,6 +28,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-cloud.version>2023.0.3</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.3.2</spring-cloud-alibaba.version>
+        <rocketmq-spring-boot.version>2.3.4</rocketmq-spring-boot.version>
+        <redisson-spring-boot.version>3.37.0</redisson-spring-boot.version>
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <dynamic-datasource.version>4.5.0</dynamic-datasource.version>
         <fastjson2.version>2.0.61</fastjson2.version>
@@ -58,6 +60,21 @@
                 <version>${spring-cloud-alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- RocketMQ Spring Boot Starter：封装 RocketMQTemplate 生产者和 @RocketMQMessageListener 消费者，
+            2.3.x 起支持 Proxy gRPC 模式（rocketmq.proxy.grpc-endpoints），当前使用 Proxy 连接 RocketMQ 集群。 -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq-spring-boot.version}</version>
+            </dependency>
+
+            <!-- Redisson：提供分布式锁、用户防重标记和秒杀结果缓存所需的分布式对象，已包含 spring-data-redis。 -->
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson-spring-boot.version}</version>
             </dependency>
 
             <!-- MyBatis-Plus Core：公共模块只依赖核心接口时使用，不触发数据源自动配置。 -->
