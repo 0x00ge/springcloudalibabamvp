@@ -35,6 +35,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- 内部 common 模块：跨模块共享 DTO、VO、BaseController、自动配置和通用工具，不在子模块重复写版本。 -->
+            <dependency>
+                <groupId>com.mvp</groupId>
+                <artifactId>common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- Spring Cloud 官方 BOM：统一 OpenFeign、LoadBalancer、Gateway 等 Spring Cloud 组件版本。 -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -53,24 +60,17 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- 内部 common 模块：跨模块共享 DTO、VO、BaseController、自动配置和通用工具，不在子模块重复写版本。 -->
+            <!-- MyBatis-Plus Core：公共模块只依赖核心接口时使用，不触发数据源自动配置。 -->
             <dependency>
-                <groupId>com.mvp</groupId>
-                <artifactId>common</artifactId>
-                <version>${project.version}</version>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-core</artifactId>
+                <version>${mybatis-plus.version}</version>
             </dependency>
 
             <!-- MyBatis-Plus Starter：业务服务的数据访问自动配置，会触发数据源、Mapper 等能力。 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-                <version>${mybatis-plus.version}</version>
-            </dependency>
-
-            <!-- MyBatis-Plus Core：公共模块只依赖核心接口时使用，不触发数据源自动配置。 -->
-            <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-core</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
