@@ -1,13 +1,13 @@
 server:
-  port: 8080
+  port: 8090  # 改为 8090，避免与其他服务冲突
 
 spring:
   application:
     name: rocketmq-demo
 
 rocketmq:
-  # Proxy 模式：应用连 Proxy gRPC 端口（8081），不直连 NameServer
-  name-server: 127.0.0.1:8081
+  # Proxy 模式：应用连 Proxy Remoting 端口（8080）
+  name-server: 127.0.0.1:8080
   producer:
     group: demo-producer-group
     send-message-timeout: 3000
