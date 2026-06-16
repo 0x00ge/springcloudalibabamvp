@@ -1,5 +1,25 @@
+# RocketMQ 本地开发集群（Proxy 模式）
+#
+# 拓扑：2 NameServer + 2 主从 Broker 对 + 1 Proxy + 1 Dashboard
+#   namesrv-1 / namesrv-2          —— 无状态路由注册中心，Broker 向两个节点同时注册
+#   broker-master1 / broker-slave1  —— Broker 组 1（brokerName=broker-group1）
+#   broker-master2 / broker-slave2  —— Broker 组 2（brokerName=broker-group2）
+#   proxy                           —— 统一接入层，应用只连 Proxy，不直连 Broker
+#   dashboard                       —— Web 控制台 http://127.0.0.1:8082
+#
+# Proxy 模式说明：
+#   应用 → Proxy:8081（gRPC）→ Broker（Docker 内网）
+#   Broker 的 brokerIP1 填容器 hostname，只供 Proxy 在内网访问，宿主机无需直连 Broker。
+#   因此 Broker 容器不对宿主机暴露端口，减少端口占用。
+#
+# 启动：docker compose -f docker-compose-rocketmq.yml up -d
+# 停止：docker compose -f docker-compose-rocketmq.yml down
+#
+# 应用连接配置（rocketmq-spring-boot-starter 2.3.x 支持 proxy endpoints）：
+#   rocketmq.proxy.endpoints: 127.0.0.1:8081
+
 x-rocketmq-common: &rocketmq-common
-  image: apache/rocketmq:5.5.0
+  image: apache/rocketmq:5.3.2
   restart: unless-stopped
   environment:
     JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
@@ -8,156 +28,161 @@ x-rocketmq-common: &rocketmq-common
     - mvp-network
 
 services:
-  rocketmq-namesrv-1:
+
+  # ── NameServer ──────────────────────────────────────────────────────────────
+  # 无状态路由注册中心，两节点互相独立，任一宕机不影响另一个。
+
+  namesrv-1:
     <<: *rocketmq-common
     container_name: mvp-rocketmq-namesrv-1
-    hostname: rocketmq-namesrv-1
+    hostname: namesrv-1
+    # mqnamesrv：启动 NameServer 进程，监听 9876 端口，接受 Broker 注册和客户端路由查询
     command: sh mqnamesrv
     ports:
-      - "9876:9876"
+      - "9876:9876"   # 供 Dashboard / 运维工具直连，应用不直连 NameServer
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/namesrv-1/logs:/home/rocketmq/logs
 
-  rocketmq-namesrv-2:
+  namesrv-2:
     <<: *rocketmq-common
     container_name: mvp-rocketmq-namesrv-2
-    hostname: rocketmq-namesrv-2
+    hostname: namesrv-2
+    # 同 namesrv-1，两个节点独立运行，互为冗余
     command: sh mqnamesrv
     ports:
-      - "9877:9876"
+      - "9877:9876"   # 宿主机 9877 → 容器 9876，避免与 namesrv-1 端口冲突
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/namesrv-2/logs:/home/rocketmq/logs
 
-  rocketmq-broker-master1:
+  # ── Broker 组 1（master1 + slave1）────────────────────────────────────────
+  # brokerName=broker-group1，brokerId: master=0，slave=1。
+  # Proxy 模式下 Broker 只在 Docker 内网通信，不对宿主机暴露端口。
+
+  broker-master1:
     <<: *rocketmq-common
     container_name: mvp-rocketmq-broker-master1
-    hostname: rocketmq-broker-master1
+    hostname: broker-master1
     depends_on:
-      - rocketmq-namesrv-1
-      - rocketmq-namesrv-2
+      - namesrv-1
+      - namesrv-2
     environment:
       JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
-      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
+    # mqbroker：启动 Broker 进程，负责消息存储和读写
+    # -c：指定 broker 配置文件路径（容器内路径，由 volumes 从宿主机挂载）
     command: sh mqbroker -c /home/rocketmq/conf/broker-master1.conf
-    ports:
-      - "10909:10909"
-      - "10911:10911"
-      - "10912:10912"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    # Proxy 模式：Broker 不对宿主机暴露端口，只在 mvp-network 内网通信
     volumes:
-      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-master1.conf:/home/rocketmq/conf/broker-master1.conf:ro
+      - /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/rocketmq/config/broker-master1.conf:/home/rocketmq/conf/broker-master1.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master1/store:/home/rocketmq/store
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master1/logs:/home/rocketmq/logs
 
-  rocketmq-broker-slave1:
+  broker-slave1:
     <<: *rocketmq-common
     container_name: mvp-rocketmq-broker-slave1
-    hostname: rocketmq-broker-slave1
+    hostname: broker-slave1
     depends_on:
-      - rocketmq-namesrv-1
-      - rocketmq-namesrv-2
-      - rocketmq-broker-master1
+      - namesrv-1
+      - namesrv-2
+      - broker-master1   # slave 启动前确保 master 已就绪，避免同步连接失败
     environment:
       JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
-      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
+    # conf 中 brokerId=1、brokerRole=SLAVE，启动后自动连接 master1 的 HA 端口同步消息
     command: sh mqbroker -c /home/rocketmq/conf/broker-slave1.conf
-    ports:
-      - "10919:10919"
-      - "10921:10921"
-      - "10922:10922"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
-      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-slave1.conf:/home/rocketmq/conf/broker-slave1.conf:ro
+      - /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/rocketmq/config/broker-slave1.conf:/home/rocketmq/conf/broker-slave1.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave1/store:/home/rocketmq/store
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave1/logs:/home/rocketmq/logs
 
-  rocketmq-broker-master2:
+  # ── Broker 组 2（master2 + slave2）────────────────────────────────────────
+  # brokerName=broker-group2，与组 1 共同承载流量。
+
+  broker-master2:
     <<: *rocketmq-common
     container_name: mvp-rocketmq-broker-master2
-    hostname: rocketmq-broker-master2
+    hostname: broker-master2
     depends_on:
-      - rocketmq-namesrv-1
-      - rocketmq-namesrv-2
+      - namesrv-1
+      - namesrv-2
     environment:
       JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
-      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-master2.conf
-    ports:
-      - "10929:10929"
-      - "10931:10931"
-      - "10932:10932"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
-      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-master2.conf:/home/rocketmq/conf/broker-master2.conf:ro
+      - /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/rocketmq/config/broker-master2.conf:/home/rocketmq/conf/broker-master2.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master2/store:/home/rocketmq/store
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master2/logs:/home/rocketmq/logs
 
-  rocketmq-broker-slave2:
+  broker-slave2:
     <<: *rocketmq-common
     container_name: mvp-rocketmq-broker-slave2
-    hostname: rocketmq-broker-slave2
+    hostname: broker-slave2
     depends_on:
-      - rocketmq-namesrv-1
-      - rocketmq-namesrv-2
-      - rocketmq-broker-master2
+      - namesrv-1
+      - namesrv-2
+      - broker-master2
     environment:
       JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
-      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
+    # conf 中 brokerId=1、brokerRole=SLAVE，连接 master2 的 HA 端口同步消息
     command: sh mqbroker -c /home/rocketmq/conf/broker-slave2.conf
-    ports:
-      - "10939:10939"
-      - "10941:10941"
-      - "10942:10942"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
-      - /Users/zhongtao/.my_docker/rocketmq-cluster/conf/broker-slave2.conf:/home/rocketmq/conf/broker-slave2.conf:ro
+      - /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/rocketmq/config/broker-slave2.conf:/home/rocketmq/conf/broker-slave2.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/store:/home/rocketmq/store
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/logs:/home/rocketmq/logs
 
-  rocketmq-proxy:
+  # ── Proxy ────────────────────────────────────────────────────────────────────
+  # 统一接入层，应用只连 Proxy，Proxy 在 Docker 内网转发到 Broker。
+  # 8081: gRPC 端口，rocketmq-spring-boot-starter 通过 proxy.endpoints 连接此端口。
+  # 8080: Remoting over Proxy，备用。
+
+  proxy:
     <<: *rocketmq-common
     container_name: mvp-rocketmq-proxy
-    hostname: rocketmq-proxy
+    hostname: proxy
     depends_on:
-      - rocketmq-broker-master1
-      - rocketmq-broker-master2
+      - broker-master1
+      - broker-master2
     environment:
       JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
-      NAMESRV_ADDR: rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876
+      NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
+    # mqproxy：启动 Proxy 进程，对外暴露 gRPC（8081）和 Remoting（8080）两种协议接入
+    # Proxy 从 NameServer 拉取路由，再将请求转发到对应 Broker
     command: sh mqproxy
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - "8080:8080"   # Remoting over Proxy
+      - "8081:8081"   # gRPC，应用连接此端口
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/proxy/logs:/home/rocketmq/logs
 
-  rocketmq-dashboard:
+  # ── Dashboard ────────────────────────────────────────────────────────────────
+  # Web 控制台：http://127.0.0.1:8083
+
+  dashboard:
     image: apacherocketmq/rocketmq-dashboard:2.1.0
     container_name: mvp-rocketmq-dashboard
     restart: unless-stopped
     depends_on:
-      - rocketmq-broker-master1
-      - rocketmq-broker-master2
+      - broker-master1
+      - broker-master2
     environment:
-      JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv-1:9876;rocketmq-namesrv-2:9876"
+      # Dashboard 通过 NameServer 拉取集群信息，无需直连 Broker
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=namesrv-1:9876;namesrv-2:9876"
       TZ: Asia/Shanghai
     ports:
-      - "8088:8082"
+      - "8082:8082"   # Dashboard 控制台，http://127.0.0.1:8082
     networks:
       - mvp-network
 
 networks:
   mvp-network:
-    name: mvp-network
+    name: mvp-network   # 显式命名，与 nacos/nginx compose 共用同一网络，容器间可直接通信
     driver: bridge
