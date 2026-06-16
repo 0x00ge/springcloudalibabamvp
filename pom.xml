@@ -19,6 +19,7 @@
         <module>common</module>
         <module>mvp-gateway-0</module>
         <module>services</module>
+        <module>rocketmq-demo</module>
     </modules>
 
     <properties>

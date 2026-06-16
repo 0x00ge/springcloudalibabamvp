@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: rocketmq-demo
+
+rocketmq:
+  # 连接你已有的 RocketMQ
+  name-server: 127.0.0.1:9876;127.0.0.1:9877
+  producer:
+    group: demo-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+
+logging:
+  level:
+    com.demo: DEBUG
+    org.apache.rocketmq: INFO

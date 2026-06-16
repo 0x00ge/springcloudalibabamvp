@@ -9,6 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="common" />
         <module name="mvp-gateway-0" />
+        <module name="rocketmq-demo" />
         <module name="service-order-0" />
         <module name="service-iot-0" />
         <module name="service-goods-0" />
@@ -28,6 +29,7 @@
       <module name="model" options="-parameters" />
       <module name="mvp-gateway-0" options="-parameters" />
       <module name="mvp-gateway-1" options="-parameters" />
+      <module name="rocketmq-demo" options="-parameters" />
       <module name="service-goods-0" options="-parameters" />
       <module name="service-iot-0" options="-parameters" />
       <module name="service-order-0" options="-parameters" />
