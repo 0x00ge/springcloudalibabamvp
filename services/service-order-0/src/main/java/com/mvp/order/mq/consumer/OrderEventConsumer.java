@@ -1,4 +1,4 @@
-package com.mvp.order.consumer;
+package com.mvp.order.mq.consumer;
 
 import com.mvp.common.vo.ResultVO;
 import com.mvp.order.dto.GoodsInfoDto;

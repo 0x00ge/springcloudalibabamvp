@@ -5,7 +5,7 @@ import com.mvp.order.dto.GoodsInfoDto;
 import com.mvp.order.dto.OrderRequestDto;
 import com.mvp.order.dto.OrderResultDto;
 import com.mvp.order.feign.GoodsStockClient;
-import com.mvp.order.service.OrderProducerService;
+import com.mvp.order.mq.producer.OrderEventProducer;
 import com.mvp.order.service.OrderService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -41,14 +41,14 @@ import java.util.Objects;
 public class OrderController {
 
     private final OrderService orderService;
-    private final OrderProducerService producerService;
+    private final OrderEventProducer orderEventProducer;
     private final GoodsStockClient goodsStockClient;
 
     public OrderController(OrderService orderService,
-                          OrderProducerService producerService,
+                          OrderEventProducer orderEventProducer,
                           GoodsStockClient goodsStockClient) {
         this.orderService = orderService;
-        this.producerService = producerService;
+        this.orderEventProducer = orderEventProducer;
         this.goodsStockClient = goodsStockClient;
     }
 
@@ -88,7 +88,7 @@ public class OrderController {
             }
 
             // 第3步：发送消息到 RocketMQ
-            boolean sent = producerService.sendOrderEvent(userId, requestDto, goods);
+            boolean sent = orderEventProducer.sendOrderEvent(userId, requestDto, goods);
 
             if (!sent) {
                 // 发送失败，降级到同步模式

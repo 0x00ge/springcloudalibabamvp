@@ -1,4 +1,4 @@
-package com.mvp.order.consumer;
+package com.mvp.order.mq.consumer;
 
 import com.mvp.order.dto.OrderEventMessage;
 import lombok.extern.slf4j.Slf4j;
