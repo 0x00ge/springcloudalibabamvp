@@ -6,8 +6,12 @@ spring:
     name: rocketmq-demo
 
 rocketmq:
-  # Proxy 模式：应用连 Proxy Remoting 端口（8080）
-  name-server: 127.0.0.1:8080
+  # 纯 Proxy 模式：应用只连 Proxy，不直连 Broker
+  # 注意：rocketmq-spring-boot-starter 2.3.x 要求 name-server 必填
+  # 但实际连接时使用 proxy.endpoints，name-server 只是占位
+  name-server: 127.0.0.1:9876
+
+  # 生产者配置（走 Remoting 协议，需要通过 NameServer）
   producer:
     group: demo-producer-group
     send-message-timeout: 3000
