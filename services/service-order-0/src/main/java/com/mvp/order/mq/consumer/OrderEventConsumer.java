@@ -112,7 +112,11 @@ public class OrderEventConsumer implements RocketMQListener<OrderEventMessage> {
             throw new RuntimeException("消息处理被中断", ex);
 
         } catch (Exception ex) {
-            log.error("订单事件处理失败，将触发重试 messageId={} businessKey={}", messageId, businessKey, ex);
+            log.error("订单事件处理失败，将触发RocketMQ自动重试 messageId={} businessKey={}", messageId, businessKey, ex);
+            // 抛出异常，触发RocketMQ框架自动重试机制：
+            // - 重试次数：最多16次
+            // - 重试间隔：10s, 30s, 1m, 2m, 3m, 4m, 5m, 6m, 7m, 8m, 9m, 10m, 20m, 30m, 1h, 2h
+            // - 超过16次后，消息进入死信队列：%DLQ%order-consumer-group
             throw ex;
         }
     }
