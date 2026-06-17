@@ -15,6 +15,11 @@ rocketmq:
     group: demo-producer-group
     send-message-timeout: 3000
     retry-times-when-send-failed: 2
+    vip-channel-enabled: false  # 禁用 VIP 通道，避免连接到 listenPort-2 的端口
+
+  # 消费者配置
+  consumer:
+    vip-channel-enabled: false  # 禁用 VIP 通道
 
 logging:
   level:
