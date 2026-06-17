@@ -3,7 +3,7 @@
 # ============================================================================
 #
 # 架构说明：
-#   采用 Proxy 模式部署，应用通过 Proxy 统一接入，无需直连 Broker
+#   采用直连模式，宿主机应用通过 NameServer 发现 Broker 后直连
 #
 # 集群拓扑：
 #   ┌─────────────────────────────────────────────────────┐
@@ -33,22 +33,19 @@
 #   (内网)  (内网)        (内网)  (内网)
 #
 #
-# Proxy 模式优势：
-#   1. 统一接入：应用只需连接 Proxy，无需感知后端 Broker 拓扑
-#   2. 简化配置：Broker 不需要暴露端口，减少端口管理复杂度
-#   3. 协议支持：支持 gRPC（8081）和传统 Remoting（8080）两种协议
-#   4. macOS 兼容：完全兼容 Docker Desktop，不依赖 host 网络模式
-#
-#
-# 端口映射：
+# 端口映射（所有 Broker 均暴露 Remoting 端口供宿主机直连）：
 #   宿主机端口 → 容器端口
-#   9876        → namesrv-1:9876    (NameServer 1)
-#   9877        → namesrv-2:9876    (NameServer 2)
-#   8080        → proxy:8080        (Proxy Remoting)
-#   8081        → proxy:8081        (Proxy gRPC)
+#   9876        → namesrv-1:9876
+#   9877        → namesrv-2:9876
+#   10911       → broker-master1:10911
+#   10912       → broker-master1:10912
+#   10921       → broker-slave1:10921
+#   10931       → broker-master2:10931
+#   10932       → broker-master2:10932
+#   10941       → broker-slave2:10941
+#   8080        → proxy:8080        (Proxy Remoting，保留)
+#   8081        → proxy:8081        (Proxy gRPC，保留)
 #   8082        → dashboard:8082    (Web 控制台)
-#   注意：Broker 端口不对外暴露，仅在 mvp-network 内网通信
-#
 #
 # Web 控制台：
 #   http://127.0.0.1:8082
@@ -57,19 +54,9 @@
 
 
 x-rocketmq-common: &rocketmq-common
-  # RocketMQ 官方镜像
-  # 版本说明：5.3.2 是当前稳定版本，支持 Proxy 模式
   image: apache/rocketmq:5.3.2
-  # 重启策略
-  # unless-stopped：容器退出时自动重启，除非手动停止
-  # 其他选项：no（不重启）、always（总是重启）、on-failure（失败时重启）
   restart: unless-stopped
   environment:
-    # JVM 内存配置（默认 256MB）
-    # -Xms：初始堆内存
-    # -Xmx：最大堆内存
-    # -Xmn：年轻代内存
-    # 说明：NameServer/Proxy 使用 256MB，Broker 使用 512MB（单独配置）
     JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     TZ: Asia/Shanghai
   networks:
@@ -77,12 +64,11 @@ x-rocketmq-common: &rocketmq-common
 
 
 services:
-  
+
   namesrv-1:
-    <<: *rocketmq-common                    # 继承公共配置
-    container_name: mvp-rocketmq-namesrv-1  # 容器名称
-    hostname: namesrv-1                     # 容器主机名（Docker 内网访问用）
-    # mqnamesrv：RocketMQ NameServer 启动脚本
+    <<: *rocketmq-common
+    container_name: mvp-rocketmq-namesrv-1
+    hostname: namesrv-1
     command: sh mqnamesrv
     ports:
       - "9876:9876"
@@ -107,18 +93,13 @@ services:
       - namesrv-1
       - namesrv-2
     environment:
-      # Broker 需要更多内存（512MB）
       JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
-      # NameServer 地址列表
-      # 格式：host1:port1;host2:port2
-      # Broker 会向所有 NameServer 注册
       NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-master1.conf
     ports:
-      # 直连模式：暴露 Broker 端口，允许宿主机应用直连
-      - "10911:10911"  # Remoting 通信端口
-      - "10912:10912"  # HA 主从同步端口
+      - "10911:10911"
+      - "10912:10912"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-master1.conf:/home/rocketmq/conf/broker-master1.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master1/store:/home/rocketmq/store
@@ -131,12 +112,15 @@ services:
     depends_on:
       - namesrv-1
       - namesrv-2
-      - broker-master1  # Slave 必须在 Master 之后启动
+      - broker-master1
     environment:
       JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
       NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-slave1.conf
+    ports:
+      # 暴露 Slave 的 Remoting 端口，供宿主机 Consumer 直连读取
+      - "10921:10921"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-slave1.conf:/home/rocketmq/conf/broker-slave1.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave1/store:/home/rocketmq/store
@@ -155,9 +139,8 @@ services:
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-master2.conf
     ports:
-      # 直连模式：暴露 Broker 端口，允许宿主机应用直连
-      - "10931:10931"  # Remoting 通信端口
-      - "10932:10932"  # HA 主从同步端口
+      - "10931:10931"
+      - "10932:10932"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-master2.conf:/home/rocketmq/conf/broker-master2.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master2/store:/home/rocketmq/store
@@ -176,31 +159,31 @@ services:
       NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-slave2.conf
+    ports:
+      # 暴露 Slave 的 Remoting 端口
+      - "10941:10941"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-slave2.conf:/home/rocketmq/conf/broker-slave2.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/store:/home/rocketmq/store
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/logs:/home/rocketmq/logs
 
-  proxy:
-    <<: *rocketmq-common
-    container_name: mvp-rocketmq-proxy
-    hostname: proxy
-    depends_on:
-      - broker-master1
-      - broker-master2
-    environment:
-      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
-      NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
-      TZ: Asia/Shanghai
-    command: sh mqproxy
-    ports:
-      # Remoting 协议端口（兼容 RocketMQ 4.x 客户端）
-      - "8080:8080"
-      # gRPC 协议端口（推荐，RocketMQ 5.x 新客户端）
-      # 性能更好，支持流式传输
-      - "8081:8081"
-    volumes:
-      - /Users/zhongtao/.my_docker/rocketmq-cluster/proxy/logs:/home/rocketmq/logs
+#  proxy:
+#    <<: *rocketmq-common
+#    container_name: mvp-rocketmq-proxy
+#    hostname: proxy
+#    depends_on:
+#      - broker-master1
+#      - broker-master2
+#    environment:
+#      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+#      NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
+#      TZ: Asia/Shanghai
+#    command: sh mqproxy
+#    ports:
+#      - "8080:8080"
+#      - "8081:8081"
+#    volumes:
+#      - /Users/zhongtao/.my_docker/rocketmq-cluster/proxy/logs:/home/rocketmq/logs
 
   dashboard:
     image: apacherocketmq/rocketmq-dashboard:2.1.0
@@ -210,25 +193,14 @@ services:
       - broker-master1
       - broker-master2
     environment:
-      # Dashboard 通过 NameServer 获取集群拓扑
-      # 注意：这里使用的是 JAVA_OPTS（不是 JAVA_OPT_EXT）
       JAVA_OPTS: "-Drocketmq.namesrv.addr=namesrv-1:9876;namesrv-2:9876"
       TZ: Asia/Shanghai
     ports:
-      - "8082:8082"  # Web 控制台端口
+      - "8082:8082"
     networks:
       - mvp-network
 
 networks:
   mvp-network:
-    # 网络名称
-    # 显式命名，可以与其他项目的 Docker Compose 共用同一网络
-    # 例如：Nacos、Nginx 等服务也可以加入此网络，实现容器间互访
     name: mvp-network
-    # 网络驱动
-    # bridge：桥接模式，Docker 默认网络类型
-    # 特点：
-    #   - 容器间通过容器名互相访问（Docker DNS 自动解析）
-    #   - 需要通过端口映射访问宿主机
-    #   - 完全兼容 macOS 的 Docker Desktop
     driver: bridge
