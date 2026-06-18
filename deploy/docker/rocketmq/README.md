@@ -15,9 +15,9 @@
 
 ## 网络模式
 
-使用 **host 网络模式**，所有 Broker 容器直接使用宿主机网络：
-- Broker 注册地址：`127.0.0.1`
-- 应用可直接连接 Broker，无需端口映射
+使用 **bridge 网络 + 端口映射**：
+- 容器之间通过服务名互通，例如 `namesrv-1:9876`、`broker-master1:10912`
+- Broker 对宿主机注册地址为宿主机局域网 IP（当前示例为 `192.168.3.27`），宿主机应用通过映射端口直连 Broker
 
 ## 端口分配
 
@@ -45,7 +45,8 @@ spring:
 
 rocketmq:
   # 连接 NameServer，获取路由信息
-  name-server: 127.0.0.1:9876
+  name-server: 127.0.0.1:9876;127.0.0.1:9877
+  access-channel: LOCAL
   
   producer:
     group: demo-producer-group
@@ -109,7 +110,7 @@ docker ps | grep rocketmq
 |-----|----------------|-----------|
 | 应用连接 | 直连 Broker | 通过 Proxy 统一接入 |
 | 配置 | `name-server` | `proxy.endpoints` |
-| 网络 | host 网络模式 | bridge + 端口映射 |
+| 网络 | bridge + 端口映射 | bridge + 端口映射 |
 | 适用场景 | 本地开发 | 生产环境、多租户 |
 
 ## 故障排查
@@ -124,10 +125,11 @@ docker ps | grep rocketmq
    应该看到：`127.0.0.1:10911`
 
 2. 确认应用配置
-   ```yaml
-   rocketmq:
-     name-server: 127.0.0.1:9876
-   ```
+  ```yaml
+  rocketmq:
+    name-server: 127.0.0.1:9876;127.0.0.1:9877
+    access-channel: LOCAL
+  ```
 
 ### 问题2：Slave 无法同步
 
@@ -141,7 +143,7 @@ docker ps | grep rocketmq
    ```bash
    cat config/broker-slave1.conf | grep haMasterAddress
    ```
-   应该是：`haMasterAddress=127.0.0.1:10912`
+   应该是：`haMasterAddress=broker-master1:10912`
 
 ## 生产环境建议
 

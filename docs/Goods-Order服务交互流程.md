@@ -399,8 +399,9 @@ public void rollbackStock(String id, int count) {
 ```yaml
 # 📍 services/service-order-0/src/main/resources/application.yml:40
 rocketmq:
-  # Proxy 模式：应用连 Proxy gRPC 端口（8081），不直连 NameServer
-  name-server: 127.0.0.1:8081
+  # 直连模式：应用通过 NameServer 获取 Broker 路由，然后直连 Broker
+  name-server: 127.0.0.1:9876;127.0.0.1:9877
+  access-channel: LOCAL
   producer:
     group: order-producer-group
     send-message-timeout: 3000
@@ -688,7 +689,7 @@ http://localhost:8080
 Topic: %DLQ%order-consumer-group
 
 # 命令行查询死信队列消息
-sh mqadmin queryMsgByKey -n 127.0.0.1:8081 -t %DLQ%order-consumer-group -k "messageId"
+sh mqadmin queryMsgByKey -n 127.0.0.1:9876 -t %DLQ%order-consumer-group -k "messageId"
 ```
 
 **文件**: `services/service-order-0/src/main/java/com/mvp/order/mq/consumer/OrderDLQConsumer.java`
@@ -974,7 +975,8 @@ OrderEventConsumer    OrderTxService    GoodsStockClient    GoodsService    Redi
 ```yaml
 # 📍 services/service-order-0/src/main/resources/application.yml
 rocketmq:
-  name-server: 127.0.0.1:8081  # Proxy模式gRPC端口
+  name-server: 127.0.0.1:9876;127.0.0.1:9877
+  access-channel: LOCAL
   producer:
     group: order-producer-group
     send-message-timeout: 3000
@@ -1154,13 +1156,13 @@ rocketMQTemplate.asyncSend(DESTINATION, message, new SendCallback() {
 **监控告警**:
 ```bash
 # 查看Broker状态
-sh mqadmin clusterList -n 127.0.0.1:8081
+sh mqadmin clusterList -n 127.0.0.1:9876
 
 # 查看Topic消息堆积
-sh mqadmin topicStatus -n 127.0.0.1:8081 -t order-events
+sh mqadmin topicStatus -n 127.0.0.1:9876 -t order-events
 
 # 查看消费者组状态
-sh mqadmin consumerProgress -n 127.0.0.1:8081 -g order-consumer-group
+sh mqadmin consumerProgress -n 127.0.0.1:9876 -g order-consumer-group
 ```
 
 ### 12.2 库存超卖问题

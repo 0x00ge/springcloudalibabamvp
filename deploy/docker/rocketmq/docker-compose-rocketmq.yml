@@ -1,5 +1,5 @@
 # ============================================================================
-# RocketMQ 本地开发集群 - Docker Compose 配置文件（Proxy 模式）
+# RocketMQ 本地开发集群 - Docker Compose 配置文件（直连模式）
 # ============================================================================
 #
 # 架构说明：
@@ -8,14 +8,10 @@
 # 集群拓扑：
 #   ┌─────────────────────────────────────────────────────┐
 #   │          应用（宿主机）                               │
-#   │    rocketmq.name-server: 127.0.0.1:9876             │
+#   │    rocketmq.name-server: 127.0.0.1:9876;9877        │
 #   └──────────────────┬──────────────────────────────────┘
 #                      │
 #                      ▼
-#           ┌──────────────────────┐
-#           │   Proxy (8080/8081)  │ ← 统一接入层（gRPC/Remoting）
-#           └──────────┬───────────┘
-#                      │
 #           ┌──────────┴───────────┐
 #           ▼                      ▼
 #      NameServer-1           NameServer-2
@@ -43,8 +39,6 @@
 #   10931       → broker-master2:10931
 #   10932       → broker-master2:10932
 #   10941       → broker-slave2:10941
-#   8080        → proxy:8080        (Proxy Remoting，保留)
-#   8081        → proxy:8081        (Proxy gRPC，保留)
 #   8082        → dashboard:8082    (Web 控制台)
 #
 # Web 控制台：
@@ -168,24 +162,6 @@ services:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-slave2.conf:/home/rocketmq/conf/broker-slave2.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/store:/home/rocketmq/store
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/logs:/home/rocketmq/logs
-
-#  proxy:
-#    <<: *rocketmq-common
-#    container_name: mvp-rocketmq-proxy
-#    hostname: proxy
-#    depends_on:
-#      - broker-master1
-#      - broker-master2
-#    environment:
-#      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
-#      NAMESRV_ADDR: namesrv-1:9876;namesrv-2:9876
-#      TZ: Asia/Shanghai
-#    command: sh mqproxy
-#    ports:
-#      - "8080:8080"
-#      - "8081:8081"
-#    volumes:
-#      - /Users/zhongtao/.my_docker/rocketmq-cluster/proxy/logs:/home/rocketmq/logs
 
   dashboard:
     image: apacherocketmq/rocketmq-dashboard:2.1.0

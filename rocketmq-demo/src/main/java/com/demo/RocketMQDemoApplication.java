@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class RocketMQDemoApplication {
 
     public static void main(String[] args) {
+        System.setProperty("com.rocketmq.sendMessageWithVIPChannel", "false");
         SpringApplication.run(RocketMQDemoApplication.class, args);
         System.out.println("\n=================================");
         System.out.println("RocketMQ Demo 启动成功！");

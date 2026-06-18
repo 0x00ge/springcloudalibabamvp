@@ -30,6 +30,7 @@ public class OrderApplication {
      * {@code /order/result} 结果查询接口；下单时通过 Feign 调用 service-goods-0 完成库存预扣与回补。</p>
      */
     public static void main(String[] args) {
+        System.setProperty("com.rocketmq.sendMessageWithVIPChannel", "false");
         org.springframework.boot.SpringApplication.run(OrderApplication.class, args);
     }
 }

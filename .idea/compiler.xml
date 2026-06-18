@@ -19,6 +19,7 @@
     <bytecodeTargetLevel>
       <module name="model" target="17" />
       <module name="mvp-gateway-1" target="17" />
+      <module name="service-ai-agent" target="1.5" />
       <module name="service-product-0" target="17" />
       <module name="service-seckill-local-0" target="17" />
     </bytecodeTargetLevel>

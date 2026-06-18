@@ -8,20 +8,14 @@ spring:
 rocketmq:
   # 直连模式：应用通过 NameServer 获取 Broker 地址，然后直连 Broker
   # 这是最稳定可靠的方式，适合开发和生产环境
-  name-server: 127.0.0.1:9876
+  name-server: 127.0.0.1:9876;127.0.0.1:9877
+  access-channel: LOCAL
 
   # 生产者配置
   producer:
     group: demo-producer-group
     send-message-timeout: 3000
     retry-times-when-send-failed: 2
-    # 禁用 VIP 通道（端口-2），避免连接失败
-    # VIP 通道：10931-2=10929，Docker 未映射此端口
-    access-channel: LOCAL  # LOCAL 模式禁用 VIP 通道
-
-  # 消费者配置
-  consumer:
-    access-channel: LOCAL  # LOCAL 模式禁用 VIP 通道
 
 logging:
   level:
