@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.mvp</groupId>
+        <artifactId>SpringCloudAlibabaMVP</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>redisson-demo</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!--
+            Spring MVC Web：
+            1. 让本 demo 能以 HTTP 接口形式展示 Redisson 的执行结果；
+            2. 自动引入嵌入式 Tomcat，执行 mvn spring-boot:run 后即可访问；
+            3. Controller 中的 @RestController、@GetMapping 等注解都来自这个 starter。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+            Redisson Spring Boot Starter：
+            1. 根据 spring.data.redis.* 自动创建 RedissonClient；
+            2. 提供 RBucket、RMap、RLock、RSemaphore 等分布式对象 API；
+            3. demo 中所有数据结构和锁示例都通过 RedissonClient 获取。
+            版本由父工程 dependencyManagement 中的 redisson-spring-boot.version 统一管理。
+        -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!--
+            Lombok：
+            1. DemoResponse 使用 @Data、@NoArgsConstructor、@AllArgsConstructor 简化样板代码；
+            2. optional=true 表示 Lombok 只参与当前模块编译，不向依赖本模块的项目传递。
+        -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!--
+            Spring Boot Test：
+            当前 demo 主要以接口形式演示，暂未编写测试类；
+            保留 test starter，后续可以直接补 @SpringBootTest 或 WebMvcTest。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

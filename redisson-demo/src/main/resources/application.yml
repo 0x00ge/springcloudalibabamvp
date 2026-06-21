@@ -1,0 +1,25 @@
+server:
+  # demo 独立使用 8091，避免和 gateway、业务服务、rocketmq-demo 常见端口冲突。
+  port: 8091
+
+spring:
+  application:
+    # 应用名会出现在日志、监控和 Spring 上下文中，便于区分不同 demo。
+    name: redisson-demo
+  data:
+    redis:
+      # Redisson starter 会读取这里的 Redis 连接信息并自动创建 RedissonClient。
+      # 如果你使用 Docker、本机 Redis 或远程 Redis，只需要改 host/port/password。
+      host: 127.0.0.1
+      port: 6379
+      # database=0 表示使用 Redis 0 号库。demo key 都带 redisson-demo 前缀，方便清理。
+      database: 0
+      # 连接超时时间，避免 Redis 未启动时请求长时间卡住。
+      timeout: 3000ms
+
+logging:
+  level:
+    # demo 包使用 DEBUG，方便观察接口调用时的日志。
+    com.demo.redisson: DEBUG
+    # Redisson 自身日志保持 INFO，避免输出过多底层连接细节。
+    org.redisson: INFO
