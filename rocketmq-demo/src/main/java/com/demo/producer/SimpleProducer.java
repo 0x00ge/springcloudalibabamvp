@@ -99,7 +99,7 @@ public class SimpleProducer {
 
             // 发送成功，记录日志
             // msgId: RocketMQ 自动生成的消息唯一标识
-            log.info("✅ 同步发送成功 orderId= msgId={}",
+            log.info(">>> syncSendSuccess : orderId={} msgId={}",
                      order.getOrderId(), result.getMsgId());
 
             return result;
@@ -109,14 +109,14 @@ public class SimpleProducer {
             // 1. 网络故障
             // 2. Broker 宕机
             // 3. 超时（默认 3000ms）
-            log.error("❌ 同步发送失败 orderId={}", order.getOrderId(), e);
+            log.error(">>> syncSendFail : orderId={}", order.getOrderId(), e);
 
             // 抛出异常，让调用方知道消息发送失败
             // 调用方可以选择：
             // - 重试
             // - 记录到数据库，后续补偿
             // - 降级处理（例如同步处理业务）
-            throw new RuntimeException("消息发送失败", e);
+            throw new RuntimeException(">>> syncSendFail :", e);
         }
     }
 
@@ -166,7 +166,7 @@ public class SimpleProducer {
                  */
                 @Override
                 public void onSuccess(SendResult result) {
-                    log.info("✅ 异步发送成功 orderId={} msgId={}",
+                    log.info(">>> asyncSendSuccess : orderId={} msgId={}",
                              order.getOrderId(), result.getMsgId());
 
                     // 这里可以：
@@ -181,7 +181,7 @@ public class SimpleProducer {
                  */
                 @Override
                 public void onException(Throwable e) {
-                    log.error("❌ 异步发送失败 orderId={}", order.getOrderId(), e);
+                    log.error(">>> asyncSendFail : orderId={}", order.getOrderId(), e);
 
                     // ⚠️ 重要：必须处理失败情况
                     // 常见做法：
@@ -197,51 +197,7 @@ public class SimpleProducer {
 
         // 注意：这行日志会在发送完成前输出
         // 因为 asyncSend 不等待 Broker 响应就返回
-        log.info("📤 异步发送请求已提交 orderId={}", order.getOrderId());
-    }
-
-    /**
-     * 单向发送（不推荐）⚠️
-     *
-     * ============================================
-     * 工作流程
-     * ============================================
-     * 1. Producer 发送消息到 Broker
-     * 2. 不等待响应，直接返回
-     * 3. 不关心发送结果
-     *
-     * ============================================
-     * 为什么不推荐？
-     * ============================================
-     * - 不可靠：消息可能丢失
-     * - 不知道是否发送成功
-     * - 无法处理失败情况
-     *
-     * ============================================
-     * 什么时候用？
-     * ============================================
-     * - 日志记录（丢失几条不影响业务）
-     * - 监控打点（允许少量丢失）
-     * - 性能要求极高且允许丢消息
-     *
-     * ============================================
-     * 警告
-     * ============================================
-     * 对于重要业务，千万别用单向发送！
-     *
-     * @param order 订单对象
-     */
-    public void sendOneWay(OrderDTO order) {
-        String destination = "demo-topic:order-created";
-
-        // sendOneWay 没有返回值
-        // 发送后立即返回，不管成功还是失败
-        rocketMQTemplate.sendOneWay(destination, order);
-
-        // 这行日志可能在消息还没发到 Broker 就输出了
-        log.info("📤 单向发送 orderId={} （不关心结果）", order.getOrderId());
-
-        // ⚠️ 注意：如果这里马上关闭 JVM，消息可能来不及发送
+        log.info(">>> asyncSendCommit : orderId={}", order.getOrderId());
     }
 }
 

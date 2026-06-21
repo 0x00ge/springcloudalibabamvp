@@ -113,18 +113,19 @@ public class SimpleConsumer implements RocketMQListener<OrderDTO> {
      */
     @Override
     public void onMessage(OrderDTO order) {
-        log.info("📨 收到订单消息 orderId={} product={} quantity={} amount={}",
+        log.info("<<< getOrderMessage : orderId={} product={} quantity={} amount={}",
                  order.getOrderId(),
                  order.getProductName(),
                  order.getQuantity(),
                  order.getAmount());
 
         try {
+            log.info("<<< handleStart : orderId={}", order.getOrderId());
             processOrder(order);
-            log.info("✅ 订单处理成功 orderId={}", order.getOrderId());
+            log.info("<<< handleSuccess : orderId={}", order.getOrderId());
 
         } catch (Exception e) {
-            log.error("❌ 订单处理失败 orderId={}", order.getOrderId(), e);
+            log.error("handleFail : orderId={}", order.getOrderId(), e);
             throw new RuntimeException("处理失败", e);
         }
     }
@@ -139,7 +140,7 @@ public class SimpleConsumer implements RocketMQListener<OrderDTO> {
             Thread.currentThread().interrupt();
         }
 
-        log.info("💼 处理订单业务: 发送通知、更新库存、记录日志");
+        log.info("<<< handling : 发送通知、更新库存、记录日志");
     }
 }
 

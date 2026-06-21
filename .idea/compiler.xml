@@ -7,6 +7,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="redisson-demo" />
         <module name="common" />
         <module name="mvp-gateway-0" />
         <module name="rocketmq-demo" />
@@ -30,6 +31,7 @@
       <module name="model" options="-parameters" />
       <module name="mvp-gateway-0" options="-parameters" />
       <module name="mvp-gateway-1" options="-parameters" />
+      <module name="redisson-demo" options="-parameters" />
       <module name="rocketmq-demo" options="-parameters" />
       <module name="service-goods-0" options="-parameters" />
       <module name="service-iot-0" options="-parameters" />
