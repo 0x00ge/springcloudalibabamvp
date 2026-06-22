@@ -1,0 +1,253 @@
+# ============================================================================
+# Redis Cluster 本地开发集群 - Docker Compose 配置文件
+# ============================================================================
+#
+# 集群拓扑：
+#   - 6 个 Redis 节点：redis-7001 ~ redis-7006。
+#   - init-redis-cluster.sh 初始化后形成 3 主 3 从。
+#   - Redis 服务端口：7001 ~ 7006，宿主机和容器内保持一致。
+#   - Cluster bus 端口：17001 ~ 17006，Redis Cluster 节点之间用它交换槽位、心跳和故障转移信息。
+#
+# 为什么配置 cluster-announce-*：
+#   Redis Cluster 会把节点地址返回给客户端。
+#   本地 Java/Redisson 应用跑在宿主机时，如果 Redis 返回容器内 IP，宿主机无法访问。
+#   这里统一声明为 host.docker.internal + 映射端口，宿主机客户端能正确连回每个节点。
+#
+# 为什么不设置密码：
+#   这个配置定位是本机开发环境，简化 Redisson、redis-cli 和集群初始化命令。
+#   如果用于共享环境或服务器，需要补 requirepass、masterauth，并同步修改初始化和客户端配置。
+#
+# ============================================================================
+
+# 公共配置块：6 个 Redis 节点都继承这里，避免重复写镜像、网络和重启策略。
+x-redis-cluster-common: &redis-cluster-common
+  # Redis 版本固定为 7.2.10，避免 latest 自动升级导致行为变化。
+  image: redis:7.2.10
+  # Docker 或宿主机重启后自动拉起容器；手动 docker compose down 后不会自动恢复。
+  restart: unless-stopped
+  # 加入项目统一网络，后续其他容器可以通过容器名访问 Redis 节点。
+  networks:
+    - mvp-network
+  # Linux 下显式映射 host.docker.internal，Docker Desktop for macOS 也兼容。
+  # 这个名字会写入 Redis Cluster 节点公告地址，宿主机应用依赖它访问各节点。
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+services:
+  redis-7001:
+    <<: *redis-cluster-common
+    container_name: mvp-redis-7001
+    hostname: redis-7001
+    # 使用命令行参数而不是 redis.conf，方便一个 compose 文件看清全部集群配置。
+    command:
+      - redis-server
+      # 当前节点监听端口。容器内端口和宿主机映射端口保持一致，降低排查成本。
+      - --port
+      - "7001"
+      # 开启 Redis Cluster 模式。未执行 cluster create 前，节点只是“可参与集群”的单节点。
+      - --cluster-enabled
+      - "yes"
+      # Redis 自动维护的集群节点配置文件，保存 node id、槽位、主从关系等信息。
+      # 文件位于 /data/nodes.conf，会随 volume 持久化。
+      - --cluster-config-file
+      - nodes.conf
+      # 节点超时时间。超过该时间未收到心跳，集群会开始主观下线/故障转移判断。
+      - --cluster-node-timeout
+      - "5000"
+      # 开启 AOF 持久化，本地开发重启后能保留写入数据和集群状态。
+      - --appendonly
+      - "yes"
+      # 关闭保护模式，允许宿主机通过端口映射访问。
+      - --protected-mode
+      - "no"
+      # 监听所有网卡，否则容器外可能无法访问。
+      - --bind
+      - "0.0.0.0"
+      # 对客户端和其他集群节点公告宿主机可访问的地址。
+      - --cluster-announce-hostname
+      - host.docker.internal
+      # 对外公告的 Redis 服务端口。
+      - --cluster-announce-port
+      - "7001"
+      # 对外公告的 Cluster bus 端口。默认是服务端口 + 10000，这里显式写出更清楚。
+      - --cluster-announce-bus-port
+      - "17001"
+    ports:
+      # Redis 服务端口：Java/Redisson/redis-cli 都通过这个端口访问。
+      - "7001:7001"
+      # Cluster bus 端口：节点间通信、槽位广播、故障检测需要它。
+      - "17001:17001"
+    volumes:
+      # 每个节点必须有独立数据目录，不能多个节点共享同一个 /data。
+      - /Users/zhongtao/.my_docker/redis-cluster/7001/data:/data
+
+  redis-7002:
+    <<: *redis-cluster-common
+    container_name: mvp-redis-7002
+    hostname: redis-7002
+    # redis-7002 和 redis-7001 只有端口、容器名、数据目录不同。
+    command:
+      - redis-server
+      - --port
+      - "7002"
+      - --cluster-enabled
+      - "yes"
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - "5000"
+      - --appendonly
+      - "yes"
+      - --protected-mode
+      - "no"
+      - --bind
+      - "0.0.0.0"
+      - --cluster-announce-hostname
+      - host.docker.internal
+      - --cluster-announce-port
+      - "7002"
+      - --cluster-announce-bus-port
+      - "17002"
+    ports:
+      - "7002:7002"
+      - "17002:17002"
+    volumes:
+      - /Users/zhongtao/.my_docker/redis-cluster/7002/data:/data
+
+  redis-7003:
+    <<: *redis-cluster-common
+    container_name: mvp-redis-7003
+    hostname: redis-7003
+    # redis-7003 是第三个初始节点；cluster create 会优先把前三个节点作为 master。
+    command:
+      - redis-server
+      - --port
+      - "7003"
+      - --cluster-enabled
+      - "yes"
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - "5000"
+      - --appendonly
+      - "yes"
+      - --protected-mode
+      - "no"
+      - --bind
+      - "0.0.0.0"
+      - --cluster-announce-hostname
+      - host.docker.internal
+      - --cluster-announce-port
+      - "7003"
+      - --cluster-announce-bus-port
+      - "17003"
+    ports:
+      - "7003:7003"
+      - "17003:17003"
+    volumes:
+      - /Users/zhongtao/.my_docker/redis-cluster/7003/data:/data
+
+  redis-7004:
+    <<: *redis-cluster-common
+    container_name: mvp-redis-7004
+    hostname: redis-7004
+    # redis-7004 初始化后通常会成为某个 master 的 replica，具体关系由 redis-cli 分配。
+    command:
+      - redis-server
+      - --port
+      - "7004"
+      - --cluster-enabled
+      - "yes"
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - "5000"
+      - --appendonly
+      - "yes"
+      - --protected-mode
+      - "no"
+      - --bind
+      - "0.0.0.0"
+      - --cluster-announce-hostname
+      - host.docker.internal
+      - --cluster-announce-port
+      - "7004"
+      - --cluster-announce-bus-port
+      - "17004"
+    ports:
+      - "7004:7004"
+      - "17004:17004"
+    volumes:
+      - /Users/zhongtao/.my_docker/redis-cluster/7004/data:/data
+
+  redis-7005:
+    <<: *redis-cluster-common
+    container_name: mvp-redis-7005
+    hostname: redis-7005
+    # redis-7005 初始化后通常会成为某个 master 的 replica。
+    command:
+      - redis-server
+      - --port
+      - "7005"
+      - --cluster-enabled
+      - "yes"
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - "5000"
+      - --appendonly
+      - "yes"
+      - --protected-mode
+      - "no"
+      - --bind
+      - "0.0.0.0"
+      - --cluster-announce-hostname
+      - host.docker.internal
+      - --cluster-announce-port
+      - "7005"
+      - --cluster-announce-bus-port
+      - "17005"
+    ports:
+      - "7005:7005"
+      - "17005:17005"
+    volumes:
+      - /Users/zhongtao/.my_docker/redis-cluster/7005/data:/data
+
+  redis-7006:
+    <<: *redis-cluster-common
+    container_name: mvp-redis-7006
+    hostname: redis-7006
+    # redis-7006 初始化后通常会成为某个 master 的 replica。
+    command:
+      - redis-server
+      - --port
+      - "7006"
+      - --cluster-enabled
+      - "yes"
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - "5000"
+      - --appendonly
+      - "yes"
+      - --protected-mode
+      - "no"
+      - --bind
+      - "0.0.0.0"
+      - --cluster-announce-hostname
+      - host.docker.internal
+      - --cluster-announce-port
+      - "7006"
+      - --cluster-announce-bus-port
+      - "17006"
+    ports:
+      - "7006:7006"
+      - "17006:17006"
+    volumes:
+      - /Users/zhongtao/.my_docker/redis-cluster/7006/data:/data
+
+networks:
+  mvp-network:
+    # 和 Nacos、RocketMQ 等本地组件复用同一个 Docker bridge 网络。
+    name: mvp-network
+    driver: bridge
