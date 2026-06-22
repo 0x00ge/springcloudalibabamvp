@@ -176,6 +176,13 @@ services:
       TZ: Asia/Shanghai
     ports:
       - "8082:8082"
+    volumes:
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/dashboard/logs:/root/logs
+      # 👇 新增以下4个映射，阻止 Tomcat 产生随机匿名卷
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/dashboard/webapps:/usr/local/tomcat/webapps
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/dashboard/work:/usr/local/tomcat/work
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/dashboard/temp:/usr/local/tomcat/temp
+      - /Users/zhongtao/.my_docker/rocketmq-cluster/tmp:/tmp
     networks:
       - mvp-network
 
