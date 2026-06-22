@@ -47,7 +47,7 @@
 # ============================================================================
 
 
-x-rocketmq-common: &rocketmq-common
+x-rocketmq-cluster-common: &rocketmq-cluster-common
   image: apache/rocketmq:5.3.2
   restart: unless-stopped
   environment:
@@ -60,7 +60,7 @@ x-rocketmq-common: &rocketmq-common
 services:
 
   namesrv-1:
-    <<: *rocketmq-common
+    <<: *rocketmq-cluster-common
     container_name: mvp-rocketmq-namesrv-1
     hostname: namesrv-1
     command: sh mqnamesrv
@@ -70,7 +70,7 @@ services:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/namesrv-1/logs:/home/rocketmq/logs
 
   namesrv-2:
-    <<: *rocketmq-common
+    <<: *rocketmq-cluster-common
     container_name: mvp-rocketmq-namesrv-2
     hostname: namesrv-2
     command: sh mqnamesrv
@@ -80,7 +80,7 @@ services:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/namesrv-2/logs:/home/rocketmq/logs
 
   broker-master1:
-    <<: *rocketmq-common
+    <<: *rocketmq-cluster-common
     container_name: mvp-rocketmq-broker-master1
     hostname: broker-master1
     depends_on:
@@ -101,7 +101,7 @@ services:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master1/logs:/home/rocketmq/logs
 
   broker-slave1:
-    <<: *rocketmq-common
+    <<: *rocketmq-cluster-common
     container_name: mvp-rocketmq-broker-slave1
     hostname: broker-slave1
     depends_on:
@@ -122,7 +122,7 @@ services:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave1/logs:/home/rocketmq/logs
 
   broker-master2:
-    <<: *rocketmq-common
+    <<: *rocketmq-cluster-common
     container_name: mvp-rocketmq-broker-master2
     hostname: broker-master2
     depends_on:
@@ -143,7 +143,7 @@ services:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master2/logs:/home/rocketmq/logs
 
   broker-slave2:
-    <<: *rocketmq-common
+    <<: *rocketmq-cluster-common
     container_name: mvp-rocketmq-broker-slave2
     hostname: broker-slave2
     depends_on:
