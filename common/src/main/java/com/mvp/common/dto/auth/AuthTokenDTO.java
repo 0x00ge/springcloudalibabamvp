@@ -9,9 +9,19 @@ import lombok.Data;
 public class AuthTokenDTO {
 
     /**
+     * 请求头 token 类型。
+     */
+    private String tokenType = "Bearer";
+
+    /**
      * 访问业务接口使用的短期 token。
      */
     private String accessToken;
+
+    /**
+     * accessToken 剩余有效期，单位秒。
+     */
+    private Long accessTokenExpiresIn;
 
     /**
      * 换取新 accessToken 使用的长期 token。
@@ -20,16 +30,6 @@ public class AuthTokenDTO {
      * 避免响应体把 refreshToken 暴露给前端 JS。</p>
      */
     private String refreshToken;
-
-    /**
-     * 请求头 token 类型。
-     */
-    private String tokenType = "Bearer";
-
-    /**
-     * accessToken 剩余有效期，单位秒。
-     */
-    private Long accessTokenExpiresIn;
 
     /**
      * refreshToken 剩余有效期，单位秒。
