@@ -20,16 +20,22 @@ public class RedissonDataTypesTest {
     @BeforeEach
     public void setUp() {
         Config config = new Config();
-        config.useSingleServer()
-                .setAddress("redis://127.0.0.1:6379")
-                .setConnectionPoolSize(10)
-                .setConnectionMinimumIdleSize(5);
+        config.useClusterServers()
+                .addNodeAddress(
+                        "redis://127.0.0.1:7001",
+                        "redis://127.0.0.1:7002",
+                        "redis://127.0.0.1:7003",
+                        "redis://127.0.0.1:7004",
+                        "redis://127.0.0.1:7005",
+                        "redis://127.0.0.1:7006"
+                )
+                .setScanInterval(2000);
 
         // 设置为 JSON 序列化（重要！）
         config.setCodec(new StringCodec());
 
         redissonClient = Redisson.create(config);
-        System.out.println("RedissonClient 初始化成功（使用 JsonJacksonCodec）\n");
+        System.out.println("RedissonClient 初始化成功（Redis Cluster + StringCodec）\n");
     }
 
     @AfterEach

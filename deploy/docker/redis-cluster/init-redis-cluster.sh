@@ -22,6 +22,16 @@ DATA_DIR="/Users/zhongtao/.my_docker/redis-cluster"
 # 切到脚本所在目录，保证 docker compose -f 使用相对路径也稳定。
 cd "$(dirname "$0")"
 
+REDIS_CLUSTER_ANNOUNCE_HOST="${REDIS_CLUSTER_ANNOUNCE_HOST:-127.0.0.1}"
+cat > .env <<EOF
+REDIS_CLUSTER_ANNOUNCE_HOST=${REDIS_CLUSTER_ANNOUNCE_HOST}
+EOF
+
+echo "Redis Cluster announce host: ${REDIS_CLUSTER_ANNOUNCE_HOST}"
+
+# Compose 文件声明 mvp-network 为 external，避免已有同名网络时出现 warning。
+docker network inspect mvp-network >/dev/null 2>&1 || docker network create mvp-network >/dev/null
+
 # 提前创建目录，避免 Docker 自动用 root 权限创建后本机清理不方便。
 mkdir -p \
   "${DATA_DIR}/7001/data" \
@@ -38,33 +48,51 @@ echo "Waiting Redis nodes to be ready..."
 for port in 7001 7002 7003 7004 7005 7006; do
   # Redis 容器启动后还需要一点时间接受连接。
   # ping 成功说明 redis-server 已经开始监听当前节点端口。
-  until docker exec "mvp-redis-${port}" redis-cli -p "${port}" ping >/dev/null 2>&1; do
+  until docker exec -w / "mvp-redis-${port}" redis-cli -p "${port}" ping >/dev/null 2>&1; do
     sleep 1
   done
 done
 
+known_node_count="$(docker exec -w / mvp-redis-7001 redis-cli -p 7001 cluster nodes 2>/dev/null | wc -l | tr -d '[:space:]')"
+if [ "${known_node_count}" -gt 1 ]; then
+  if ! docker exec -w / mvp-redis-7001 redis-cli -p 7001 cluster info 2>/dev/null | grep -q "cluster_state:ok"; then
+    cat <<EOF
+Redis nodes already contain partial cluster metadata, but cluster_state is not ok.
+
+Please rebuild the local cluster data and run again:
+
+  docker compose -f ${COMPOSE_FILE} down
+  rm -rf ${DATA_DIR}
+  ./init-redis-cluster.sh
+
+EOF
+    exit 1
+  fi
+fi
+
 # 如果集群已经初始化过，重复执行脚本时不要再次 cluster create。
 # 这样脚本可以安全重复运行，用来启动已存在的集群。
-if docker exec mvp-redis-7001 redis-cli -p 7001 cluster info 2>/dev/null | grep -q "cluster_state:ok"; then
+if docker exec -w / mvp-redis-7001 redis-cli -p 7001 cluster info 2>/dev/null | grep -q "cluster_state:ok"; then
   echo "Redis Cluster already initialized."
-  docker exec mvp-redis-7001 redis-cli -p 7001 cluster nodes
+  docker exec -w / mvp-redis-7001 redis-cli -p 7001 cluster nodes
   exit 0
 fi
 
 echo "Creating Redis Cluster: 3 masters + 3 replicas..."
 # --cluster-replicas 1 表示每个 master 配 1 个 replica。
 # 传入 6 个节点时，redis-cli 会创建 3 个 master，并把剩余 3 个节点分配为 replica。
-# 节点地址必须使用宿主机可访问地址，和 compose 中 cluster-announce-hostname/port 保持一致。
-docker exec -i mvp-redis-7001 redis-cli --cluster create \
-  host.docker.internal:7001 \
-  host.docker.internal:7002 \
-  host.docker.internal:7003 \
-  host.docker.internal:7004 \
-  host.docker.internal:7005 \
-  host.docker.internal:7006 \
+# 节点创建使用 Docker 网络内服务名，保证 Redis 节点之间可以直接握手。
+# 对宿主机 Java/Redisson 客户端返回的地址由 cluster-announce-hostname 控制。
+docker exec -i -w / mvp-redis-7001 redis-cli --cluster create \
+  redis-7001:7001 \
+  redis-7002:7002 \
+  redis-7003:7003 \
+  redis-7004:7004 \
+  redis-7005:7005 \
+  redis-7006:7006 \
   --cluster-replicas 1 \
   --cluster-yes
 
 echo "Redis Cluster initialized."
 # 打印节点、槽位和主从关系，方便确认初始化结果。
-docker exec mvp-redis-7001 redis-cli -p 7001 cluster nodes
+docker exec -w / mvp-redis-7001 redis-cli -p 7001 cluster nodes

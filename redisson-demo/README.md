@@ -1,15 +1,23 @@
 # Redisson Demo
 
-这个模块演示 Redisson 的基础数据结构和常见分布式锁用法。默认连接本机 Redis：
+这个模块演示 Redisson 的基础数据结构和常见分布式锁用法。默认连接本机 Redis Cluster：
 
 ```yaml
 spring:
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
-      database: 0
+      cluster:
+        nodes:
+          - 127.0.0.1:7001
+          - 127.0.0.1:7002
+          - 127.0.0.1:7003
+          - 127.0.0.1:7004
+          - 127.0.0.1:7005
+          - 127.0.0.1:7006
+      timeout: 3000ms
 ```
+
+Redis Cluster 只支持 0 号库，不再配置 `database`。
 
 ## 代码阅读路线
 

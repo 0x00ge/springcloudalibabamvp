@@ -11,9 +11,15 @@ spring:
     import: optional:nacos:${spring.application.name}-${spring.profiles.active}.yml # 可选导入 Nacos 中的 gateway-dev.yml
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
-      database: 0
+      cluster:
+        nodes:
+          - 127.0.0.1:7001
+          - 127.0.0.1:7002
+          - 127.0.0.1:7003
+          - 127.0.0.1:7004
+          - 127.0.0.1:7005
+          - 127.0.0.1:7006
+      timeout: 3000ms
   cloud:
     gateway:
       globalcors:

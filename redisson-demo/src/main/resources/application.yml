@@ -8,12 +8,16 @@ spring:
     name: redisson-demo
   data:
     redis:
-      # Redisson starter 会读取这里的 Redis 连接信息并自动创建 RedissonClient。
-      # 如果你使用 Docker、本机 Redis 或远程 Redis，只需要改 host/port/password。
-      host: 127.0.0.1
-      port: 6379
-      # database=0 表示使用 Redis 0 号库。demo key 都带 redisson-demo 前缀，方便清理。
-      database: 0
+      # Redisson starter 会读取这里的 Redis Cluster 节点信息并自动创建 RedissonClient。
+      # Redis Cluster 只支持 0 号库，因此不要再配置 database。
+      cluster:
+        nodes:
+          - 127.0.0.1:7001
+          - 127.0.0.1:7002
+          - 127.0.0.1:7003
+          - 127.0.0.1:7004
+          - 127.0.0.1:7005
+          - 127.0.0.1:7006
       # 连接超时时间，避免 Redis 未启动时请求长时间卡住。
       timeout: 3000ms
 

@@ -25,9 +25,15 @@ spring:
           password: rootroot
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
-      database: 0
+      cluster:
+        nodes:
+          - 127.0.0.1:7001
+          - 127.0.0.1:7002
+          - 127.0.0.1:7003
+          - 127.0.0.1:7004
+          - 127.0.0.1:7005
+          - 127.0.0.1:7006
+      timeout: 3000ms
   cloud:
     nacos:
       server-addr: 127.0.0.1:8848,127.0.0.1:8849,127.0.0.1:8850

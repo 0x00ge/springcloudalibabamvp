@@ -10,8 +10,9 @@
 #
 # 为什么配置 cluster-announce-*：
 #   Redis Cluster 会把节点地址返回给客户端。
-#   本地 Java/Redisson 应用跑在宿主机时，如果 Redis 返回容器内 IP，宿主机无法访问。
-#   这里统一声明为 host.docker.internal + 映射端口，宿主机客户端能正确连回每个节点。
+#   本地 Java/Redisson 应用跑在宿主机时，如果 Redis 返回容器内 IP，宿主机无法访问；
+#   集群内部使用 Docker DNS（redis-7001 等）互联。
+#   对宿主机客户端通过 cluster-announce-hostname 公告 127.0.0.1 + 映射端口。
 #
 # 为什么不设置密码：
 #   这个配置定位是本机开发环境，简化 Redisson、redis-cli 和集群初始化命令。
@@ -28,10 +29,6 @@ x-redis-cluster-common: &redis-cluster-common
   # 加入项目统一网络，后续其他容器可以通过容器名访问 Redis 节点。
   networks:
     - mvp-network
-  # Linux 下显式映射 host.docker.internal，Docker Desktop for macOS 也兼容。
-  # 这个名字会写入 Redis Cluster 节点公告地址，宿主机应用依赖它访问各节点。
-  extra_hosts:
-    - "host.docker.internal:host-gateway"
 
 services:
   redis-7001:
@@ -65,7 +62,10 @@ services:
       - "0.0.0.0"
       # 对客户端和其他集群节点公告宿主机可访问的地址。
       - --cluster-announce-hostname
-      - host.docker.internal
+      - ${REDIS_CLUSTER_ANNOUNCE_HOST}
+      # Redis 7 支持优先向客户端返回 hostname；这样 CLUSTER SLOTS 返回 127.0.0.1 而不是容器 IP。
+      - --cluster-preferred-endpoint-type
+      - hostname
       # 对外公告的 Redis 服务端口。
       - --cluster-announce-port
       - "7001"
@@ -103,7 +103,9 @@ services:
       - --bind
       - "0.0.0.0"
       - --cluster-announce-hostname
-      - host.docker.internal
+      - ${REDIS_CLUSTER_ANNOUNCE_HOST}
+      - --cluster-preferred-endpoint-type
+      - hostname
       - --cluster-announce-port
       - "7002"
       - --cluster-announce-bus-port
@@ -136,7 +138,9 @@ services:
       - --bind
       - "0.0.0.0"
       - --cluster-announce-hostname
-      - host.docker.internal
+      - ${REDIS_CLUSTER_ANNOUNCE_HOST}
+      - --cluster-preferred-endpoint-type
+      - hostname
       - --cluster-announce-port
       - "7003"
       - --cluster-announce-bus-port
@@ -169,7 +173,9 @@ services:
       - --bind
       - "0.0.0.0"
       - --cluster-announce-hostname
-      - host.docker.internal
+      - ${REDIS_CLUSTER_ANNOUNCE_HOST}
+      - --cluster-preferred-endpoint-type
+      - hostname
       - --cluster-announce-port
       - "7004"
       - --cluster-announce-bus-port
@@ -202,7 +208,9 @@ services:
       - --bind
       - "0.0.0.0"
       - --cluster-announce-hostname
-      - host.docker.internal
+      - ${REDIS_CLUSTER_ANNOUNCE_HOST}
+      - --cluster-preferred-endpoint-type
+      - hostname
       - --cluster-announce-port
       - "7005"
       - --cluster-announce-bus-port
@@ -235,7 +243,9 @@ services:
       - --bind
       - "0.0.0.0"
       - --cluster-announce-hostname
-      - host.docker.internal
+      - ${REDIS_CLUSTER_ANNOUNCE_HOST}
+      - --cluster-preferred-endpoint-type
+      - hostname
       - --cluster-announce-port
       - "7006"
       - --cluster-announce-bus-port
@@ -248,6 +258,5 @@ services:
 
 networks:
   mvp-network:
-    # 和 Nacos、RocketMQ 等本地组件复用同一个 Docker bridge 网络。
     name: mvp-network
-    driver: bridge
+    external: true
