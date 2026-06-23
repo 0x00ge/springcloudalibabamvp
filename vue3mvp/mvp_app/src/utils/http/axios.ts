@@ -12,7 +12,7 @@ import {
     clearStoredAuthInfo,
     getAccessToken,
     isAccessTokenExpired,
-    setAuthTokens,
+    setAuthToken,
 } from '@/stores/authStore.ts'
 
 /**
@@ -142,7 +142,7 @@ const handleRefreshAccessToken = async () => {
                     throw new Error(response.data.message)
                 }
                 const data = response.data.data
-                setAuthTokens(data)
+                setAuthToken(data)
                 return data.accessToken
             })
             .finally(() => {

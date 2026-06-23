@@ -7,8 +7,11 @@ import type {UserInfo} from '@/types/types.ts'
 
 /**
  * accessToken 提前失效窗口。
+ *
+ * 后端当前 accessToken 有效期是 30 秒，前端缓冲窗口不能大于有效期；
+ * 否则登录刚拿到 token 就会被判定为“即将过期”，进入首页时立刻触发 refresh。
  */
-const TOKEN_EXPIRE_BUFFER_SECONDS = 60
+const TOKEN_EXPIRE_BUFFER_SECONDS = 5
 
 /**
  * accessToken 内存失效定时器。
