@@ -4,8 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Cellphone, Lock, Message, User } from '@element-plus/icons-vue'
 
-import { sendRegisterSmsCode } from '@/api/authApi.ts'
-import { useUserStore } from '@/stores/userStore.ts'
+import { registerCodeByPhone } from '@/api/authApi.ts'
+import { useAuthStore } from '@/stores/authStore.ts'
 
 interface LoginForm {
   phone: string
@@ -26,8 +26,8 @@ type AuthMode = 'login' | 'register'
 const router = useRouter()
 const route = useRoute()
 
-// 用户鉴权状态统一放在 Pinia：登录、注册、刷新、登出都从 userStore 进入。
-const userStore = useUserStore()
+// 登录、注册、刷新、登出都属于认证职责，统一从 authStore 进入。
+const authStore = useAuthStore()
 
 // Element Plus 表单实例，用于手动触发表单校验。
 const loginFormRef = ref<FormInstance>()
@@ -108,8 +108,8 @@ const redirectToTarget = () => {
 
 // 登录流程：
 // 1. 先触发表单校验；
-// 2. 校验通过后调用 userStore.loginAction；
-// 3. userStore 内部会请求真实 /auth/login，并保存响应体中的 accessToken；
+// 2. 校验通过后调用 authStore.loginAction；
+// 3. authStore 内部会请求真实 /auth/login，并保存响应体中的 accessToken；
 // 4. refreshToken 不进入前端 JS，由后端通过 HttpOnly Cookie 写入浏览器。
 const handleLogin = async () => {
   if (!loginFormRef.value) return
@@ -118,8 +118,8 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
-    // 登录逻辑交给 Pinia 的 userStore 统一处理：接口请求、保存 token 都放在一起。
-    await userStore.loginAction({
+    // 登录逻辑交给 authStore 统一处理：接口请求、保存 token 都放在一起。
+    await authStore.loginAction({
       phone: loginForm.phone,
       password: loginForm.password,
     })
@@ -149,7 +149,7 @@ const startSmsCountdown = () => {
 }
 
 // 发送注册验证码流程：
-// 1. 只校验手机号字段，不要求用户提前填完整张注册表单；
+// 1. 只校验手机号字段，不要求用户提前填完整注册表单；
 // 2. 调用真实 /auth/register/code；
 // 3. 成功后启动前端倒计时。
 const handleSendRegisterCode = async () => {
@@ -159,7 +159,7 @@ const handleSendRegisterCode = async () => {
   sendCodeLoading.value = true
 
   try {
-    await sendRegisterSmsCode({
+    await registerCodeByPhone({
       phone: registerForm.phone,
     })
 
@@ -186,7 +186,7 @@ const handleRegister = async () => {
   loading.value = true
 
   try {
-    await userStore.registerAction({
+    await authStore.registerAction({
       phone: registerForm.phone,
       password: registerForm.password,
       confirmPassword: registerForm.confirmPassword,

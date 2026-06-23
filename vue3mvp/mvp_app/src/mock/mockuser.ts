@@ -11,7 +11,7 @@ import {
 import type { UserForm, UserItem, UserPageConfig } from '@/types/types.ts'
 
 // mockUserList 模拟后端数据库中的用户表数据，只在 mock 接口内部使用。
-// 它不是 Pinia 的全局 userStore，真实前端登录状态放在 src/stores/userStore.ts。
+// 它不是 Pinia 的全局 userStore，真实前端登录状态放在 src/stores/authStore.ts。
 const mockUserList: UserItem[] = Mock.mock<{ list: UserItem[] }>({
   'list|6': [
     {

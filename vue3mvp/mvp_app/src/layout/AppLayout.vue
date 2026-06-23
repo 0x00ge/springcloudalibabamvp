@@ -12,7 +12,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { fetchLayoutData } from '../api/dashboard' // 获取菜单等布局数据的 API
-import { useUserStore } from '@/stores/userStore.ts' // 用户状态管理（当前用户信息、登录状态、退出操作）
+import { useAuthStore } from '@/stores/authStore.ts' // 认证状态管理（当前登录用户、登录状态、退出操作）
 import type { BreadcrumbItem, MenuItem } from '../types/types' // 类型定义
 import AppMain from './components/LayoutMain.vue' // 主体内容区域（路由出口）
 import AppMenu from './components/LayoutMenu.vue' // 左侧菜单组件
@@ -36,8 +36,8 @@ const logoutLoading = ref(false)
 const route = useRoute()
 const router = useRouter()
 
-// 用户 store，用于获取当前用户信息和执行退出登录 action。
-const userStore = useUserStore()
+// 认证 store，用于获取当前登录用户信息和执行退出登录 action。
+const authStore = useAuthStore()
 
 // ==================== 计算属性 ====================
 
@@ -50,10 +50,10 @@ const userStore = useUserStore()
 const asideWidth = computed(() => (isCollapse.value ? '64px' : '220px'))
 
 /**
- * 当前用户信息，直接从 userStore 中获取。
+ * 当前登录用户信息，直接从 authStore 中获取。
  * 确保顶部栏展示的用户名、头像等来源于真实鉴权接口（/auth/me），而非 Mock 数据。
  */
-const currentUser = computed(() => userStore.currentUserInfo)
+const currentUser = computed(() => authStore.currentUserInfo)
 
 /**
  * 面包屑导航数据，根据当前路由的 matched 记录动态生成。
@@ -92,7 +92,7 @@ const handleProfile = () => {
  * 处理退出登录流程。
  * 1. 弹出二次确认框，防止误操作。
  * 2. 若确认，设置 logoutLoading 为 true 禁用按钮。
- * 3. 调用 userStore.logoutAction() 执行退出接口请求并清理 token。
+ * 3. 调用 authStore.logoutAction() 执行退出接口请求并清理 token。
  * 4. 成功后提示并跳转至登录页；失败时给出友好提示。
  * 5. 无论成功失败，最终重置 loading 状态。
  */
@@ -111,7 +111,7 @@ const handleLogout = async () => {
   logoutLoading.value = true
 
   try {
-    await userStore.logoutAction()
+    await authStore.logoutAction()
     ElMessage.success('已退出登录')
   } catch {
     // 即使接口报错，store 内部可能已清理本地 token，提示用户但继续跳转。
@@ -126,7 +126,7 @@ const handleLogout = async () => {
 
 /**
  * 组件挂载完成后执行初始化。
- * 1. 并行请求布局数据（菜单等）和用户信息（通过 userStore.loadCurrentAuthAction 调用 /auth/me）。
+ * 1. 并行请求布局数据（菜单等）和登录用户信息（通过 authStore.loadCurrentAuthAction 调用 /auth/me）。
  *    使用 Promise.all 提高加载效率。
  * 2. 将获取到的菜单数据赋值给 menus。
  * 3. 无论成功或失败，最终关闭 loading 状态。
@@ -136,7 +136,7 @@ onMounted(async () => {
   try {
     const [layoutData] = await Promise.all([
       fetchLayoutData(),
-      userStore.loadCurrentAuthAction(), // 该 action 会请求 /auth/me 并更新 userStore.currentUserInfo
+      authStore.loadCurrentAuthAction(), // 该 action 会请求 /auth/me 并更新 authStore.currentUserInfo
     ])
 
     menus.value = layoutData.menus

@@ -7,7 +7,7 @@ import axios, {
 import {ElNotification} from 'element-plus'
 
 import {BUSINESS_CODE, HTTP_STATUS} from '@/constants/httpCode.ts'
-import type {RefreshTokenResult} from '@/types/authType.ts'
+import type {AuthTokenParams} from '@/types/authType.ts'
 import {
     clearStoredAuthInfo,
     getAccessToken,
@@ -128,7 +128,7 @@ const handleRefreshAccessToken = async () => {
     // refreshPromise 为空，说明当前没有刷新请求在进行中，需要新发起一次。
     if (!refreshPromise) {
         refreshPromise = axios
-            .post<ResponseData<RefreshTokenResult>>(
+            .post<ResponseData<AuthTokenParams>>(
                 '/auth/refresh',
                 undefined,
                 {
