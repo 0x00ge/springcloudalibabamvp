@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS `t_user` (
     `birthday`      DATE            NULL DEFAULT NULL COMMENT '出生日期',
 
     -- 状态控制
+    `permission`    VARCHAR(20)     NOT NULL DEFAULT 'USER' COMMENT '用户权限: ADMIN-管理员, USER-普通用户',
     `status`        TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-正常, 2-注销',
     `last_login_at` DATETIME        NULL DEFAULT NULL COMMENT '最后登录时间',
 
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS `t_user` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_user_phone` (`phone`),
     UNIQUE KEY `uk_user_email` (`email`),
+    KEY `idx_user_permission` (`permission`),
     KEY `idx_user_deleted` (`deleted_at`),
     KEY `idx_user_created_at` (`created_at`),
     KEY `idx_user_last_login_at` (`last_login_at`)
@@ -47,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `t_user_menu` (
 
     -- 树形结构
     `parent_id`   CHAR(32)      NULL DEFAULT NULL COMMENT '父菜单ID，NULL表示一级菜单',
-    `level`       TINYINT(1)    NOT NULL DEFAULT 1 COMMENT '菜单层级: 1-一级菜单, 2-二级菜单',
+    `level`       INT           NOT NULL DEFAULT 1 COMMENT '菜单层级: 1-一级菜单, 2-二级菜单, 依次递增',
     `sort_order`  INT           NOT NULL DEFAULT 0 COMMENT '排序值，越小越靠前',
 
     -- 菜单展示
