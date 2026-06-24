@@ -34,6 +34,14 @@ public class CurrentAuthDTO {
     private String phone;
 
     /**
+     * 当前用户权限。
+     *
+     * <p>这里使用字符串而不是 user 服务里的枚举类型，是为了让 common 模块不反向依赖具体业务模块。
+     * 当前取值为 ADMIN、USER，前端 authStore 根据该字段判断是否展示管理员入口。</p>
+     */
+    private String permission;
+
+    /**
      * 登录密码。
      */
     @NotBlank(message = "密码不能为空")

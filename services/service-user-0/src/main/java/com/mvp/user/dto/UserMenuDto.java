@@ -3,7 +3,6 @@ package com.mvp.user.dto;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -53,9 +52,7 @@ public class UserMenuDto implements Serializable {
     /**
      * 菜单层级。
      */
-    @NotNull(message = "菜单层级不能为空")
     @Min(value = 1, message = "菜单层级不能小于1")
-    @Max(value = 2, message = "菜单层级不能大于2")
     @TableField(value = "level")
     private Integer level;
 

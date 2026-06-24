@@ -14,7 +14,7 @@ import java.util.Date;
  * 用户菜单表。
  *
  * <p>每条记录表示某个用户可见的一项菜单。一级菜单 {@code parentId} 为空，
- * 二级菜单通过 {@code parentId} 关联父菜单。</p>
+ * 子菜单通过 {@code parentId} 关联父菜单。</p>
  */
 @TableName(value = "t_user_menu")
 @Data
@@ -39,7 +39,7 @@ public class UserMenu implements Serializable {
     private String parentId;
 
     /**
-     * 菜单层级: 1-一级菜单, 2-二级菜单。
+     * 菜单层级: 1-一级菜单, 2-二级菜单, 依次递增。
      */
     @TableField(value = "level")
     private Integer level;

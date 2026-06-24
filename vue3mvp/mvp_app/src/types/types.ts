@@ -2,7 +2,7 @@
  * 菜单图标名称。
  * mock 接口只返回字符串名称，菜单组件再根据名称映射成 Element Plus 图标组件。
  */
-export type MenuIconName = 'Setting' | 'User' | 'UserFilled' | 'OfficeBuilding'
+export type MenuIconName = 'Setting' | 'User' | 'UserFilled' | 'OfficeBuilding' | 'Menu' | 'Tickets'
 
 /**
  * 通用下拉/单选/状态选项。
@@ -24,6 +24,14 @@ export interface OptionItem {
 export interface MenuItem {
     /** 菜单唯一标识，用于 v-for 的 key。 */
     id: string
+    /** 菜单所属用户，后端 t_user_menu 以用户维度保存可见菜单。 */
+    userId?: string
+    /** 父菜单ID；为空表示一级菜单。 */
+    parentId?: string | null
+    /** 菜单层级，一级为 1，二级为 2。 */
+    level?: number
+    /** 排序值，越小越靠前。 */
+    sortOrder?: number
     /** 菜单显示名称。 */
     title: string
     /** 菜单跳转路径，通常和路由 path 保持一致。 */
@@ -32,6 +40,25 @@ export interface MenuItem {
     icon?: MenuIconName
     /** 子菜单列表；存在 children 时渲染为 el-sub-menu。 */
     children?: MenuItem[]
+}
+
+/**
+ * 菜单管理表单数据。
+ * 新增/编辑时由前端提交给 /user/menu 接口，userId 默认使用当前登录用户。
+ */
+export interface MenuForm {
+    /** 菜单所属用户ID。 */
+    userId: string
+    /** 父菜单ID；为空表示一级菜单。 */
+    parentId?: string | null
+    /** 菜单显示名称。 */
+    title: string
+    /** 前端路由路径。 */
+    path: string
+    /** 菜单图标名称。 */
+    icon?: MenuIconName | ''
+    /** 排序值，越小越靠前。 */
+    sortOrder: number
 }
 
 /**

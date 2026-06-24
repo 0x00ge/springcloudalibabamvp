@@ -3,6 +3,7 @@ package com.mvp.user.dto;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.mvp.user.enums.UserPermission;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -112,6 +113,12 @@ public class UserDto implements Serializable {
     @PastOrPresent(message = "出生日期不能晚于当前时间")
     @TableField(value = "birthday")
     private Date birthday;
+
+    /**
+     * 用户权限: ADMIN-管理员, USER-普通用户。
+     */
+    @TableField(value = "permission")
+    private UserPermission permission;
 
     /**
      * 状态: 0-禁用, 1-正常, 2-注销

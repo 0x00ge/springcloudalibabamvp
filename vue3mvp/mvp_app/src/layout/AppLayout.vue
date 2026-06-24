@@ -11,7 +11,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { fetchLayoutData } from '../api/dashboard' // 获取菜单等布局数据的 API
+import { fetchCurrentUserMenuTree } from '@/api/menu.ts' // 当前登录用户真实菜单树
 import { useAuthStore } from '@/stores/authStore.ts' // 认证状态管理（当前登录用户、登录状态、退出操作）
 import type { BreadcrumbItem, MenuItem } from '../types/types' // 类型定义
 import AppMain from './components/LayoutMain.vue' // 主体内容区域（路由出口）
@@ -126,20 +126,19 @@ const handleLogout = async () => {
 
 /**
  * 组件挂载完成后执行初始化。
- * 1. 并行请求布局数据（菜单等）和登录用户信息（通过 authStore.loadCurrentAuthAction 调用 /auth/me）。
- *    使用 Promise.all 提高加载效率。
- * 2. 将获取到的菜单数据赋值给 menus。
+ * 1. 并行请求当前用户信息和当前用户真实菜单树。
+ * 2. 菜单数据来自 /user/menu/tree，对应后端 t_user_menu，不再依赖 mocklayout.ts 的静态菜单。
  * 3. 无论成功或失败，最终关闭 loading 状态。
  */
 onMounted(async () => {
   loading.value = true
   try {
-    const [layoutData] = await Promise.all([
-      fetchLayoutData(),
+    const [, menuTree] = await Promise.all([
       authStore.loadCurrentAuthAction(), // 该 action 会请求 /auth/me 并更新 authStore.currentUserInfo
+      fetchCurrentUserMenuTree(),
     ])
 
-    menus.value = layoutData.menus
+    menus.value = menuTree
   } finally {
     loading.value = false
   }

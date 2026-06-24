@@ -8,6 +8,7 @@ import com.mvp.common.enums.ResultCode;
 import com.mvp.common.dto.auth.AuthTokenDTO;
 import com.mvp.common.dto.auth.CurrentAuthDTO;
 import com.mvp.user.config.AuthProperties;
+import com.mvp.user.enums.UserPermission;
 import com.mvp.user.service.AuthService;
 import com.mvp.user.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -109,6 +110,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPasswordHash(passwordEncoder.encode(currentAuthDTO.getPassword()));
         user.setName(currentAuthDTO.getName());
         user.setGender(0);
+        user.setPermission(UserPermission.USER);
         user.setStatus(USER_STATUS_NORMAL);
 
         // 5. 保存用户，并删除已使用的验证码，避免同一个验证码重复注册。
@@ -274,6 +276,7 @@ public class AuthServiceImpl implements AuthService {
         dto.setId(user.getId());
         dto.setPhone(user.getPhone());
         dto.setName(user.getName());
+        dto.setPermission(user.getPermission() == null ? UserPermission.USER.getCode() : user.getPermission().getCode());
         return dto;
     }
 

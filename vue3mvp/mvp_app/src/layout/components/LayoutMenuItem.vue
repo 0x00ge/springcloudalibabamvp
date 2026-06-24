@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { OfficeBuilding, Setting, User, UserFilled } from '@element-plus/icons-vue'
+import { Menu, OfficeBuilding, Setting, Tickets, User, UserFilled } from '@element-plus/icons-vue'
 
 import type { Component } from 'vue'
 import type { MenuIconName, MenuItem } from '@/types/types.js'
 
 // 菜单图标映射表：后端/mock 只返回图标名称，组件里再映射成真正的 Element Plus 图标组件。
 const iconMap: Record<MenuIconName, Component> = {
+  Menu,
   OfficeBuilding,
   Setting,
+  Tickets,
   User,
   UserFilled,
 }

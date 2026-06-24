@@ -6,6 +6,7 @@ export interface CurrentAuthParams {
     id?: string
     name: string
     phone: string
+    permission?: 'ADMIN' | 'USER' | string
     password: string
     confirmPassword: string
     smsCode: string
@@ -28,4 +29,3 @@ export interface AuthTokenParams {
     /** refreshToken Cookie 过期秒数，前端只用于调试或展示，不保存 refreshToken 原值。 */
     refreshTokenExpiresIn: number
 }
-
