@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS `t_user_menu` (
     -- 核心标识
     `id`          CHAR(32)      NOT NULL COMMENT '菜单ID，32位无横杠UUIDv7格式',
 
+    -- 关联用户
+    `user_id`     CHAR(32)      NOT NULL COMMENT '用户ID',
+
     -- 树形结构
     `parent_id`   CHAR(32)      NULL DEFAULT NULL COMMENT '父菜单ID，NULL表示一级菜单',
     `level`       TINYINT(1)    NOT NULL DEFAULT 1 COMMENT '菜单层级: 1-一级菜单, 2-二级菜单',
@@ -58,7 +61,7 @@ CREATE TABLE IF NOT EXISTS `t_user_menu` (
     `deleted_at`  DATETIME      NULL DEFAULT NULL COMMENT '软删除时间',
 
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_menu_path` (`path`),
-    KEY `idx_menu_parent_sort` (`parent_id`, `sort_order`),
-    KEY `idx_menu_deleted` (`deleted_at`)
+    UNIQUE KEY `uk_user_menu_path` (`user_id`, `path`),
+    KEY `idx_user_menu_user_parent_sort` (`user_id`, `parent_id`, `sort_order`),
+    KEY `idx_user_menu_deleted` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户菜单表';
