@@ -52,6 +52,15 @@ public class JwtUtil {
     }
 
     /**
+     * 按指定有效期创建 accessToken。
+     *
+     * <p>refreshToken 剩余时间小于默认 accessToken 有效期时使用，避免 accessToken 活得比当前会话更久。</p>
+     */
+    public String createAccessToken(String userId, long expiresInSeconds) {
+        return createToken(userId, TYPE_ACCESS, expiresInSeconds);
+    }
+
+    /**
      * 创建 refresh 类型 token。
      */
     public String createRefreshToken(String userId) {

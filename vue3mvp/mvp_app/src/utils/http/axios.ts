@@ -250,6 +250,12 @@ axiosInstance.interceptors.response.use(
 
         // 非 200 业务 code：统一弹出后端返回的错误信息。
         if (response.data.code !== BUSINESS_CODE.SUCCESS) {
+            // refresh 失败通常只是表示 Cookie 不存在、过期或已被使用过。
+            // 这类错误交给路由守卫判断是否跳登录页，不在这里弹错误提示。
+            if (isRefreshApi(response.config.url)) {
+                return Promise.reject(response.data)
+            }
+
             ElNotification({
                 title: '错误',
                 message: response.data.message,

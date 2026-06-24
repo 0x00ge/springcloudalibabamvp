@@ -152,26 +152,34 @@ public class AuthServiceImpl implements AuthService {
     /**
      * 使用 refreshToken 刷新双 token。
      *
-     * <p>refreshToken 采用一次性使用策略：每次刷新成功后，旧 refreshToken 会从 Redis 删除。</p>
+     * <p>refreshToken 有固定会话有效期：登录时签发后最多存活 refresh-token-seconds 秒。
+     * 刷新 accessToken 时不重新签发 refreshToken，避免用户只要持续请求就无限滑动续期。</p>
      */
     @Override
     public AuthTokenDTO refresh(String refreshToken) {
         // 1. 校验 refreshToken 签名、过期时间和 token 类型。
-        JwtPayload oldRefreshPayload = jwtUtil.parseAndValidate(refreshToken, JwtUtil.TYPE_REFRESH);
+        JwtPayload refreshPayload = jwtUtil.parseAndValidate(refreshToken, JwtUtil.TYPE_REFRESH);
 
         // 2. 校验 refreshToken 是否仍在 Redis 白名单中，不在白名单说明已过期、已登出或已被使用过。
-        String refreshKey = refreshKey(oldRefreshPayload.getSub(), oldRefreshPayload.getJti());
+        String refreshKey = refreshKey(refreshPayload.getSub(), refreshPayload.getJti());
         Boolean exists = stringRedisTemplate.hasKey(refreshKey);
         if (!Boolean.TRUE.equals(exists)) {
             throw new IllegalArgumentException("refreshToken 已失效");
         }
 
-        // 3. 删除旧 refreshToken 白名单记录，保证 refreshToken 只能使用一次。
-        stringRedisTemplate.delete(refreshKey);
+        // 3. accessToken 不能比 refreshToken 活得更久，否则会出现会话已过期但 accessToken 仍可访问的窗口。
+        long refreshRemainSeconds = refreshPayload.getExp() - Instant.now().getEpochSecond();
+        long accessTokenSeconds = Math.min(jwtUtil.getAccessTokenSeconds(), refreshRemainSeconds);
+        if (accessTokenSeconds <= 0) {
+            throw new IllegalArgumentException("refreshToken 已过期");
+        }
 
-        // 4. 重新签发双 token，并保存新的 refreshToken 白名单记录。
-        AuthTokenDTO tokenDTO = createAndSaveToken(oldRefreshPayload.getSub());
-        log.info("刷新双 token 成功 userId={}", oldRefreshPayload.getSub());
+        // 4. 只重新签发 accessToken，refreshToken 和它的 Redis TTL、Cookie Max-Age 都不续期。
+        String accessToken = jwtUtil.createAccessToken(refreshPayload.getSub(), accessTokenSeconds);
+        AuthTokenDTO tokenDTO = toAuthTokenDTO(accessToken, refreshToken);
+        tokenDTO.setAccessTokenExpiresIn(accessTokenSeconds);
+        tokenDTO.setRefreshTokenExpiresIn(refreshRemainSeconds);
+        log.info("刷新 accessToken 成功 userId={} refreshRemainSeconds={}", refreshPayload.getSub(), refreshRemainSeconds);
         return tokenDTO;
     }
 

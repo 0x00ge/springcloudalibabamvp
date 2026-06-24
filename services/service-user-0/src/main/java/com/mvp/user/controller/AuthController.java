@@ -1,6 +1,7 @@
 package com.mvp.user.controller;
 
 import com.mvp.common.dto.auth.LoginDTO;
+import com.mvp.common.enums.ResultCode;
 import com.mvp.common.vo.ResultVO;
 import com.mvp.common.dto.auth.AuthTokenDTO;
 import com.mvp.common.dto.auth.CurrentAuthDTO;
@@ -117,13 +118,15 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResultVO<AuthTokenDTO> refresh(HttpServletRequest request,
                                           HttpServletResponse response) {
-        String refreshToken = getRefreshTokenCookie(request);
+        String refreshToken = findRefreshTokenCookie(request);
+        if (refreshToken == null) {
+            return ResultVO.fail(ResultCode.PARAM_ERROR.getCode(), "refreshToken Cookie 不存在");
+        }
 
         // 调用鉴权服务校验 Cookie 中的 refreshToken，并重新签发一组双 token。
         AuthTokenDTO tokenDTO = authService.refresh(refreshToken);
 
-        // 刷新成功后轮换 refreshToken Cookie，旧 refreshToken 已在 Service 中删除白名单。
-        writeRefreshTokenCookie(response, tokenDTO.getRefreshToken(), tokenDTO.getRefreshTokenExpiresIn());
+        // refreshToken 使用固定会话有效期，刷新 accessToken 时不重写 Cookie，避免 Cookie Max-Age 被续期。
         tokenDTO.setRefreshToken(null);
         return ResultVO.ok(tokenDTO);
     }
@@ -206,9 +209,24 @@ public class AuthController {
      * 从请求 Cookie 中读取 refreshToken。
      */
     private String getRefreshTokenCookie(HttpServletRequest request) {
+        String refreshToken = findRefreshTokenCookie(request);
+        if (refreshToken != null) {
+            return refreshToken;
+        }
+
+        throw new IllegalArgumentException("refreshToken Cookie 不存在");
+    }
+
+    /**
+     * 从请求 Cookie 中查找 refreshToken。
+     *
+     * <p>refresh 接口允许未登录用户刷新登录页时没有 Cookie，此时返回 null 交给接口返回统一业务失败；
+     * logout 等必须携带 refreshToken 的场景仍可使用 getRefreshTokenCookie 抛出业务异常。</p>
+     */
+    private String findRefreshTokenCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
-            throw new IllegalArgumentException("refreshToken Cookie 不存在");
+            return null;
         }
 
         for (Cookie cookie : cookies) {
@@ -217,6 +235,6 @@ public class AuthController {
             }
         }
 
-        throw new IllegalArgumentException("refreshToken Cookie 不存在");
+        return null;
     }
 }

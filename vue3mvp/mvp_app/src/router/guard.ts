@@ -10,14 +10,16 @@ export const guard = (router: Router) => {
   router.beforeEach(async (to) => {
     const authStore = useAuthStore()
 
-    // 进入登录页时不主动调用 /auth/refresh，避免后端未启动时打开登录页就出现 502。
-    // 如果当前前端内存里已经有 accessToken，才直接回后台首页。
+    // 进入登录页时只检查当前页签内是否已有 accessToken。
+    // 未登录用户刷新 /login 时不主动调用 /auth/refresh，避免没有 refreshToken Cookie 时后端报错。
+    // 已登录用户刷新受保护页面时，会在下面的 requiresAuth 分支里恢复登录态。
     if (to.path === '/login') {
       if (getAccessToken()) {
-        return '/home'
+        return (to.query.redirect as string) || '/home'
       }
 
       authStore.clearLoginState()
+      return
     }
 
     // 访问受保护页面时，先尝试从内存 accessToken 或 refreshToken 恢复登录态。
