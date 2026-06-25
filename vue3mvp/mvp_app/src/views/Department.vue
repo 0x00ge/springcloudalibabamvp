@@ -8,7 +8,7 @@ import {
   fetchDepartmentPageConfig,
   fetchDepartments,
   updateDepartment,
-} from '@/api/department.ts'
+} from '@/api/apiDepartment.js'
 import type { DepartmentForm, DepartmentItem, OptionItem } from '@/types/types.js'
 
 const departments = ref<DepartmentItem[]>([])
@@ -145,13 +145,6 @@ onMounted(async () => {
 
 <template>
   <section class="page-view">
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">Department Management</p>
-        <h1>部门管理</h1>
-      </div>
-      <el-button type="primary" @click="openCreateDialog">新增部门</el-button>
-    </div>
 
     <el-card v-loading="pageLoading" class="table-card" shadow="never">
       <div class="toolbar">

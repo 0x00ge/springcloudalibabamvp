@@ -47,7 +47,7 @@ jwt:
   # demo 密钥。真实项目请放到配置中心或环境变量中，并保证足够长、定期轮换。
   secret: mvp-jwt-demo-secret-key-change-me-please-2026
   access-token-seconds: 60
-  refresh-token-seconds: 180
+  refresh-token-seconds: 1800
 
 auth:
   blacklist-key-prefix: 'auth:blacklist:'

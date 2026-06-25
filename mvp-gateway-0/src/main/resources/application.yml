@@ -41,7 +41,7 @@ jwt:
   # demo 密钥，需要和 service-user-0 保持一致。
   secret: mvp-jwt-demo-secret-key-change-me-please-2026
   access-token-seconds: 60
-  refresh-token-seconds: 180
+  refresh-token-seconds: 1800
 
 auth:
   whitelist:

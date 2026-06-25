@@ -25,10 +25,10 @@ public class JwtProperties {
     /**
      * accessToken 有效期，单位秒。
      */
-    private long accessTokenSeconds = 30;
+    private long accessTokenSeconds = 60;
 
     /**
      * refreshToken 有效期，单位秒。
      */
-    private long refreshTokenSeconds = 60;
+    private long refreshTokenSeconds = 1800;
 }

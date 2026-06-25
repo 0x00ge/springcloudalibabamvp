@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Cellphone, Lock, Message, User } from '@element-plus/icons-vue'
 
-import { registerCodeByPhone } from '@/api/authApi.ts'
+import { registerCodeByPhone } from '@/api/apiAuth.js'
 import { useAuthStore } from '@/stores/authStore.ts'
 
 interface LoginForm {

@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 
-import { deleteUser, fetchUserPageConfig, fetchUsers, updateUser } from '@/api/user.ts'
+import { deleteUser, fetchUserPageConfig, fetchUsers, updateUser } from '@/api/apiUser.js'
 import type { OptionItem, UserForm, UserItem } from '@/types/types.js'
 
 // 用户表格数据，页面只关心渲染结果，真实数据来源统一交给 api 层。
@@ -174,13 +174,6 @@ onMounted(async () => {
 
 <template>
   <section class="page-view">
-    <!-- 页面头部：左侧展示当前模块名称，右侧提供新增入口。 -->
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">User Management</p>
-        <h1>用户管理</h1>
-      </div>
-    </div>
 
     <!-- 用户列表卡片：loading 绑定 pageLoading，让配置或列表请求期间都有反馈。 -->
     <el-card v-loading="pageLoading" class="table-card" shadow="never">
