@@ -42,10 +42,5 @@ export const guard = (router: Router) => {
                     }
                 }
             }
-
-            // 管理员路由由 authStore 统一判断权限，避免页面自己再承担权限认证职责。
-            if (to.meta.requiresAdmin && !authStore.isAdmin) {
-                return '/home/user'
-            }
         })
 }

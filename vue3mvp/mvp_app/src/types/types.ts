@@ -2,11 +2,11 @@
  * 菜单图标名称。
  * mock 接口只返回字符串名称，菜单组件再根据名称映射成 Element Plus 图标组件。
  */
-export type MenuIconName = 'Setting' | 'User' | 'UserFilled' | 'OfficeBuilding' | 'Menu' | 'Tickets'
+export type MenuIconName = 'Setting' | 'UserFilled'
 
 /**
  * 通用下拉/单选/状态选项。
- * 用户管理、部门管理、个人中心里的角色、部门、状态都可以复用这个结构。
+ * 用户管理里的角色、状态都可以复用这个结构。
  */
 export interface OptionItem {
     /** 页面上展示给用户看的文字。 */
@@ -40,25 +40,6 @@ export interface MenuItem {
     icon?: MenuIconName
     /** 子菜单列表；存在 children 时渲染为 el-sub-menu。 */
     children?: MenuItem[]
-}
-
-/**
- * 菜单管理表单数据。
- * 新增/编辑时由前端提交给 /user/menu 接口，userId 默认使用当前登录用户。
- */
-export interface MenuForm {
-    /** 菜单所属用户ID。 */
-    userId: string
-    /** 父菜单ID；为空表示一级菜单。 */
-    parentId?: string | null
-    /** 菜单显示名称。 */
-    title: string
-    /** 前端路由路径。 */
-    path: string
-    /** 菜单图标名称。 */
-    icon?: MenuIconName | ''
-    /** 排序值，越小越靠前。 */
-    sortOrder: number
 }
 
 /**
@@ -133,71 +114,4 @@ export interface UserPageConfig {
     statusOptions: OptionItem[]
     /** 新增用户时的默认表单值。 */
     defaultForm: UserForm
-}
-
-/**
- * 部门管理表格中的单条部门数据。
- */
-export interface DepartmentItem {
-    /** 部门唯一 id。 */
-    id: number
-    /** 部门名称。 */
-    name: string
-    /** 部门负责人。 */
-    leader: string
-    /** 部门成员数量。 */
-    memberCount: number
-    /** 部门状态，例如启用、停用。 */
-    status: string
-    /** 部门说明。 */
-    description: string
-}
-
-/**
- * 部门表单数据。
- * 新增/编辑弹窗不需要传 id，所以从 DepartmentItem 中去掉 id。
- */
-export type DepartmentForm = Omit<DepartmentItem, 'id'>
-
-/**
- * 部门管理页面配置。
- * 页面初始化时从 /departments/config 获取状态选项和默认表单值。
- */
-export interface DepartmentPageConfig {
-    /** 部门状态选项。 */
-    statusOptions: OptionItem[]
-    /** 新增部门时的默认表单值。 */
-    defaultForm: DepartmentForm
-}
-
-/**
- * 个人中心资料数据。
- * Profile.vue 展示和编辑时共用这一份结构。
- */
-export interface ProfileData {
-    /** 用户名。 */
-    name: string
-    /** 用户角色。 */
-    role: string
-    /** 所属部门。 */
-    department: string
-    /** 邮箱。 */
-    email: string
-    /** 手机号。 */
-    phone: string
-    /** 用户状态。 */
-    status: string
-    /** 头像文字。 */
-    avatarText: string
-}
-
-/**
- * 个人中心页面配置。
- * 用于提供部门下拉选项和状态选项。
- */
-export interface ProfilePageConfig {
-    /** 部门下拉选项。 */
-    departmentOptions: OptionItem[]
-    /** 状态选项。 */
-    statusOptions: OptionItem[]
 }

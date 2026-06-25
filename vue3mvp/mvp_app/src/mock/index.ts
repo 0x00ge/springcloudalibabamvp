@@ -1,8 +1,6 @@
 import Mock from 'mockjs'
 
-import { setupDepartmentMock } from '@/mock/mockdepartment.ts'
 import { setupLayoutMock } from '@/mock/mocklayout.ts'
-import { setupProfileMock } from '@/mock/mockprofile.ts'
 import { setupUserMock } from '@/mock/mockuser.ts'
 
 Mock.setup({
@@ -13,6 +11,4 @@ Mock.setup({
 export const setupMock = () => {
   setupLayoutMock()
   setupUserMock()
-  setupDepartmentMock()
-  setupProfileMock()
 }

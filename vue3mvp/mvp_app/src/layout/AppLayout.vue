@@ -3,7 +3,7 @@
  * @file Layout.vue
  * @description 后台管理系统的根布局组件，整合侧边栏、顶部导航和主体内容区域。
  *              该组件负责管理侧边栏折叠状态、菜单数据、用户信息、面包屑导航，
- *              并提供退出登录、个人中心跳转等全局交互。
+ *              并提供退出登录等全局交互。
  *              所有子组件（AppMenu、AppTopbar、AppMain）通过 props 和 events 通信，
  *              避免兄弟组件直接依赖，提升可维护性。
  */
@@ -11,7 +11,7 @@ import {computed, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 
-import {userMenuTree, userMenuTreeCheck} from '@/api/menu.ts' // 当前登录用户真实菜单树
+import {userMenuTree} from '@/api/menu.ts' // 当前登录用户真实菜单树
 import {useAuthStore} from '@/stores/authStore.ts' // 认证状态管理（当前登录用户、登录状态、退出操作）
 import type {BreadcrumbItem, MenuItem} from '../types/types' // 类型定义
 import AppMain from './components/LayoutMain.vue' // 主体内容区域（路由出口）
@@ -81,16 +81,6 @@ const breadcrumbs = computed<BreadcrumbItem[]>(
 const toggleSidebar =
     () => {
       isCollapse.value = !isCollapse.value
-    }
-
-/**
- * 跳转到个人中心页面。
- * 由顶部栏用户下拉菜单中的“个人中心”项触发。
- * 路由路径为 '/home/profile'，需确保该路由已注册。
- */
-const handleProfile =
-    () => {
-      router.push('/home/profile')
     }
 
 /**
@@ -177,14 +167,13 @@ onMounted(
       <!--
         顶部导航栏（AppTopbar）
         - 接收面包屑、折叠状态、加载状态、用户信息等 props。
-        - 通过事件监听：toggle-collapse（折叠切换）、profile（个人中心）、logout（退出登录）。
+        - 通过事件监听：toggle-collapse（折叠切换）、logout（退出登录）。
       -->
       <AppTopbar
           :breadcrumbs="breadcrumbs"
           :collapse="isCollapse"
           :loading="loading || logoutLoading"
           :user="currentUser"
-          @profile="handleProfile"
           @toggle-collapse="toggleSidebar"
           @logout="handleLogout"
       />

@@ -1,7 +1,7 @@
 import Mock from 'mockjs'
 
 import { BUSINESS_CODE } from '@/constants/httpCode.ts'
-import type { DepartmentItem, OptionItem } from '@/types/types.ts'
+import type { OptionItem } from '@/types/types.ts'
 
 export interface MockRequestOptions {
   url: string
@@ -39,17 +39,3 @@ export const statusOptionsStore: OptionItem[] = Mock.mock<{ list: OptionItem[] }
 }).list
 
 export const pickValue = (options: OptionItem[]) => Mock.Random.pick(options).value
-
-// 部门数据会被 mockdepartment.ts 和 mockprofile.ts 共用，所以放在公共 mock 文件中维护同一份内存数据。
-export const departmentStore: DepartmentItem[] = Mock.mock<{ list: DepartmentItem[] }>({
-  'list|5': [
-    {
-      'id|+1': 1,
-      name: '@pick(["技术部", "运营部", "产品部", "市场部", "财务部"])',
-      leader: '@cname',
-      memberCount: '@integer(6, 48)',
-      status: () => pickValue(statusOptionsStore),
-      description: '@ctitle(10, 24)',
-    },
-  ],
-}).list

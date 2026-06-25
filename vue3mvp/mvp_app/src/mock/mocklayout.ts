@@ -13,7 +13,6 @@ export const createLayoutMock = (): LayoutMockData =>
         icon: 'Setting',
         children: [
           { id: '@guid', title: '用户管理', path: '/home/user', icon: 'UserFilled' },
-          { id: '@guid', title: '部门管理', path: '/home/department', icon: 'OfficeBuilding' },
         ],
       },
     ],

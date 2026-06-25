@@ -13,7 +13,6 @@ defineProps<{
 
 // 顶部栏不直接修改侧栏状态，只向父组件抛出事件，由 AppLayout 统一处理状态变化。
 defineEmits<{
-  profile: []
   toggleCollapse: []
   logout: []
 }>()
@@ -53,7 +52,6 @@ defineEmits<{
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item @click="$emit('profile')">个人中心</el-dropdown-item>
             <el-dropdown-item @click="$emit('logout')">退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>

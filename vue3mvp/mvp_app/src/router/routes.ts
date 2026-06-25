@@ -33,34 +33,6 @@ export const routes: RouteRecordRaw[] = [
           title: '用户管理',
         },
       },
-      {
-        path: 'department',
-        name: 'Department',
-        component: () => import('@/views/Department.vue'),
-        meta: {
-          requiresAuth: true,
-          title: '部门管理',
-        },
-      },
-      {
-        path: 'menu',
-        name: 'MenuManagement',
-        component: () => import('@/views/MenuManagement.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresAdmin: true,
-          title: '菜单管理',
-        },
-      },
-      {
-        path: 'profile',
-        name: 'Profile',
-        component: () => import('@/views/Profile.vue'),
-        meta: {
-          requiresAuth: true,
-          title: '个人中心',
-        },
-      },
     ],
   },
   {

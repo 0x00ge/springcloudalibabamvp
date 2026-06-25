@@ -148,14 +148,6 @@ export const useAuthStore =
         const isLogin = computed(() => Boolean(getAccessToken()))
 
         /**
-         * 是否管理员。
-         *
-         * 权限属于认证态的一部分，所以统一放在 authStore，不通过 userStore 中转。
-         * 后端 /auth/me 返回 permission=ADMIN 时展示管理员入口，并允许进入管理员路由。
-         */
-        const isAdmin = computed(() => currentAuth.value?.permission === 'ADMIN')
-
-        /**
          * 是否可以直接发起需要登录的业务请求。
          * 和 isLogin 不同，这里还会把“即将过期”的 accessToken 判为无效。
          */
@@ -276,7 +268,6 @@ export const useAuthStore =
             currentAuth,
             currentUserInfo,
             isLogin,
-            isAdmin,
             hasValidLogin,
             clearLoginState,
             loginAction,
