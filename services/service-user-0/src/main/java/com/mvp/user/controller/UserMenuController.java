@@ -52,10 +52,10 @@ public class UserMenuController extends BaseController<UserMenu, UserMenuDto> {
     /**
      * 管理端查询菜单树。
      */
-    @GetMapping("/manage/tree")
-    public ResultVO<List<UserMenuDto>> manageTree(@RequestHeader("X-User-Id") @NotBlank(message = "用户ID不能为空") String operatorUserId,
+    @GetMapping("/tree/check")
+    public ResultVO<List<UserMenuDto>> treeCheck(@RequestHeader("X-User-Id") @NotBlank(message = "用户ID不能为空") String operatorUserId,
                                                   @RequestParam(required = false) String userId) {
-        return ResultVO.ok(userMenuService.manageTree(operatorUserId, userId));
+        return ResultVO.ok(userMenuService.treeCheck(operatorUserId, userId));
     }
 
     /**
@@ -64,7 +64,7 @@ public class UserMenuController extends BaseController<UserMenu, UserMenuDto> {
     @Override
     @GetMapping("/{id}")
     public ResultVO<UserMenuDto> getById(@PathVariable String id) {
-        userMenuService.manageTree(currentUserId(), currentUserId());
+        userMenuService.treeCheck(currentUserId(), currentUserId());
         return super.getById(id);
     }
 
@@ -104,7 +104,7 @@ public class UserMenuController extends BaseController<UserMenu, UserMenuDto> {
     @GetMapping("/page")
     public ResultVO<IPage<UserMenuDto>> page(@RequestParam(defaultValue = "1") Long page,
                                              @RequestParam(defaultValue = "10") Long size) {
-        userMenuService.manageTree(currentUserId(), currentUserId());
+        userMenuService.treeCheck(currentUserId(), currentUserId());
         return super.page(page, size);
     }
 

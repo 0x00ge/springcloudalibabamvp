@@ -26,7 +26,7 @@ public interface UserMenuService extends IService<UserMenu> {
      * @param targetUserId   被管理的用户ID
      * @return 菜单树
      */
-    List<UserMenuDto> manageTree(String operatorUserId, String targetUserId);
+    List<UserMenuDto> treeCheck(String operatorUserId, String targetUserId);
 
     /**
      * 管理端新增菜单。

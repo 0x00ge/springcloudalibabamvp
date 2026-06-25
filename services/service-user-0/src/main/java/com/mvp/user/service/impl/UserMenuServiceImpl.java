@@ -45,7 +45,7 @@ public class UserMenuServiceImpl extends ServiceImpl<UserMenuMapper, UserMenu>
     }
 
     @Override
-    public List<UserMenuDto> manageTree(String operatorUserId, String targetUserId) {
+    public List<UserMenuDto> treeCheck(String operatorUserId, String targetUserId) {
         requireAdmin(operatorUserId);
         String queryUserId = StringUtils.hasText(targetUserId) ? targetUserId : operatorUserId;
         getExistingUser(queryUserId);

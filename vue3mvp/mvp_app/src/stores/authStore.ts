@@ -218,7 +218,7 @@ export const useAuthStore =
          * 前端不会伪造 X-User-Id；该请求先经过 gateway 校验 accessToken，
          * 再由 gateway 把当前用户 ID 透传给 user 服务。
          */
-        const loadCurrentAuthAction =
+        const getAuthAction =
             async () => {
                 currentAuth.value = await getCurrentAuth()
 
@@ -281,7 +281,7 @@ export const useAuthStore =
             clearLoginState,
             loginAction,
             registerAction,
-            loadCurrentAuthAction,
+            getAuthAction,
             refreshLoginStateAction,
             logoutAction,
         }

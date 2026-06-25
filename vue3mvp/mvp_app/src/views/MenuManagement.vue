@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 
-import { createMenu, deleteMenu, fetchManageMenuTree, updateMenu } from '@/api/menu.ts'
+import { createMenu, deleteMenu, userMenuTreeCheck, updateMenu } from '@/api/menu.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
 import type { MenuForm, MenuIconName, MenuItem } from '@/types/types.ts'
 
@@ -93,7 +93,7 @@ const loadMenus = async () => {
   loading.value = true
 
   try {
-    menuTree.value = await fetchManageMenuTree(authStore.currentAuth?.id)
+    menuTree.value = await userMenuTreeCheck(authStore.currentAuth?.id)
   } finally {
     loading.value = false
   }
@@ -163,7 +163,7 @@ const handleReset = () => {
 
 onMounted(async () => {
   if (!authStore.currentAuth) {
-    await authStore.loadCurrentAuthAction()
+    await authStore.getAuthAction()
   }
   Object.assign(form, defaultForm())
   await loadMenus()

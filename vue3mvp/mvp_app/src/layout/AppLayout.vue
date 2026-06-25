@@ -7,13 +7,13 @@
  *              所有子组件（AppMenu、AppTopbar、AppMain）通过 props 和 events 通信，
  *              避免兄弟组件直接依赖，提升可维护性。
  */
-import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import {computed, onMounted, ref} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {ElMessage, ElMessageBox} from 'element-plus'
 
-import { fetchCurrentUserMenuTree } from '@/api/menu.ts' // 当前登录用户真实菜单树
-import { useAuthStore } from '@/stores/authStore.ts' // 认证状态管理（当前登录用户、登录状态、退出操作）
-import type { BreadcrumbItem, MenuItem } from '../types/types' // 类型定义
+import {userMenuTree, userMenuTreeCheck} from '@/api/menu.ts' // 当前登录用户真实菜单树
+import {useAuthStore} from '@/stores/authStore.ts' // 认证状态管理（当前登录用户、登录状态、退出操作）
+import type {BreadcrumbItem, MenuItem} from '../types/types' // 类型定义
 import AppMain from './components/LayoutMain.vue' // 主体内容区域（路由出口）
 import AppMenu from './components/LayoutMenu.vue' // 左侧菜单组件
 import AppTopbar from './components/LayoutTopbar.vue' // 顶部导航栏组件
@@ -47,26 +47,29 @@ const authStore = useAuthStore()
  * 折叠时保持 64px（仅显示图标），展开时为 220px（显示图标+文字）。
  * 该值绑定到 el-aside 的 :width 属性，并配合 CSS transition 实现平滑动画。
  */
-const asideWidth = computed(() => (isCollapse.value ? '64px' : '220px'))
+const asideWidth = computed(
+    () => (isCollapse.value ? '64px' : '220px'))
 
 /**
  * 当前登录用户信息，直接从 authStore 中获取。
  * 确保顶部栏展示的用户名、头像等来源于真实鉴权接口（/auth/me），而非 Mock 数据。
  */
-const currentUser = computed(() => authStore.currentUserInfo)
+const currentUser = computed(
+    () => authStore.currentUserInfo)
 
 /**
  * 面包屑导航数据，根据当前路由的 matched 记录动态生成。
  * 过滤出 meta.title 存在的路由记录，并映射为 { title, path } 格式。
  * 这样不再依赖后端返回的 breadcrumbs，更加灵活和准确。
  */
-const breadcrumbs = computed<BreadcrumbItem[]>(() =>
-  route.matched
-    .filter((matchedRoute) => matchedRoute.meta.title)
-    .map((matchedRoute) => ({
-      title: matchedRoute.meta.title as string,
-      path: matchedRoute.path,
-    })),
+const breadcrumbs = computed<BreadcrumbItem[]>(
+    () =>
+        route.matched
+            .filter((matchedRoute) => matchedRoute.meta.title)
+            .map((matchedRoute) => ({
+              title: matchedRoute.meta.title as string,
+              path: matchedRoute.path,
+            })),
 )
 
 // ==================== 事件处理函数 ====================
@@ -75,18 +78,20 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() =>
  * 切换侧边栏折叠/展开状态。
  * 由顶部栏的菜单按钮触发，通过 @toggle-collapse 事件传递到此。
  */
-const toggleSidebar = () => {
-  isCollapse.value = !isCollapse.value
-}
+const toggleSidebar =
+    () => {
+      isCollapse.value = !isCollapse.value
+    }
 
 /**
  * 跳转到个人中心页面。
  * 由顶部栏用户下拉菜单中的“个人中心”项触发。
  * 路由路径为 '/home/profile'，需确保该路由已注册。
  */
-const handleProfile = () => {
-  router.push('/home/profile')
-}
+const handleProfile =
+    () => {
+      router.push('/home/profile')
+    }
 
 /**
  * 处理退出登录流程。
@@ -96,31 +101,32 @@ const handleProfile = () => {
  * 4. 成功后提示并跳转至登录页；失败时给出友好提示。
  * 5. 无论成功失败，最终重置 loading 状态。
  */
-const handleLogout = async () => {
-  // 二次确认
-  const confirmed = await ElMessageBox.confirm('确定退出当前账号吗？', '退出登录', {
-    type: 'warning',
-    confirmButtonText: '退出',
-    cancelButtonText: '取消',
-  })
-    .then(() => true)
-    .catch(() => false)
+const handleLogout =
+    async () => {
+      // 二次确认
+      const confirmed = await ElMessageBox.confirm('确定退出当前账号吗？', '退出登录', {
+        type: 'warning',
+        confirmButtonText: '退出',
+        cancelButtonText: '取消',
+      })
+          .then(() => true)
+          .catch(() => false)
 
-  if (!confirmed) return
+      if (!confirmed) return
 
-  logoutLoading.value = true
+      logoutLoading.value = true
 
-  try {
-    await authStore.logoutAction()
-    ElMessage.success('已退出登录')
-  } catch {
-    // 即使接口报错，store 内部可能已清理本地 token，提示用户但继续跳转。
-    ElMessage.warning('已清理本地登录状态')
-  } finally {
-    logoutLoading.value = false
-    router.replace('/login')
-  }
-}
+      try {
+        await authStore.logoutAction()
+        ElMessage.success('已退出登录')
+      } catch {
+        // 即使接口报错，store 内部可能已清理本地 token，提示用户但继续跳转。
+        ElMessage.warning('已清理本地登录状态')
+      } finally {
+        logoutLoading.value = false
+        router.replace('/login')
+      }
+    }
 
 // ==================== 生命周期 ====================
 
@@ -130,19 +136,20 @@ const handleLogout = async () => {
  * 2. 菜单数据来自 /user/menu/tree，对应后端 t_user_menu，不再依赖 mocklayout.ts 的静态菜单。
  * 3. 无论成功或失败，最终关闭 loading 状态。
  */
-onMounted(async () => {
-  loading.value = true
-  try {
-    const [, menuTree] = await Promise.all([
-      authStore.loadCurrentAuthAction(), // 该 action 会请求 /auth/me 并更新 authStore.currentUserInfo
-      fetchCurrentUserMenuTree(),
-    ])
+onMounted(
+    async () => {
+      loading.value = true
+      try {
+        const [, menuTree] = await Promise.all([
+          authStore.getAuthAction(), // 该 action 会请求 /auth/me 并更新 authStore.currentUserInfo
+          userMenuTree(),
+        ])
 
-    menus.value = menuTree
-  } finally {
-    loading.value = false
-  }
-})
+        menus.value = menuTree
+      } finally {
+        loading.value = false
+      }
+    })
 </script>
 
 <template>
@@ -158,7 +165,7 @@ onMounted(async () => {
       - 内部包含 AppMenu 组件，传递折叠状态和菜单数据。
     -->
     <el-aside class="app-aside" :width="asideWidth">
-      <AppMenu :collapse="isCollapse" :menus="menus" />
+      <AppMenu :collapse="isCollapse" :menus="menus"/>
     </el-aside>
 
     <!--
@@ -173,20 +180,20 @@ onMounted(async () => {
         - 通过事件监听：toggle-collapse（折叠切换）、profile（个人中心）、logout（退出登录）。
       -->
       <AppTopbar
-        :breadcrumbs="breadcrumbs"
-        :collapse="isCollapse"
-        :loading="loading || logoutLoading"
-        :user="currentUser"
-        @profile="handleProfile"
-        @toggle-collapse="toggleSidebar"
-        @logout="handleLogout"
+          :breadcrumbs="breadcrumbs"
+          :collapse="isCollapse"
+          :loading="loading || logoutLoading"
+          :user="currentUser"
+          @profile="handleProfile"
+          @toggle-collapse="toggleSidebar"
+          @logout="handleLogout"
       />
 
       <!--
         主体内容区域（AppMain）
         - 内部通常包含 <router-view>，用于渲染当前路由对应的页面组件。
       -->
-      <AppMain />
+      <AppMain/>
     </el-container>
   </el-container>
 </template>
