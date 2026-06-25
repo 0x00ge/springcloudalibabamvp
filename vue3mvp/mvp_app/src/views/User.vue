@@ -5,12 +5,28 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { createUser, deleteUser, fetchUserPageConfig, fetchUsers, updateUser } from '@/api/apiUser.js'
 import type { OptionItem, UserForm, UserItem } from '@/types/types.js'
 
+type UserQueryField = 'name' | 'phone' | 'role' | 'email' | 'status'
+
 // 用户表格数据，页面只关心渲染结果，真实数据来源统一交给 api 层。
 const users = ref<UserItem[]>([])
 // 表格加载状态：只控制用户列表请求期间的 loading。
 const tableLoading = ref(false)
 // 页面配置加载状态：角色、状态、默认表单等字典请求期间使用。
 const configLoading = ref(false)
+
+const queryField = ref<UserQueryField>('name')
+const queryValue = ref('')
+const activeQuery = reactive({
+  field: 'name' as UserQueryField,
+  value: '',
+})
+const queryFieldOptions: Array<{ label: string; value: UserQueryField }> = [
+  { label: '用户名', value: 'name' },
+  { label: '手机号', value: 'phone' },
+  { label: '角色', value: 'role' },
+  { label: '邮箱', value: 'email' },
+  { label: '状态', value: 'status' },
+]
 
 // 控制新增/编辑弹窗显示隐藏，同一个弹窗复用两种场景。
 const dialogVisible = ref(false)
@@ -65,6 +81,13 @@ const statusTagTypeMap = computed(() =>
   }, {}),
 )
 
+const filteredUsers = computed(() => {
+  const value = activeQuery.value.trim().toLowerCase()
+  if (!value) return users.value
+
+  return users.value.filter((user) => String(user[activeQuery.field] || '').toLowerCase().includes(value))
+})
+
 // 加载用户列表：
 // 1. 页面初始化、新增/编辑/删除成功后都会调用。
 // 2. fetchUsers 内部走 utils/http 封装的 axios。
@@ -110,6 +133,18 @@ const resetForm = () => {
 const openCreateDialog = () => {
   resetForm()
   dialogVisible.value = true
+}
+
+const handleQuery = () => {
+  activeQuery.field = queryField.value
+  activeQuery.value = queryValue.value
+}
+
+const handleClearQuery = () => {
+  queryField.value = 'name'
+  queryValue.value = ''
+  activeQuery.field = 'name'
+  activeQuery.value = ''
 }
 
 // 打开编辑弹窗：记录当前用户 id，并把当前行数据回填到表单中。
@@ -176,9 +211,24 @@ onMounted(async () => {
 <template>
   <section class="page-view">
     <div class="page-header">
-      <div>
-        <p class="eyebrow">User Management</p>
-        <h1>用户管理</h1>
+      <div class="query-panel">
+        <el-select v-model="queryField" class="query-field" placeholder="查询字段">
+          <el-option
+            v-for="item in queryFieldOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+        <el-input
+          v-model="queryValue"
+          class="query-input"
+          clearable
+          placeholder="请输入查询内容"
+          @keyup.enter="handleQuery"
+        />
+        <el-button type="primary" @click="handleQuery">查询</el-button>
+        <el-button @click="handleClearQuery">清空</el-button>
       </div>
       <el-button type="primary" @click="openCreateDialog">新增用户</el-button>
     </div>
@@ -186,7 +236,7 @@ onMounted(async () => {
     <!-- 用户列表卡片：loading 绑定 pageLoading，让配置或列表请求期间都有反馈。 -->
     <el-card v-loading="pageLoading" class="table-card" shadow="never">
       <!-- 用户表格：数据来自 users，操作列调用同一个弹窗和删除流程。 -->
-      <el-table v-loading="tableLoading" :data="users" stripe>
+      <el-table v-loading="tableLoading" :data="filteredUsers" stripe>
         <el-table-column prop="name" label="用户名" min-width="140" />
         <el-table-column prop="phone" label="手机号" min-width="140" />
         <el-table-column prop="role" label="角色" min-width="140" />
@@ -279,19 +329,18 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.page-header h1 {
-  /* 页面主标题字号比普通卡片标题更醒目。 */
-  margin-top: 4px;
-  color: #1f2937;
-  font-size: 26px;
-  line-height: 1.2;
+.query-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.eyebrow {
-  /* 英文辅助标题弱化显示，只作为页面识别补充。 */
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
+.query-field {
+  width: 128px;
+}
+
+.query-input {
+  width: 260px;
 }
 
 .table-card {
@@ -310,6 +359,17 @@ onMounted(async () => {
     /* 小屏下改成纵向排列，避免按钮和输入框被挤压。 */
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .query-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .query-field,
+  .query-input,
+  .query-panel :deep(.el-button) {
+    width: 100%;
   }
 }
 </style>
