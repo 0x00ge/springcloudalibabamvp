@@ -28,7 +28,7 @@ export const guard = (router: Router) => {
                 try {
                     await authStore.refreshLoginStateAction()
                     if (!authStore.currentAuth) {
-                        await authStore.loadCurrentAuthAction()
+                        await authStore.getAuthAction()
                     }
                 } catch {
                     authStore.clearLoginState()

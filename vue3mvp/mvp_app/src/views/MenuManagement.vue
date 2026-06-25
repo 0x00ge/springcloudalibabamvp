@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 
-import { createMenu, deleteMenu, userMenuTreeCheck, updateMenu } from '@/api/menu.ts'
+import {createUserMenu, deleteUserMenu, userMenuTreeCheck, updateUserMenu} from '@/api/menu.ts'
 import { useAuthStore } from '@/stores/authStore.ts'
 import type { MenuForm, MenuIconName, MenuItem } from '@/types/types.ts'
 
@@ -131,10 +131,10 @@ const handleSubmit = async () => {
 
   try {
     if (editingId.value) {
-      await updateMenu(editingId.value, form)
+      await updateUserMenu(editingId.value, form)
       ElMessage.success('菜单修改成功')
     } else {
-      await createMenu(form)
+      await createUserMenu(form)
       ElMessage.success('菜单新增成功')
     }
 
@@ -152,7 +152,7 @@ const handleDelete = async (menu: MenuItem) => {
     cancelButtonText: '取消',
   })
 
-  await deleteMenu(menu.id)
+  await deleteUserMenu(menu.id)
   ElMessage.success('菜单删除成功')
   await loadMenus()
 }
