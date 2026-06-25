@@ -1,9 +1,9 @@
-import {del, get, put} from '@/utils/http/http.ts'
+import {del, get, post, put} from '@/utils/http/http.ts'
 
 import type {UserForm, UserItem, UserPageConfig} from '@/types/types.ts'
 
 interface UserDto {
-    id: string
+    id?: string
     phone: string
     email?: string
     passwordHash?: string
@@ -43,7 +43,7 @@ const statusValueMap: Record<string, number> = {
 
 const toUserItem =
     (user: UserDto): UserItem => ({
-        id: user.id,
+        id: user.id || '',
         name: user.name,
         phone: user.phone,
         role: roleMap[user.permission || 'USER'] || user.permission || '普通用户',
@@ -54,7 +54,6 @@ const toUserItem =
 
 const toUserDto =
     (data: UserForm): UserDto => ({
-        id: '',
         name: data.name,
         phone: data.phone,
         email: data.email || undefined,
@@ -86,20 +85,18 @@ export const fetchUserPageConfig =
     })
 
 export const fetchUsers =
-    async (keyword = '') => {
+    async () => {
         const page = await get<PageResult<UserDto>>('/user/page', {page: 1, size: 100})
-        const users = page.records.map(toUserItem)
-        const value = keyword.trim().toLowerCase()
+        return page.records.map(toUserItem)
+    }
 
-        if (!value) return users
-
-        return users.filter(
-            (user) =>
-                user.name.toLowerCase().includes(value) ||
-                user.phone.includes(value) ||
-                user.email.toLowerCase().includes(value) ||
-                user.role.toLowerCase().includes(value),
-        )
+export const createUser =
+    async (data: UserForm) => {
+        const id = await post<string>('/user', toUserDto(data))
+        return {
+            id,
+            ...data,
+        } as UserItem
     }
 
 export const updateUser =

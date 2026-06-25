@@ -7,6 +7,7 @@ import com.mvp.user.entity.User;
 import com.mvp.common.vo.ResultVO;
 import com.mvp.user.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,7 @@ import java.io.Serializable;
 public class UserController extends BaseController<User, UserDto> {
 
     private final UserService userService;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public UserController(UserService userService) {
         super(userService);
@@ -50,12 +52,14 @@ public class UserController extends BaseController<User, UserDto> {
     @Override
     @PostMapping
     public ResultVO<Serializable> save(@Valid @RequestBody UserDto dto) {
+        encodePlainPassword(dto);
         return super.save(dto);
     }
 
     @Override
     @PutMapping("/{id}")
     public ResultVO<Void> update(@PathVariable String id, @Valid @RequestBody UserDto dto) {
+        encodePlainPassword(dto);
         return super.update(id, dto);
     }
 
@@ -70,5 +74,14 @@ public class UserController extends BaseController<User, UserDto> {
     @GetMapping("/test")
     public ResultVO<String> getTest() {
         return ResultVO.ok(userService.getTest());
+    }
+
+    private void encodePlainPassword(UserDto dto) {
+        String passwordHash = dto.getPasswordHash();
+        if (passwordHash == null || passwordHash.isBlank() || passwordHash.startsWith("$2")) {
+            return;
+        }
+
+        dto.setPasswordHash(passwordEncoder.encode(passwordHash));
     }
 }

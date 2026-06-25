@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 
-import { deleteUser, fetchUserPageConfig, fetchUsers, updateUser } from '@/api/apiUser.js'
+import { createUser, deleteUser, fetchUserPageConfig, fetchUsers, updateUser } from '@/api/apiUser.js'
 import type { OptionItem, UserForm, UserItem } from '@/types/types.js'
 
 // 用户表格数据，页面只关心渲染结果，真实数据来源统一交给 api 层。
@@ -12,11 +12,9 @@ const tableLoading = ref(false)
 // 页面配置加载状态：角色、状态、默认表单等字典请求期间使用。
 const configLoading = ref(false)
 
-// keyword 是查询条件，会作为 query 参数传给 /users 接口。
-const keyword = ref('')
 // 控制新增/编辑弹窗显示隐藏，同一个弹窗复用两种场景。
 const dialogVisible = ref(false)
-// editingId 有值代表编辑模式。
+// editingId 有值代表编辑模式，没有值代表新增模式。
 const editingId = ref<string>()
 // Element Plus 表单实例，用于触发表单校验和清空校验状态。
 const formRef = ref<FormInstance>()
@@ -32,7 +30,7 @@ const form = reactive<UserForm>({
   role: '',
   status: '',
   email: '',
-  passwordHash: '',
+  passwordHash: '123456',
 })
 
 // defaultForm 是接口下发的默认表单模板，不直接绑定输入框，只用来重置 form。
@@ -42,7 +40,7 @@ const defaultForm = reactive<UserForm>({
   role: '',
   status: '',
   email: '',
-  passwordHash: '',
+  passwordHash: '123456',
 })
 
 // 表单校验规则集中维护，提交前通过 formRef.validate() 统一触发。
@@ -52,9 +50,10 @@ const rules: FormRules<UserForm> = {
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
   email: [{ type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
+  passwordHash: [{ required: true, message: '请输入初始密码', trigger: 'blur' }],
 }
 
-const dialogTitle = computed(() => '编辑用户')
+const dialogTitle = computed(() => (editingId.value ? '编辑用户' : '新增用户'))
 // 页面整体 loading 合并表格请求和配置请求，任意一个请求未完成时都显示加载态。
 const pageLoading = computed(() => tableLoading.value || configLoading.value)
 // 把接口返回的状态配置转换成 Map，表格渲染 tag 时可以快速按状态取颜色。
@@ -67,14 +66,14 @@ const statusTagTypeMap = computed(() =>
 )
 
 // 加载用户列表：
-// 1. 页面初始化、查询、重置、新增/编辑/删除成功后都会调用。
+// 1. 页面初始化、新增/编辑/删除成功后都会调用。
 // 2. fetchUsers 内部走 utils/http 封装的 axios。
 // 3. 用户数据来自真实后端 /user/page。
 const loadUsers = async () => {
   tableLoading.value = true
 
   try {
-    users.value = await fetchUsers(keyword.value)
+    users.value = await fetchUsers()
   } finally {
     tableLoading.value = false
   }
@@ -108,6 +107,11 @@ const resetForm = () => {
   formRef.value?.clearValidate()
 }
 
+const openCreateDialog = () => {
+  resetForm()
+  dialogVisible.value = true
+}
+
 // 打开编辑弹窗：记录当前用户 id，并把当前行数据回填到表单中。
 const openEditDialog = (user: UserItem) => {
   editingId.value = user.id
@@ -131,10 +135,13 @@ const handleSubmit = async () => {
 
   await formRef.value.validate()
 
-  if (!editingId.value) return
-
-  await updateUser(editingId.value, form)
-  ElMessage.success('用户修改成功')
+  if (editingId.value) {
+    await updateUser(editingId.value, form)
+    ElMessage.success('用户修改成功')
+  } else {
+    await createUser(form)
+    ElMessage.success('用户新增成功')
+  }
 
   dialogVisible.value = false
   await loadUsers()
@@ -154,12 +161,6 @@ const handleDelete = async (user: UserItem) => {
   await loadUsers()
 }
 
-// 重置查询条件：清空关键字后重新请求完整用户列表。
-const handleReset = () => {
-  keyword.value = ''
-  loadUsers()
-}
-
 // 状态颜色由接口配置中的 tagType 决定，页面不关心具体状态文案。
 // 如果后端新增了别的状态但没给颜色，默认使用 info，避免页面报错。
 const getStatusTagType = (status: string) => statusTagTypeMap.value[status] || 'info'
@@ -174,16 +175,16 @@ onMounted(async () => {
 
 <template>
   <section class="page-view">
+    <div class="page-header">
+      <div>
+        <p class="eyebrow">User Management</p>
+        <h1>用户管理</h1>
+      </div>
+      <el-button type="primary" @click="openCreateDialog">新增用户</el-button>
+    </div>
 
     <!-- 用户列表卡片：loading 绑定 pageLoading，让配置或列表请求期间都有反馈。 -->
     <el-card v-loading="pageLoading" class="table-card" shadow="never">
-      <!-- 查询工具栏：关键字双向绑定 keyword，查询和重置都重新请求接口。 -->
-      <div class="toolbar">
-        <el-input v-model="keyword" class="search-input" placeholder="搜索用户名称、手机号、角色或邮箱" clearable />
-        <el-button type="primary" @click="loadUsers">查询</el-button>
-        <el-button @click="handleReset">重置</el-button>
-      </div>
-
       <!-- 用户表格：数据来自 users，操作列调用同一个弹窗和删除流程。 -->
       <el-table v-loading="tableLoading" :data="users" stripe>
         <el-table-column prop="name" label="用户名" min-width="140" />
@@ -228,6 +229,9 @@ onMounted(async () => {
         <!-- 邮箱：输入内容由 Element Plus 按 email 类型规则校验。 -->
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item v-if="!editingId" label="初始密码" prop="passwordHash">
+          <el-input v-model="form.passwordHash" placeholder="请输入初始密码" show-password />
         </el-form-item>
         <!-- 状态：状态选项从配置接口返回，和表格 tag 颜色使用同一份数据源。 -->
         <el-form-item label="状态" prop="status">
@@ -301,35 +305,11 @@ onMounted(async () => {
   padding: 18px;
 }
 
-.toolbar {
-  /* 查询条件和按钮横向排列，便于快速筛选。 */
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.search-input {
-  /* 搜索框固定宽度，避免桌面端占用过多工具栏空间。 */
-  width: 320px;
-}
-
 @media (max-width: 768px) {
-  .page-header,
-  .toolbar {
+  .page-header {
     /* 小屏下改成纵向排列，避免按钮和输入框被挤压。 */
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .search-input {
-    /* 移动端搜索框占满一行，提升输入体验。 */
-    width: 100%;
-  }
-
-  .toolbar :deep(.el-button) {
-    /* 移动端工具栏按钮占满整行，避免宽度不一致。 */
-    width: 100%;
   }
 }
 </style>
