@@ -1,7 +1,7 @@
 import Mock from 'mockjs'
 
 import { BUSINESS_CODE } from '@/constants/httpCode.ts'
-import type { OptionItem } from '@/types/types.ts'
+import type { DepartmentItem, OptionItem } from '@/types/types.ts'
 
 export interface MockRequestOptions {
   url: string
@@ -23,14 +23,6 @@ export const unauthorized = (message = '登录已过期') => ({
 
 export const parseBody = <T>(body?: string): T => (body ? JSON.parse(body) : ({} as T))
 
-export const roleOptionsStore: OptionItem[] = Mock.mock<{ list: OptionItem[] }>({
-  list: [
-    { label: '超级管理员', value: '超级管理员' },
-    { label: '运营管理员', value: '运营管理员' },
-    { label: '普通用户', value: '普通用户' },
-  ],
-}).list
-
 export const statusOptionsStore: OptionItem[] = Mock.mock<{ list: OptionItem[] }>({
   list: [
     { label: '启用', value: '启用', tagType: 'success' },
@@ -39,3 +31,16 @@ export const statusOptionsStore: OptionItem[] = Mock.mock<{ list: OptionItem[] }
 }).list
 
 export const pickValue = (options: OptionItem[]) => Mock.Random.pick(options).value
+
+export const departmentStore: DepartmentItem[] = Mock.mock<{ list: DepartmentItem[] }>({
+  'list|5': [
+    {
+      'id|+1': 1,
+      name: '@pick(["技术部", "运营部", "产品部", "市场部", "财务部"])',
+      leader: '@cname',
+      memberCount: '@integer(6, 48)',
+      status: () => pickValue(statusOptionsStore),
+      description: '@ctitle(10, 24)',
+    },
+  ],
+}).list

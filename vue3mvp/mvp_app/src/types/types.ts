@@ -1,10 +1,4 @@
 /**
- * 菜单图标名称。
- * mock 接口只返回字符串名称，菜单组件再根据名称映射成 Element Plus 图标组件。
- */
-export type MenuIconName = 'Setting' | 'UserFilled'
-
-/**
  * 通用下拉/单选/状态选项。
  * 用户管理里的角色、状态都可以复用这个结构。
  */
@@ -15,31 +9,6 @@ export interface OptionItem {
     value: string
     /** Element Plus 的 el-tag 类型，用来控制状态标签颜色。 */
     tagType?: '' | 'success' | 'info' | 'warning' | 'danger' | 'primary'
-}
-
-/**
- * 左侧菜单项。
- * 支持普通一级菜单，也支持带 children 的二级菜单。
- */
-export interface MenuItem {
-    /** 菜单唯一标识，用于 v-for 的 key。 */
-    id: string
-    /** 菜单所属用户，后端 t_user_menu 以用户维度保存可见菜单。 */
-    userId?: string
-    /** 父菜单ID；为空表示一级菜单。 */
-    parentId?: string | null
-    /** 菜单层级，一级为 1，二级为 2。 */
-    level?: number
-    /** 排序值，越小越靠前。 */
-    sortOrder?: number
-    /** 菜单显示名称。 */
-    title: string
-    /** 菜单跳转路径，通常和路由 path 保持一致。 */
-    path: string
-    /** 菜单图标名称，组件中会通过 iconMap 转成真实图标。 */
-    icon?: MenuIconName
-    /** 子菜单列表；存在 children 时渲染为 el-sub-menu。 */
-    children?: MenuItem[]
 }
 
 /**
@@ -71,14 +40,19 @@ export interface UserInfo {
 }
 
 /**
- * 布局接口返回数据。
- * AppLayout 初始化时通过该结构拿到菜单和顶部栏用户信息。
+ * 左侧菜单项。
  */
-export interface LayoutMockData {
-    /** 左侧菜单列表。 */
-    menus: MenuItem[]
-    /** 当前用户信息。 */
-    user: UserInfo
+export interface MenuItem {
+    /** 菜单唯一标识，用于 v-for 的 key。 */
+    id: string
+    /** 菜单显示名称。 */
+    title: string
+    /** 菜单跳转路径。 */
+    path: string
+    /** 菜单图标名称。 */
+    icon?: MenuIconName
+    /** 子菜单。 */
+    children?: MenuItem[]
 }
 
 /**
@@ -86,22 +60,33 @@ export interface LayoutMockData {
  */
 export interface UserItem {
     /** 用户唯一 id。 */
-    id: number
+    id: string
     /** 用户名。 */
     name: string
-    /** 用户角色。 */
+    /** 手机号。 */
+    phone: string
+    /** 角色。 */
     role: string
     /** 用户状态，例如启用、停用。 */
     status: string
     /** 用户邮箱。 */
     email: string
+    /** 后端返回的密码哈希，编辑提交时保持原值。 */
+    passwordHash?: string
 }
 
 /**
  * 用户表单数据。
  * 新增/编辑弹窗不需要传 id，所以从 UserItem 中去掉 id。
  */
-export type UserForm = Omit<UserItem, 'id'>
+export interface UserForm {
+    name: string
+    phone: string
+    email: string
+    role: string
+    status: string
+    passwordHash?: string
+}
 
 /**
  * 用户管理页面配置。
@@ -115,3 +100,42 @@ export interface UserPageConfig {
     /** 新增用户时的默认表单值。 */
     defaultForm: UserForm
 }
+
+/**
+ * 部门管理表格中的单条部门数据。
+ */
+export interface DepartmentItem {
+    /** 部门唯一 id。 */
+    id: number
+    /** 部门名称。 */
+    name: string
+    /** 部门负责人。 */
+    leader: string
+    /** 部门成员数量。 */
+    memberCount: number
+    /** 部门状态，例如启用、停用。 */
+    status: string
+    /** 部门说明。 */
+    description: string
+}
+
+/**
+ * 部门表单数据。
+ * 新增/编辑弹窗不需要传 id，所以从 DepartmentItem 中去掉 id。
+ */
+export type DepartmentForm = Omit<DepartmentItem, 'id'>
+
+/**
+ * 部门管理页面配置。
+ */
+export interface DepartmentPageConfig {
+    /** 部门状态选项。 */
+    statusOptions: OptionItem[]
+    /** 新增部门时的默认表单值。 */
+    defaultForm: DepartmentForm
+}
+/**
+ * 菜单图标名称。
+ * 侧边栏当前只保留用户管理和部门管理两个入口。
+ */
+export type MenuIconName = 'UserFilled' | 'OfficeBuilding'
