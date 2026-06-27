@@ -17,7 +17,9 @@
 
 使用 **bridge 网络 + 端口映射**：
 - 容器之间通过服务名互通，例如 `namesrv-1:9876`、`broker-master1:10912`
-- Broker 对宿主机注册地址为宿主机局域网 IP（当前示例为 `192.168.3.27`），宿主机应用通过映射端口直连 Broker
+- Broker 对宿主机注册地址固定为 `127.0.0.1`，宿主机应用通过映射端口直连 Broker
+- 不使用家庭、公司或公共网络里的局域网 IP，避免电脑切换网络后 Broker 路由失效
+- `mvp-network` 是外部 Docker 网络，先运行 Redis 集群初始化脚本创建并校验固定网段
 
 ## 端口分配
 
@@ -64,14 +66,17 @@ logging:
 ### 启动集群
 
 ```bash
-cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/rocketmq
-docker compose -f docker-compose-rocketmq.yml up -d
+cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/redis-cluster
+./init-redis-cluster.sh
+
+cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/rocketmq-cluster
+docker compose -f docker-compose-rocketmq-cluster.yml up -d
 ```
 
 ### 停止集群
 
 ```bash
-docker compose -f docker-compose-rocketmq.yml down
+docker compose -f docker-compose-rocketmq-cluster.yml down
 ```
 
 ### 查看日志

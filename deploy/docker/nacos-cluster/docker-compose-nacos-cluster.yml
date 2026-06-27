@@ -68,4 +68,4 @@ services:
 networks:
   mvp-network:
     name: mvp-network
-    driver: bridge
+    external: true

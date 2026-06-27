@@ -38,9 +38,14 @@ mysql -uroot -prootroot nacos_config < /Users/zhongtao/IdeaProjects/javaProjects
 ## 启动
 
 ```bash
+cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/redis-cluster
+./init-redis-cluster.sh
+
 cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/nacos-cluster
 docker compose -f docker-compose-nacos-cluster.yml up -d
 ```
+
+`mvp-network` 是外部 Docker 网络，统一由 Redis 集群初始化脚本创建并校验固定网段。这样 Nacos、RocketMQ、Redis、Nginx 复用同一个稳定网络，不会因为某个 compose 先启动而创建出随机网段。
 
 ## 停止
 

@@ -151,4 +151,4 @@ RedissonClient redissonClient = Redisson.create(config);
 - 集群初始化使用 Docker DNS 创建，例如 `redis-7001:7001`。
 - Redis 容器固定使用 `172.19.0.31-36`，避免持久化的 `nodes.conf` 在容器重建后指向过期 IP。
 - `cluster-announce-hostname` 固定使用 `.env` 中的 `127.0.0.1`，让本机 Java/Redisson 不受 Wi-Fi 或局域网 IP 变化影响。
-- `mvp-network` 声明为 external；脚本会自动创建它，避免与 Nacos/RocketMQ 复用网络时出现 warning。
+- `mvp-network` 声明为 external；脚本会自动创建并校验 `172.19.0.0/16`，Nacos/RocketMQ/Nginx 复用这个网络，不再由各自 compose 随机创建。
