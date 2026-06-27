@@ -32,8 +32,9 @@ const activeQuery = reactive({
   status: '',
 })
 
-const isVisibleFormOfCreateOrUpdate = ref(false)
-const isCreateOrUpdate = ref<string>()
+const isCreateOrUpdate = ref<boolean>()
+const titleOfCreateOrUpdate = ref<string>(isCreateOrUpdate.value === true ? '新增用户' : '编辑用户')
+const isVisibleOfCreateOrUpdate = ref<boolean>()
 // Element Plus 表单实例，用于触发表单校验和清空校验状态。
 const formRef = ref<FormInstance>()
 // 角色下拉选项由 MockJS 配置接口返回，避免页面写死业务字典。
@@ -71,7 +72,7 @@ const rules: FormRules<UserForm> = {
   passwordHash: [{required: true, message: '请输入初始密码', trigger: 'blur'}],
 }
 
-const titleOfCreateOrUpdate = computed(() => (isCreateOrUpdate.value ? '编辑用户' : '新增用户'))
+
 // 页面整体 loading 合并表格请求和配置请求，任意一个请求未完成时都显示加载态。
 const pageLoading = computed(() => tableLoading.value || configLoading.value)
 // 把接口返回的状态配置转换成 Map，表格渲染 tag 时可以快速按状态取颜色。
@@ -151,9 +152,9 @@ const resetUserForm =
       formRef.value?.clearValidate()
     }
 
-const handleSaveUserBefore = () => {
+const handleSaveUser = () => {
   resetUserForm()
-  isVisibleFormOfCreateOrUpdate.value = true
+  isVisibleOfCreateOrUpdate.value = true
 }
 
 // 应用查询条件。
@@ -175,7 +176,7 @@ const handleClearQuery = () => {
 }
 
 // 打开编辑弹窗：记录当前用户 id，并把当前行数据回填到表单中。
-const openEditDialog =
+const handleUpdateUser =
     (user: UserItem) => {
       isCreateOrUpdate.value = user.id
       Object.assign(form, {
@@ -186,7 +187,7 @@ const openEditDialog =
         email: user.email,
         passwordHash: user.passwordHash,
       })
-      isVisibleFormOfCreateOrUpdate.value = true
+      isVisibleOfCreateOrUpdate.value = true
     }
 
 // 提交表单：
@@ -201,13 +202,13 @@ const handleSaveOrUpdateUser =
 
       if (isCreateOrUpdate.value) {
         await updateUser(isCreateOrUpdate.value, form)
-        ElMessage.success('用户修改成功')
+        ElMessage.success('用户新增成功')
       } else {
         await createUser(form)
         ElMessage.success('用户新增成功')
       }
 
-      isVisibleFormOfCreateOrUpdate.value = false
+      isVisibleOfCreateOrUpdate.value = false
       await loadUsers()
     }
 
@@ -241,6 +242,7 @@ onMounted(
 
 <template>
   <div class="page-view">
+
     <!-- 顶部操作区：左侧是多字段联合查询，右侧是新增入口。 -->
     <div class="page-header">
       <div class="query-panel">
@@ -270,8 +272,8 @@ onMounted(
         <el-button type="primary" @click="handleQuery">查询</el-button>
         <el-button @click="handleClearQuery">清空</el-button>
       </div>
-      <!-- 新增用户：打开同一个弹窗，但 isCreateOrUpdate 为空，所以提交时走 createUser。 -->
-      <el-button type="primary" @click="handleSaveUserBefore">新增用户</el-button>
+
+      <el-button type="primary" @click="handleSaveUser">新增</el-button>
     </div>
 
     <!-- 用户列表卡片：loading 绑定 pageLoading，让配置或列表请求期间都有反馈。 -->
@@ -287,9 +289,10 @@ onMounted(
             <el-tag :type="getStatusTagType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
+        
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openEditDialog(row)">编辑</el-button>
+            <el-button link type="primary" @click="handleUpdateUser(row)">编辑</el-button>
             <el-button link type="danger" @click="handleDeleteUser(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -297,7 +300,7 @@ onMounted(
     </el-card>
 
     <!-- 新增/编辑弹窗：通过 isCreateOrUpdate 区分模式，表单结构完全复用。 -->
-    <el-dialog v-model="isVisibleFormOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px" @closed="resetUserForm">
+    <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px" @closed="resetUserForm">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <!-- 用户名：普通输入框，必填校验在 rules.name 中维护。 -->
         <el-form-item label="用户名" prop="name">
@@ -322,7 +325,7 @@ onMounted(
           <el-input v-model="form.email" placeholder="请输入邮箱"/>
         </el-form-item>
         <!-- 初始密码只在新增用户时填写；编辑用户时保持后端已有 passwordHash，不在页面暴露。 -->
-        <el-form-item v-if="!isCreateOrUpdate" label="初始密码" prop="passwordHash">
+        <el-form-item v-if="isCreateOrUpdate" label="初始密码" prop="passwordHash">
           <el-input v-model="form.passwordHash" placeholder="请输入初始密码" show-password/>
         </el-form-item>
         <!-- 状态：状态选项从配置接口返回，和表格 tag 颜色使用同一份数据源。 -->
@@ -338,9 +341,8 @@ onMounted(
         </el-form-item>
       </el-form>
 
-      <!-- 弹窗底部操作：取消只关闭弹窗，保存会触发表单校验和接口提交。 -->
       <template #footer>
-        <el-button @click="isVisibleFormOfCreateOrUpdate = false">取消</el-button>
+        <el-button @click="isVisibleOfCreateOrUpdate = false">取消</el-button>
         <el-button type="primary" @click="handleSaveOrUpdateUser">保存</el-button>
       </template>
     </el-dialog>
