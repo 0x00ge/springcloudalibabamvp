@@ -84,7 +84,7 @@ export const fetchUserPageConfig =
         },
     })
 
-export const fetchUsers =
+export const selectUsers =
     async () => {
         const page = await get<PageResult<UserDto>>('/user/page', {page: 1, size: 100})
         return page.records.map(toUserItem)

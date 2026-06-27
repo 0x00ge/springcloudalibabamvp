@@ -2,7 +2,7 @@
 import {computed, onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
 
-import {createUser, deleteUser, fetchUserPageConfig, fetchUsers, updateUser} from '@/api/apiUser.js'
+import {createUser, deleteUser, fetchUserPageConfig, selectUsers, updateUser} from '@/api/apiUser.js'
 import type {OptionItem} from '@/types/types.js'
 import type {UserForm, UserItem} from '@/types/userTypes'
 
@@ -33,14 +33,13 @@ const activeQuery = reactive({
 })
 
 const isCreateOrUpdate = ref<boolean>()
-// const titleOfCreateOrUpdate = ref<string>(isCreateOrUpdate.value === true ? '新增用户' : '编辑用户')
 const titleOfCreateOrUpdate = computed(() => {
   return isCreateOrUpdate.value ? '新增用户' : '编辑用户'
 })
 const isVisibleOfCreateOrUpdate = ref<boolean>()
 const userId = ref<string>('')
 // Element Plus 表单实例，用于触发表单校验和清空校验状态。
-const formRef = ref<FormInstance>()
+const formInstance = ref<FormInstance>()
 // 角色下拉选项由 MockJS 配置接口返回，避免页面写死业务字典。
 const roleOptions = ref<OptionItem[]>([])
 // 状态选项同样来自配置接口，并携带 tagType 用来控制表格标签颜色。
@@ -66,7 +65,7 @@ const defaultForm = reactive<UserForm>({
   passwordHash: '123456',
 })
 
-// 表单校验规则集中维护，提交前通过 formRef.validate() 统一触发。
+// 表单校验规则集中维护，提交前通过 formInstance.validate() 统一触发。
 const rules: FormRules<UserForm> = {
   name: [{required: true, message: '请输入用户名', trigger: 'blur'}],
   phone: [{required: true, message: '请输入手机号', trigger: 'blur'}],
@@ -113,20 +112,6 @@ const filteredUsers = computed(() => {
   )
 })
 
-// 加载用户列表：
-// 1. 页面初始化、新增/编辑/删除成功后都会调用。
-// 2. fetchUsers 内部走 utils/http 封装的 axios。
-// 3. 用户数据来自真实后端 /user/page。
-const loadUsers = async () => {
-  tableLoading.value = true
-
-  try {
-    users.value = await fetchUsers()
-  } finally {
-    tableLoading.value = false
-  }
-}
-
 // 加载用户管理页面配置：
 // - roleOptions：角色下拉选项。
 // - statusOptions：状态单选项和表格 tag 颜色。
@@ -154,19 +139,14 @@ const resetUserForm =
       isCreateOrUpdate.value = undefined
       userId.value = ''
       Object.assign(form, defaultForm)
-      formRef.value?.clearValidate()
+      formInstance.value?.clearValidate()
     }
 
-const handleSaveUser = () => {
-  resetUserForm()
-  isCreateOrUpdate.value = true
-  isVisibleOfCreateOrUpdate.value = true
-}
 
 // 应用查询条件。
 // 注意这里只更新 activeQuery，不重新请求后端；查询基于当前 users 列表在前端完成。
 const handleQuery = () => {
-  Object.assign(activeQuery, queryForm)
+    Object.assign(activeQuery, queryForm)
 }
 
 // 清空查询条件，并同步清空已经生效的 activeQuery。
@@ -181,7 +161,22 @@ const handleClearQuery = () => {
   Object.assign(activeQuery, queryForm)
 }
 
-// 打开编辑弹窗：记录当前用户 id，并把当前行数据回填到表单中。
+const handleSelectUsers = async () => {
+  tableLoading.value = true
+
+  try {
+    users.value = await selectUsers()
+  } finally {
+    tableLoading.value = false
+  }
+}
+
+const handleSaveUser = () => {
+  resetUserForm()
+  isCreateOrUpdate.value = true
+  isVisibleOfCreateOrUpdate.value = true
+}
+
 const handleUpdateUser =
     (user: UserItem) => {
       isCreateOrUpdate.value = false
@@ -197,15 +192,11 @@ const handleUpdateUser =
       isVisibleOfCreateOrUpdate.value = true
     }
 
-// 提交表单：
-// - 先执行 Element Plus 表单校验。
-// - isCreateOrUpdate.value 为 true 时添加；为 false 时修改。
-// - 成功后关闭弹窗并重新拉取列表，保证表格展示最新 mock 数据。
 const handleSaveOrUpdateSubmit =
     async () => {
-      if (!formRef.value) return
+      if (!formInstance.value) return
 
-      await formRef.value.validate()
+      await formInstance.value.validate()
 
       if (isCreateOrUpdate.value === true) {
         await createUser(form)
@@ -216,10 +207,9 @@ const handleSaveOrUpdateSubmit =
       }
 
       isVisibleOfCreateOrUpdate.value = false
-      await loadUsers()
+      await handleSelectUsers()
     }
 
-// 删除用户: 确认->删除->刷新
 const handleDeleteUser =
     async (user: UserItem) => {
       await ElMessageBox.confirm(`确定删除用户「${user.name}」吗？`, '删除确认', {
@@ -230,7 +220,7 @@ const handleDeleteUser =
 
       await deleteUser(user.id)
       ElMessage.success('用户删除成功')
-      await loadUsers()
+      await handleSelectUsers()
     }
 
 // 状态颜色由配置中的 tagType 决定，页面不关心具体状态文案。
@@ -243,7 +233,7 @@ const getStatusTagType =
 onMounted(
     async () => {
       await loadUserPageConfig()
-      await loadUsers()
+      await handleSelectUsers()
     })
 </script>
 
@@ -296,7 +286,7 @@ onMounted(
             <el-tag :type="getStatusTagType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        
+
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleUpdateUser(row)">编辑</el-button>
@@ -308,7 +298,7 @@ onMounted(
 
     <!-- 新增/编辑弹窗：通过 isCreateOrUpdate 区分模式，表单结构完全复用。 -->
     <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px" @closed="resetUserForm">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+      <el-form ref="formInstance" :model="form" :rules="rules" label-width="80px">
         <!-- 用户名：普通输入框，必填校验在 rules.name 中维护。 -->
         <el-form-item label="用户名" prop="name">
           <el-input v-model="form.name" placeholder="请输入用户名"/>
