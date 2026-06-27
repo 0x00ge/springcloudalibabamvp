@@ -154,6 +154,7 @@ const resetUserForm =
 
 const handleSaveUser = () => {
   resetUserForm()
+  isCreateOrUpdate.value = true
   isVisibleOfCreateOrUpdate.value = true
 }
 
@@ -178,7 +179,6 @@ const handleClearQuery = () => {
 // 打开编辑弹窗：记录当前用户 id，并把当前行数据回填到表单中。
 const handleUpdateUser =
     (user: UserItem) => {
-      isCreateOrUpdate.value = user.id
       Object.assign(form, {
         name: user.name,
         phone: user.phone,
@@ -194,7 +194,7 @@ const handleUpdateUser =
 // - 先执行 Element Plus 表单校验。
 // - 有 isCreateOrUpdate 调更新接口；没有 isCreateOrUpdate 调新增接口。
 // - 成功后关闭弹窗并重新拉取列表，保证表格展示最新 mock 数据。
-const handleSaveOrUpdateUser =
+const handleSaveOrUpdateSubmit =
     async () => {
       if (!formRef.value) return
 
@@ -320,7 +320,6 @@ onMounted(
             />
           </el-select>
         </el-form-item>
-        <!-- 邮箱：输入内容由 Element Plus 按 email 类型规则校验。 -->
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱"/>
         </el-form-item>
@@ -343,7 +342,7 @@ onMounted(
 
       <template #footer>
         <el-button @click="isVisibleOfCreateOrUpdate = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveOrUpdateUser">保存</el-button>
+        <el-button type="primary" @click="handleSaveOrUpdateSubmit">提交</el-button>
       </template>
     </el-dialog>
 
