@@ -4,14 +4,14 @@
 
 本目录提供一个 6 节点 Redis Cluster：
 
-| 节点 | 宿主机端口 | Cluster Bus 端口 | 角色 |
-| --- | --- | --- | --- |
-| redis-7001 | 7001 | 17001 | 初始化后自动分配 |
-| redis-7002 | 7002 | 17002 | 初始化后自动分配 |
-| redis-7003 | 7003 | 17003 | 初始化后自动分配 |
-| redis-7004 | 7004 | 17004 | 初始化后自动分配 |
-| redis-7005 | 7005 | 17005 | 初始化后自动分配 |
-| redis-7006 | 7006 | 17006 | 初始化后自动分配 |
+| 节点 | Docker 网络 IP | 宿主机端口 | Cluster Bus 端口 | 角色 |
+| --- | --- | --- | --- | --- |
+| redis-7001 | 172.19.0.31 | 7001 | 17001 | 初始化后自动分配 |
+| redis-7002 | 172.19.0.32 | 7002 | 17002 | 初始化后自动分配 |
+| redis-7003 | 172.19.0.33 | 7003 | 17003 | 初始化后自动分配 |
+| redis-7004 | 172.19.0.34 | 7004 | 17004 | 初始化后自动分配 |
+| redis-7005 | 172.19.0.35 | 7005 | 17005 | 初始化后自动分配 |
+| redis-7006 | 172.19.0.36 | 7006 | 17006 | 初始化后自动分配 |
 
 初始化命令会创建 `3 master + 3 replica`。Redis 会自动分配槽位和主从关系。
 
@@ -33,17 +33,15 @@
 
 `cluster-announce-*` 很关键。Redis Cluster 客户端连接任意节点后，会通过 `CLUSTER SLOTS` 获取所有节点地址。如果返回的是 Docker 容器内 IP，宿主机上的 Java/Redisson 应用通常无法继续连接其他节点。
 
-`init-redis-cluster.sh` 默认把宿主机客户端访问地址写为 `127.0.0.1`，并写入当前目录 `.env`：
+Redis Cluster 还会把节点互联地址写入 `/data/nodes.conf`。本配置给 6 个 Redis 容器固定 `172.19.0.31-36`，避免容器重建后 Docker 分配新 IP，而旧 `nodes.conf` 继续指向过期 IP，导致 `cluster_state:fail` 或应用侧 `CLUSTERDOWN`。
+
+`init-redis-cluster.sh` 固定把宿主机客户端访问地址写为 `127.0.0.1`，并写入当前目录 `.env`：
 
 ```env
 REDIS_CLUSTER_ANNOUNCE_HOST=127.0.0.1
 ```
 
-如果需要局域网其他机器访问，可以手动指定宿主机局域网 IP：
-
-```bash
-REDIS_CLUSTER_ANNOUNCE_HOST=192.168.3.27 ./init-redis-cluster.sh
-```
+本项目默认所有 Java/Redisson 服务都跑在同一台开发电脑上，因此不要使用家庭、公司或公共网络里的局域网 IP。电脑切换 Wi-Fi、换网络、重启后，局域网 IP 可能变化；固定使用 `127.0.0.1` 才能让本机应用稳定连接 Redis Cluster。
 
 ## 启动并初始化
 
@@ -83,9 +81,11 @@ docker compose -f docker-compose-redis-cluster.yml down
 
 ```bash
 docker compose -f docker-compose-redis-cluster.yml down
-rm -rf /Users/zhongtao/.my_docker/redis-cluster
+mv /Users/zhongtao/.my_docker/redis-cluster /private/tmp/redis-cluster-backup
 ./init-redis-cluster.sh
 ```
+
+如果已经确认旧 Redis 开发数据不需要保留，也可以删除备份目录。
 
 ## 卡在 Waiting for the cluster to join
 
@@ -96,22 +96,18 @@ Waiting for the cluster to join
 ................................................................
 ```
 
-通常是旧数据里留下半初始化的 `nodes.conf`，或节点互联地址不可达。
+通常是旧数据里留下半初始化的 `nodes.conf`，或 `nodes.conf` 中保存了容器重建前的旧 IP，导致节点互联地址不可达。
 
 按下面步骤重建：
 
 ```bash
 cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/redis-cluster
 docker compose -f docker-compose-redis-cluster.yml down
-rm -rf /Users/zhongtao/.my_docker/redis-cluster
+mv /Users/zhongtao/.my_docker/redis-cluster /private/tmp/redis-cluster-backup
 ./init-redis-cluster.sh
 ```
 
-如果你需要让局域网其他机器访问，换成你的局域网 IP，例如：
-
-```bash
-REDIS_CLUSTER_ANNOUNCE_HOST=192.168.3.27 ./init-redis-cluster.sh
-```
+如果你需要让局域网其他机器访问这组 Redis，需要另外准备一套专门的共享环境配置，不要直接改这份本地开发配置。
 
 ## Spring Boot / Redisson 配置示例
 
@@ -152,6 +148,7 @@ RedissonClient redissonClient = Redisson.create(config);
 
 - 本配置用于本地开发，不设置 Redis 密码。
 - 数据持久化在 `/Users/zhongtao/.my_docker/redis-cluster`。
-- 集群内部使用 Docker DNS 创建，例如 `redis-7001:7001`。
-- `cluster-announce-hostname` 使用 `.env` 中的 `REDIS_CLUSTER_ANNOUNCE_HOST`，让宿主机应用能访问集群拓扑中的每个节点。
+- 集群初始化使用 Docker DNS 创建，例如 `redis-7001:7001`。
+- Redis 容器固定使用 `172.19.0.31-36`，避免持久化的 `nodes.conf` 在容器重建后指向过期 IP。
+- `cluster-announce-hostname` 固定使用 `.env` 中的 `127.0.0.1`，让本机 Java/Redisson 不受 Wi-Fi 或局域网 IP 变化影响。
 - `mvp-network` 声明为 external；脚本会自动创建它，避免与 Nacos/RocketMQ 复用网络时出现 warning。

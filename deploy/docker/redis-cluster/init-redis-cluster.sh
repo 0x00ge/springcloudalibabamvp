@@ -9,12 +9,16 @@
 #   5. 如果还没初始化，执行 redis-cli --cluster create 创建 3 主 3 从。
 #
 # 注意：
-#   - 本脚本不会自动删除旧数据。要重建集群，请先按 README 执行 rm -rf 数据目录。
+#   - 本脚本不会自动删除旧数据。要重建集群，请先按 README 备份或删除数据目录。
 #   - cluster create 只能在空节点上执行；节点已有 nodes.conf 或旧数据时需要先清理。
 set -euo pipefail
 
 # Compose 文件名。脚本固定在当前目录执行，避免从其他目录调用时找不到文件。
 COMPOSE_FILE="docker-compose-redis-cluster.yml"
+
+# 项目统一 Docker 网络。Redis 节点在 compose 中固定使用 172.19.0.31-36。
+NETWORK_NAME="mvp-network"
+NETWORK_SUBNET="172.19.0.0/16"
 
 # Redis 数据持久化目录。每个节点都要单独目录，否则 nodes.conf 和 AOF 会互相覆盖。
 DATA_DIR="/Users/zhongtao/.my_docker/redis-cluster"
@@ -22,15 +26,31 @@ DATA_DIR="/Users/zhongtao/.my_docker/redis-cluster"
 # 切到脚本所在目录，保证 docker compose -f 使用相对路径也稳定。
 cd "$(dirname "$0")"
 
-REDIS_CLUSTER_ANNOUNCE_HOST="${REDIS_CLUSTER_ANNOUNCE_HOST:-127.0.0.1}"
+# 本地开发固定对宿主机客户端公告 127.0.0.1。
+# 这样电脑切换家庭/公司/公共网络，或局域网 IP 变化，都不影响 Java/Redisson 从本机访问 Redis Cluster。
+REDIS_CLUSTER_ANNOUNCE_HOST="127.0.0.1"
 cat > .env <<EOF
 REDIS_CLUSTER_ANNOUNCE_HOST=${REDIS_CLUSTER_ANNOUNCE_HOST}
 EOF
 
 echo "Redis Cluster announce host: ${REDIS_CLUSTER_ANNOUNCE_HOST}"
 
-# Compose 文件声明 mvp-network 为 external，避免已有同名网络时出现 warning。
-docker network inspect mvp-network >/dev/null 2>&1 || docker network create mvp-network >/dev/null
+# Compose 文件声明 mvp-network 为 external，脚本负责保证网络存在且网段支持固定 IP。
+if docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1; then
+  network_subnets="$(docker network inspect -f '{{range .IPAM.Config}}{{println .Subnet}}{{end}}' "${NETWORK_NAME}")"
+  if ! printf '%s\n' "${network_subnets}" | grep -qx "${NETWORK_SUBNET}"; then
+    cat <<EOF
+Docker network ${NETWORK_NAME} already exists, but its subnet does not include ${NETWORK_SUBNET}.
+
+Redis containers use fixed IPs 172.19.0.31-36. Please recreate ${NETWORK_NAME} with ${NETWORK_SUBNET},
+or update docker-compose-redis-cluster.yml to match the existing network subnet.
+
+EOF
+    exit 1
+  fi
+else
+  docker network create --subnet "${NETWORK_SUBNET}" "${NETWORK_NAME}" >/dev/null
+fi
 
 # 提前创建目录，避免 Docker 自动用 root 权限创建后本机清理不方便。
 mkdir -p \
@@ -62,7 +82,7 @@ Redis nodes already contain partial cluster metadata, but cluster_state is not o
 Please rebuild the local cluster data and run again:
 
   docker compose -f ${COMPOSE_FILE} down
-  rm -rf ${DATA_DIR}
+  mv ${DATA_DIR} /private/tmp/redis-cluster-backup
   ./init-redis-cluster.sh
 
 EOF

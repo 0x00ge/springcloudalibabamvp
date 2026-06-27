@@ -26,15 +26,17 @@ x-redis-cluster-common: &redis-cluster-common
   image: redis:7.2.10
   # Docker 或宿主机重启后自动拉起容器；手动 docker compose down 后不会自动恢复。
   restart: unless-stopped
-  # 加入项目统一网络，后续其他容器可以通过容器名访问 Redis 节点。
-  networks:
-    - mvp-network
+  # 每个 Redis 节点在 service 内单独声明固定 IP。
+  # Redis Cluster 会把节点互联地址持久化到 nodes.conf；如果容器重建后 IP 改变，旧 nodes.conf 会导致节点互相连不上。
 
 services:
   redis-7001:
     <<: *redis-cluster-common
     container_name: mvp-redis-7001
     hostname: redis-7001
+    networks:
+      mvp-network:
+        ipv4_address: 172.19.0.31
     # 使用命令行参数而不是 redis.conf，方便一个 compose 文件看清全部集群配置。
     command:
       - redis-server
@@ -85,6 +87,9 @@ services:
     <<: *redis-cluster-common
     container_name: mvp-redis-7002
     hostname: redis-7002
+    networks:
+      mvp-network:
+        ipv4_address: 172.19.0.32
     # redis-7002 和 redis-7001 只有端口、容器名、数据目录不同。
     command:
       - redis-server
@@ -120,6 +125,9 @@ services:
     <<: *redis-cluster-common
     container_name: mvp-redis-7003
     hostname: redis-7003
+    networks:
+      mvp-network:
+        ipv4_address: 172.19.0.33
     # redis-7003 是第三个初始节点；cluster create 会优先把前三个节点作为 master。
     command:
       - redis-server
@@ -155,6 +163,9 @@ services:
     <<: *redis-cluster-common
     container_name: mvp-redis-7004
     hostname: redis-7004
+    networks:
+      mvp-network:
+        ipv4_address: 172.19.0.34
     # redis-7004 初始化后通常会成为某个 master 的 replica，具体关系由 redis-cli 分配。
     command:
       - redis-server
@@ -190,6 +201,9 @@ services:
     <<: *redis-cluster-common
     container_name: mvp-redis-7005
     hostname: redis-7005
+    networks:
+      mvp-network:
+        ipv4_address: 172.19.0.35
     # redis-7005 初始化后通常会成为某个 master 的 replica。
     command:
       - redis-server
@@ -225,6 +239,9 @@ services:
     <<: *redis-cluster-common
     container_name: mvp-redis-7006
     hostname: redis-7006
+    networks:
+      mvp-network:
+        ipv4_address: 172.19.0.36
     # redis-7006 初始化后通常会成为某个 master 的 replica。
     command:
       - redis-server
