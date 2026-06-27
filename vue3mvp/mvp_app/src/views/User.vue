@@ -33,8 +33,12 @@ const activeQuery = reactive({
 })
 
 const isCreateOrUpdate = ref<boolean>()
-const titleOfCreateOrUpdate = ref<string>(isCreateOrUpdate.value === true ? '新增用户' : '编辑用户')
+// const titleOfCreateOrUpdate = ref<string>(isCreateOrUpdate.value === true ? '新增用户' : '编辑用户')
+const titleOfCreateOrUpdate = computed(() => {
+  return isCreateOrUpdate.value ? '新增用户' : '编辑用户'
+})
 const isVisibleOfCreateOrUpdate = ref<boolean>()
+const userId = ref<string>('')
 // Element Plus 表单实例，用于触发表单校验和清空校验状态。
 const formRef = ref<FormInstance>()
 // 角色下拉选项由 MockJS 配置接口返回，避免页面写死业务字典。
@@ -148,6 +152,7 @@ const loadUserPageConfig = async () => {
 const resetUserForm =
     () => {
       isCreateOrUpdate.value = undefined
+      userId.value = ''
       Object.assign(form, defaultForm)
       formRef.value?.clearValidate()
     }
@@ -179,6 +184,8 @@ const handleClearQuery = () => {
 // 打开编辑弹窗：记录当前用户 id，并把当前行数据回填到表单中。
 const handleUpdateUser =
     (user: UserItem) => {
+      isCreateOrUpdate.value = false
+      userId.value = user.id
       Object.assign(form, {
         name: user.name,
         phone: user.phone,
@@ -192,7 +199,7 @@ const handleUpdateUser =
 
 // 提交表单：
 // - 先执行 Element Plus 表单校验。
-// - 有 isCreateOrUpdate 调更新接口；没有 isCreateOrUpdate 调新增接口。
+// - isCreateOrUpdate.value 为 true 时添加；为 false 时修改。
 // - 成功后关闭弹窗并重新拉取列表，保证表格展示最新 mock 数据。
 const handleSaveOrUpdateSubmit =
     async () => {
@@ -200,12 +207,12 @@ const handleSaveOrUpdateSubmit =
 
       await formRef.value.validate()
 
-      if (isCreateOrUpdate.value) {
-        await updateUser(isCreateOrUpdate.value, form)
-        ElMessage.success('用户新增成功')
-      } else {
+      if (isCreateOrUpdate.value === true) {
         await createUser(form)
         ElMessage.success('用户新增成功')
+      } else {
+        await updateUser(userId.value, form)
+        ElMessage.success('用户更新成功')
       }
 
       isVisibleOfCreateOrUpdate.value = false
