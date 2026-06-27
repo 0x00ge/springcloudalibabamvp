@@ -2,8 +2,8 @@ import {computed, reactive, ref} from 'vue'
 import {defineStore} from 'pinia'
 
 import {getCurrentAuth, login, logout, refreshAccessToken, register} from '@/api/apiAuth.ts'
-import type {AuthTokenParams, CurrentAuthParams, LoginParams} from '@/types/authType.ts'
-import type {UserInfo} from '@/types/types.ts'
+import type {AuthTokenParams, CurrentAuthParams, LoginParams} from '@/types/authTypes.ts'
+import type {UserInfo} from '@/types/userTypes.ts'
 
 /**
  * accessToken 提前失效窗口。

@@ -33,15 +33,6 @@ export const routes: RouteRecordRaw[] = [
           title: '用户管理',
         },
       },
-      {
-        path: 'department',
-        name: 'Department',
-        component: () => import('@/views/Department.vue'),
-        meta: {
-          requiresAuth: true,
-          title: '部门管理',
-        },
-      },
     ],
   },
   {

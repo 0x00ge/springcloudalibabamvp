@@ -19,7 +19,6 @@ const authStore = useAuthStore()
 
 const menus: MenuItem[] = [
   { id: 'user', title: '用户管理', path: '/home/user', icon: 'UserFilled' },
-  { id: 'department', title: '部门管理', path: '/home/department', icon: 'OfficeBuilding' },
 ]
 
 const asideWidth = computed(() => (isCollapse.value ? '64px' : '220px'))

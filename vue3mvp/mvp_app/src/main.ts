@@ -6,10 +6,7 @@ import 'element-plus/dist/index.css'
 import './style.less'
 
 import App from './App.vue'
-import { setupMock } from './mock'
 import router from './router'
-
-setupMock()
 
 const app = createApp(App)
 

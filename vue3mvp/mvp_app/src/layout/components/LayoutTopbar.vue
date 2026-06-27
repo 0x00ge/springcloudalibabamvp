@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Bell, Expand, Fold } from '@element-plus/icons-vue'
 
-import type { BreadcrumbItem, UserInfo } from '@/types/types.js'
+import type { BreadcrumbItem } from '@/types/types.js'
+import type { UserInfo } from '@/types/userTypes'
 
 defineProps<{
   breadcrumbs: BreadcrumbItem[]

@@ -1,6 +1,6 @@
 import {del, get, post, put} from '@/utils/http/http.ts'
 
-import type {UserForm, UserItem, UserPageConfig} from '@/types/types.ts'
+import type {UserForm, UserItem, UserPageConfig} from '@/types/userTypes.ts'
 
 interface UserDto {
     id?: string

@@ -5,7 +5,7 @@ import type {
     LoginParams,
     SmsCodeByPhoneParams,
     AuthTokenParams,
-} from '@/types/authType.ts'
+} from '@/types/authTypes.ts'
 
 // 发送注册短信验证码：
 // 1. 后端会检查手机号格式和是否已注册。

@@ -7,7 +7,7 @@ import axios, {
 import {ElNotification} from 'element-plus'
 
 import {BUSINESS_CODE, HTTP_STATUS} from '@/constants/httpCode.ts'
-import type {AuthTokenParams} from '@/types/authType.ts'
+import type {AuthTokenParams} from '@/types/authTypes.ts'
 import {
     clearStoredAuthInfo,
     getAccessToken,
@@ -48,10 +48,10 @@ const axiosInstance: AxiosInstance = axios.create({
 // 刷新 token 的共享 Promise。
 // 当多个请求同时发现 accessToken 过期时，只发起一次 /auth/refresh，其他请求复用这个结果。
 // 例子：
-// - 用户打开页面时同时请求用户列表、部门列表、个人信息。
-// - 这 3 个请求都发现 accessToken 过期。
-// - 如果没有 refreshPromise，会发 3 次 /auth/refresh。
-// - 有 refreshPromise 后，只发 1 次刷新请求，另外 2 个等待同一个结果。
+// - 用户打开页面时同时请求用户列表和个人信息。
+// - 这 2 个请求都发现 accessToken 过期。
+// - 如果没有 refreshPromise，会发 2 次 /auth/refresh。
+// - 有 refreshPromise 后，只发 1 次刷新请求，另一个等待同一个结果。
 let refreshPromise: Promise<string> | null = null
 
 // 登录失效处理标记。多个接口同时返回 401 时，只需要弹一次提示、跳一次登录页，避免页面连续闪动。
