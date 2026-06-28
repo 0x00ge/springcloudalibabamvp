@@ -6,8 +6,7 @@ import {createUser, deleteUser, fetchUserPageConfig, selectUsers, updateUser} fr
 import type {OptionItem} from '@/types/types.js'
 import type {UserForm, UserItem} from '@/types/userTypes'
 
-// 用户表格数据，页面只关心渲染结果，真实数据来源统一交给 api 层。
-const users = ref<UserItem[]>([])
+const userList = ref<UserItem[]>([])
 // 表格加载状态：只控制用户列表请求期间的 loading。
 const tableLoading = ref(false)
 // 页面配置加载状态：角色、状态、默认表单等字典请求期间使用。
@@ -100,10 +99,10 @@ const filteredUsers = computed(() => {
       .map(([field, value]) => [field, value.trim().toLowerCase()] as const)
       .filter(([, value]) => value)
 
-  if (queryEntries.length === 0) return users.value
+  if (queryEntries.length === 0) return userList.value
 
   // every 表示联合查询：只有所有已填写字段都命中，当前用户才会保留。
-  return users.value.filter((user) =>
+  return userList.value.filter((user) =>
       queryEntries.every(([field, value]) =>
           String(user[field as keyof Pick<UserItem, 'name' | 'phone' | 'role' | 'email' | 'status'>] || '')
               .toLowerCase()
@@ -165,7 +164,7 @@ const handleSelectUsers = async () => {
   tableLoading.value = true
 
   try {
-    users.value = await selectUsers()
+    userList.value = await selectUsers()
   } finally {
     tableLoading.value = false
   }
