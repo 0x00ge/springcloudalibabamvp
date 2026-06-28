@@ -65,9 +65,6 @@ const rules: FormRules<UserForm> = {
   passwordHash: [{required: true, message: '请输入初始密码', trigger: 'blur'}],
 }
 
-
-// 页面整体 loading 合并表格请求和配置请求，任意一个请求未完成时都显示加载态。
-const pageLoading = computed(() => tableLoading.value || configLoading.value)
 // 把接口返回的状态配置转换成 Map，表格渲染 tag 时可以快速按状态取颜色。
 const statusTagTypeMap = computed(() =>
     statusOptions.value.reduce<Record<string, OptionItem['tagType']>>((map, item) => {
@@ -237,28 +234,25 @@ onMounted(
       <el-button type="primary" @click="handleSaveUser">新增</el-button>
     </div>
 
-    <!-- 用户列表：loading 绑定 pageLoading，让配置或列表请求期间都有反馈。 -->
-    <div v-loading="pageLoading" class="table-wrap">
-      <!-- 用户表格：数据来自 users，操作列调用同一个弹窗和删除流程。 -->
-      <el-table v-loading="tableLoading" :data="userList" stripe>
-        <el-table-column prop="name" label="用户名" min-width="140"/>
-        <el-table-column prop="phone" label="手机号" min-width="140"/>
-        <el-table-column prop="role" label="角色" min-width="140"/>
-        <el-table-column prop="email" label="邮箱" min-width="220"/>
-        <el-table-column prop="status" label="状态" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getStatusTagType(row.status)">{{ row.status }}</el-tag>
-          </template>
-        </el-table-column>
+    <!-- 用户表格：数据来自 userList，操作列调用同一个弹窗和删除流程。 -->
+    <el-table v-loading="tableLoading" :data="userList" stripe>
+      <el-table-column prop="name" label="用户名" min-width="140"/>
+      <el-table-column prop="phone" label="手机号" min-width="140"/>
+      <el-table-column prop="role" label="角色" min-width="140"/>
+      <el-table-column prop="email" label="邮箱" min-width="220"/>
+      <el-table-column prop="status" label="状态" width="120">
+        <template #default="{ row }">
+          <el-tag :type="getStatusTagType(row.status)">{{ row.status }}</el-tag>
+        </template>
+      </el-table-column>
 
-        <el-table-column label="操作" width="160" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="handleUpdateUser(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDeleteUser(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
+      <el-table-column label="操作" width="160" fixed="right">
+        <template #default="{ row }">
+          <el-button link type="primary" @click="handleUpdateUser(row)">编辑</el-button>
+          <el-button link type="danger" @click="handleDeleteUser(row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
     <!-- 新增/编辑弹窗：通过 isCreateOrUpdate 区分模式，表单结构完全复用。 -->
     <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px" @closed="resetUserForm">
@@ -346,13 +340,6 @@ onMounted(
 
 .query-select {
   width: 128px;
-}
-
-.table-wrap {
-  /* 表格区域不再使用 el-card，只保留轻边框和留白承载 el-table。 */
-  border: 1px solid #e1e6ef;
-  border-radius: 8px;
-  padding: 18px;
 }
 
 @media (max-width: 768px) {
