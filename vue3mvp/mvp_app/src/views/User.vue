@@ -6,6 +6,7 @@ import {createUser, deleteUser, fetchUserPageConfig, selectUsers, updateUser} fr
 import type {OptionItem} from '@/types/types.js'
 import type {UserForm, UserItem} from '@/types/userTypes'
 
+const userId = ref<string>('')
 const userList = ref<UserItem[]>([])
 // 表格加载状态：只控制用户列表请求期间的 loading。
 const tableLoading = ref(false)
@@ -36,7 +37,7 @@ const titleOfCreateOrUpdate = computed(() => {
   return isCreateOrUpdate.value ? '新增用户' : '编辑用户'
 })
 const isVisibleOfCreateOrUpdate = ref<boolean>()
-const userId = ref<string>('')
+
 // Element Plus 表单实例，用于触发表单校验和清空校验状态。
 const formInstance = ref<FormInstance>()
 // 角色下拉选项由 MockJS 配置接口返回，避免页面写死业务字典。
@@ -272,8 +273,8 @@ onMounted(
       <el-button type="primary" @click="handleSaveUser">新增</el-button>
     </div>
 
-    <!-- 用户列表卡片：loading 绑定 pageLoading，让配置或列表请求期间都有反馈。 -->
-    <el-card v-loading="pageLoading" class="table-card" shadow="never">
+    <!-- 用户列表：loading 绑定 pageLoading，让配置或列表请求期间都有反馈。 -->
+    <div v-loading="pageLoading" class="table-wrap">
       <!-- 用户表格：数据来自 users，操作列调用同一个弹窗和删除流程。 -->
       <el-table v-loading="tableLoading" :data="filteredUsers" stripe>
         <el-table-column prop="name" label="用户名" min-width="140"/>
@@ -293,7 +294,7 @@ onMounted(
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </div>
 
     <!-- 新增/编辑弹窗：通过 isCreateOrUpdate 区分模式，表单结构完全复用。 -->
     <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px" @closed="resetUserForm">
@@ -383,14 +384,10 @@ onMounted(
   width: 128px;
 }
 
-.table-card {
-  /* 表格区域使用轻边框卡片，和后台主体浅灰背景拉开层级。 */
+.table-wrap {
+  /* 表格区域不再使用 el-card，只保留轻边框和留白承载 el-table。 */
   border: 1px solid #e1e6ef;
   border-radius: 8px;
-}
-
-.table-card :deep(.el-card__body) {
-  /* 卡片内容区保持统一内边距，避免全局清零后只依赖组件默认值。 */
   padding: 18px;
 }
 
