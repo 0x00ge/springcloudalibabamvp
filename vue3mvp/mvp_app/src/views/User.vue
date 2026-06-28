@@ -31,18 +31,18 @@ const roleOptions = ref<OptionItem[]>([])
 // 状态选项同样来自配置接口，并携带 tagType 用来控制表格标签颜色。
 const statusOptions = ref<OptionItem[]>([])
 
-// defaultForm 是接口下发的默认表单模板，不直接绑定输入框，只用来重置 form。
-const defaultForm = reactive<UserForm>({
+// defaultUserForm 是接口下发的默认表单模板，不直接绑定输入框，只用来重置 form。
+const defaultUserForm = reactive<UserForm>({
   name: '',
   phone: '',
   role: '',
   status: '',
   email: '',
-  passwordHash: '123456',
+  passwordHash: '',
 })
 
 // form 是真正绑定到输入框上的表单数据，用户在弹窗里输入或编辑时，修改的就是它。
-const form = reactive<UserForm>({
+const userForm = reactive<UserForm>({
   name: '',
   phone: '',
   role: '',
@@ -73,24 +73,24 @@ const statusTagTypeMap = computed(() =>
 // 加载用户管理页面配置：
 // - roleOptions：角色下拉选项。
 // - statusOptions：状态单选项和表格 tag 颜色。
-// - defaultForm：新增用户时的默认表单值。
+// - defaultUserForm：新增用户时的默认表单值。
 // 这些都走接口，后续接真实后端时只需要替换接口返回即可。
-const handleUserOperationConfig = async () => {
+const handleUserInfoConfig = async () => {
   const config = await getUserInfoConfig()
 
   roleOptions.value = config.roleOptions
   statusOptions.value = config.statusOptions
-  Object.assign(defaultForm, config.defaultForm)
-  Object.assign(form, config.defaultForm)
+  Object.assign(defaultUserForm, config.defaultUserForm)
+  Object.assign(userForm, config.defaultUserForm)
 }
 
 // 重置弹窗表单：
 // 新增前、弹窗关闭后都会调用，保证上一次编辑的数据不会残留到下一次新增。
-const resetUserForm =
+const handleResetUserForm =
     () => {
       isCreateOrUpdate.value = undefined
       userId.value = ''
-      Object.assign(form, defaultForm)
+      Object.assign(userForm, defaultUserForm)
       formInstance.value?.clearValidate()
     }
 
@@ -117,7 +117,7 @@ const handleSelectUsers = async () => {
 }
 
 const handleSaveUser = () => {
-  resetUserForm()
+  handleResetUserForm()
   isCreateOrUpdate.value = true
   isVisibleOfCreateOrUpdate.value = true
 }
@@ -126,7 +126,7 @@ const handleUpdateUser =
     (user: UserItem) => {
       isCreateOrUpdate.value = false
       userId.value = user.id
-      Object.assign(form, {
+      Object.assign(userForm, {
         name: user.name,
         phone: user.phone,
         role: user.role,
@@ -144,10 +144,10 @@ const handleSaveOrUpdateSubmit =
       await formInstance.value.validate()
 
       if (isCreateOrUpdate.value === true) {
-        await createUser(form)
+        await createUser(userForm)
         ElMessage.success('用户新增成功')
       } else {
-        await updateUser(userId.value, form)
+        await updateUser(userId.value, userForm)
         ElMessage.success('用户更新成功')
       }
 
@@ -177,7 +177,7 @@ const getStatusTagType =
 // 这样表格状态颜色、弹窗默认值都能在数据展示前准备好。
 onMounted(
     async () => {
-      await handleUserOperationConfig()
+      await handleUserInfoConfig()
       await handleSelectUsers()
     })
 </script>
@@ -239,18 +239,18 @@ onMounted(
     </el-table>
 
     <!-- 新增/编辑弹窗：通过 isCreateOrUpdate 区分模式，表单结构完全复用。 -->
-    <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px" @closed="resetUserForm">
-      <el-form ref="formInstance" :model="form" :rules="rules" label-width="80px">
+    <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px" @closed="handleResetUserForm">
+      <el-form ref="formInstance" :model="userForm" :rules="rules" label-width="80px">
         <!-- 用户名：普通输入框，必填校验在 rules.name 中维护。 -->
         <el-form-item label="用户名" prop="name">
-          <el-input v-model="form.name" placeholder="请输入用户名"/>
+          <el-input v-model="userForm.name" placeholder="请输入用户名"/>
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入手机号"/>
+          <el-input v-model="userForm.phone" placeholder="请输入手机号"/>
         </el-form-item>
         <!-- 角色：选项从 /users/config 获取，不在页面里写死。 -->
         <el-form-item label="角色" prop="role">
-          <el-select v-model="form.role" placeholder="请选择角色">
+          <el-select v-model="userForm.role" placeholder="请选择角色">
             <el-option
                 v-for="item in roleOptions"
                 :key="item.value"
@@ -260,15 +260,15 @@ onMounted(
           </el-select>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱"/>
+          <el-input v-model="userForm.email" placeholder="请输入邮箱"/>
         </el-form-item>
         <!-- 初始密码只在新增用户时填写；编辑用户时保持后端已有 passwordHash，不在页面暴露。 -->
         <el-form-item v-if="isCreateOrUpdate" label="初始密码" prop="passwordHash">
-          <el-input v-model="form.passwordHash" placeholder="请输入初始密码" show-password/>
+          <el-input v-model="userForm.passwordHash" placeholder="请输入初始密码" show-password/>
         </el-form-item>
         <!-- 状态：状态选项从配置接口返回，和表格 tag 颜色使用同一份数据源。 -->
         <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
+          <el-radio-group v-model="userForm.status">
             <el-radio-button
                 v-for="item in statusOptions"
                 :key="item.value"

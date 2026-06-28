@@ -71,5 +71,5 @@ export interface UserInfoConfig {
     /** 状态选项，表格状态 tag 颜色也从这里取。 */
     statusOptions: OptionItem[]
     /** 新增用户时的默认表单值。 */
-    defaultForm: UserForm
+    defaultUserForm: UserForm
 }

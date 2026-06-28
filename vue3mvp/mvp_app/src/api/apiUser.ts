@@ -74,7 +74,7 @@ export const getUserInfoConfig =
             {label: '禁用', value: '禁用', tagType: 'info'},
             {label: '注销', value: '注销', tagType: 'danger'},
         ],
-        defaultForm: {
+        defaultUserForm: {
             name: '',
             phone: '',
             role: '普通用户',
