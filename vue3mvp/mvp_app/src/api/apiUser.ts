@@ -1,6 +1,6 @@
 import {del, get, post, put} from '@/utils/http/http.ts'
 
-import type {UserForm, UserItem, UserPageConfig, UserQuery} from '@/types/userTypes.ts'
+import type {UserForm, UserItem, UserInfoConfig, UserQuery} from '@/types/userTypes.ts'
 
 interface UserDto {
     id?: string
@@ -63,8 +63,8 @@ const toUserDto =
     })
 
 // 用户管理配置来自前端固定字典；用户列表和修改删除走真实后端 /user 接口。
-export const fetchUserPageConfig =
-    async (): Promise<UserPageConfig> => ({
+export const getUserInfoConfig =
+    async (): Promise<UserInfoConfig> => ({
         roleOptions: [
             {label: '管理员', value: '管理员', tagType: 'warning'},
             {label: '普通用户', value: '普通用户', tagType: 'info'},

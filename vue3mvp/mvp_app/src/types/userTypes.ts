@@ -65,7 +65,7 @@ export interface UserQuery {
  * 用户管理页面配置。
  * 页面初始化时从 /users/config 获取，避免角色、状态和默认表单写死在组件里。
  */
-export interface UserPageConfig {
+export interface UserInfoConfig {
     /** 角色下拉选项。 */
     roleOptions: OptionItem[]
     /** 状态选项，表格状态 tag 颜色也从这里取。 */

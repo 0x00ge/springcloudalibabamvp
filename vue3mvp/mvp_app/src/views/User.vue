@@ -2,7 +2,7 @@
 import {computed, onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
 
-import {createUser, deleteUser, fetchUserPageConfig, selectUsers, updateUser} from '@/api/apiUser.js'
+import {createUser, deleteUser, getUserInfoConfig, selectUsers, updateUser} from '@/api/apiUser.js'
 import type {OptionItem} from '@/types/types.js'
 import type {UserForm, UserItem, UserQuery} from '@/types/userTypes'
 
@@ -31,8 +31,8 @@ const roleOptions = ref<OptionItem[]>([])
 // 状态选项同样来自配置接口，并携带 tagType 用来控制表格标签颜色。
 const statusOptions = ref<OptionItem[]>([])
 
-// form 是真正绑定到输入框上的表单数据，用户在弹窗里输入或编辑时，修改的就是它。
-const form = reactive<UserForm>({
+// defaultForm 是接口下发的默认表单模板，不直接绑定输入框，只用来重置 form。
+const defaultForm = reactive<UserForm>({
   name: '',
   phone: '',
   role: '',
@@ -41,8 +41,8 @@ const form = reactive<UserForm>({
   passwordHash: '123456',
 })
 
-// defaultForm 是接口下发的默认表单模板，不直接绑定输入框，只用来重置 form。
-const defaultForm = reactive<UserForm>({
+// form 是真正绑定到输入框上的表单数据，用户在弹窗里输入或编辑时，修改的就是它。
+const form = reactive<UserForm>({
   name: '',
   phone: '',
   role: '',
@@ -75,8 +75,8 @@ const statusTagTypeMap = computed(() =>
 // - statusOptions：状态单选项和表格 tag 颜色。
 // - defaultForm：新增用户时的默认表单值。
 // 这些都走接口，后续接真实后端时只需要替换接口返回即可。
-const loadUserPageConfig = async () => {
-  const config = await fetchUserPageConfig()
+const handleUserOperationConfig = async () => {
+  const config = await getUserInfoConfig()
 
   roleOptions.value = config.roleOptions
   statusOptions.value = config.statusOptions
@@ -177,7 +177,7 @@ const getStatusTagType =
 // 这样表格状态颜色、弹窗默认值都能在数据展示前准备好。
 onMounted(
     async () => {
-      await loadUserPageConfig()
+      await handleUserOperationConfig()
       await handleSelectUsers()
     })
 </script>
