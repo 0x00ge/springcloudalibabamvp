@@ -8,10 +8,6 @@ import type {UserForm, UserItem, UserQuery} from '@/types/userTypes'
 
 const userId = ref<string>('')
 const userList = ref<UserItem[]>([])
-// 表格加载状态：只控制用户列表请求期间的 loading。
-const tableLoading = ref(false)
-// 页面配置加载状态：角色、状态、默认表单等字典请求期间使用。
-const configLoading = ref(false)
 
 // 查询输入区的临时表单值。用户在输入框里改值时，只先改这里，不立刻过滤表格。
 const queryForm = reactive<UserQuery>({
@@ -80,18 +76,12 @@ const statusTagTypeMap = computed(() =>
 // - defaultForm：新增用户时的默认表单值。
 // 这些都走接口，后续接真实后端时只需要替换接口返回即可。
 const loadUserPageConfig = async () => {
-  configLoading.value = true
+  const config = await fetchUserPageConfig()
 
-  try {
-    const config = await fetchUserPageConfig()
-
-    roleOptions.value = config.roleOptions
-    statusOptions.value = config.statusOptions
-    Object.assign(defaultForm, config.defaultForm)
-    Object.assign(form, config.defaultForm)
-  } finally {
-    configLoading.value = false
-  }
+  roleOptions.value = config.roleOptions
+  statusOptions.value = config.statusOptions
+  Object.assign(defaultForm, config.defaultForm)
+  Object.assign(form, config.defaultForm)
 }
 
 // 重置弹窗表单：
@@ -123,13 +113,7 @@ const handleClearQuery = async () => {
 }
 
 const handleSelectUsers = async () => {
-  tableLoading.value = true
-
-  try {
-    userList.value = await selectUsers(queryForm)
-  } finally {
-    tableLoading.value = false
-  }
+  userList.value = await selectUsers(queryForm)
 }
 
 const handleSaveUser = () => {
@@ -235,7 +219,7 @@ onMounted(
     </div>
 
     <!-- 用户表格：数据来自 userList，操作列调用同一个弹窗和删除流程。 -->
-    <el-table v-loading="tableLoading" :data="userList" stripe>
+    <el-table :data="userList" stripe>
       <el-table-column prop="name" label="用户名" min-width="140"/>
       <el-table-column prop="phone" label="手机号" min-width="140"/>
       <el-table-column prop="role" label="角色" min-width="140"/>
