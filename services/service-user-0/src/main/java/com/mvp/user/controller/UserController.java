@@ -4,23 +4,25 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mvp.common.controller.BaseController;
-import com.mvp.user.enums.UserPermission;
+import com.mvp.common.vo.ResultVO;
 import com.mvp.user.dto.UserDto;
 import com.mvp.user.entity.User;
-import com.mvp.common.vo.ResultVO;
+import com.mvp.user.enums.UserPermission;
 import com.mvp.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.beans.BeanUtils;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
@@ -47,14 +49,17 @@ public class UserController extends BaseController<User, UserDto> {
         return super.getById(id);
     }
 
+    @Override
     @GetMapping("/page")
     public ResultVO<IPage<UserDto>> page(@RequestParam(defaultValue = "1") Long page,
-                                         @RequestParam(defaultValue = "10") Long size,
-                                         @RequestParam(required = false) String name,
-                                         @RequestParam(required = false) String phone,
-                                         @RequestParam(required = false) String email,
-                                         @RequestParam(required = false) UserPermission permission,
-                                         @RequestParam(required = false) Integer status) {
+                                         @RequestParam(defaultValue = "10") Long size) {
+        HttpServletRequest request = currentRequest();
+        String name = request.getParameter("name");
+        String phone = request.getParameter("phone");
+        String email = request.getParameter("email");
+        UserPermission permission = parsePermission(request.getParameter("permission"));
+        Integer status = parseStatus(request.getParameter("status"));
+
         Page<User> queryPage = new Page<>(page, size);
         IPage<UserDto> result = userService.page(queryPage, Wrappers.<User>lambdaQuery()
                 .like(StringUtils.hasText(name), User::getName, name)
@@ -64,7 +69,7 @@ public class UserController extends BaseController<User, UserDto> {
                 .eq(status != null, User::getStatus, status)
                 .isNull(User::getDeletedAt)
                 .orderByDesc(User::getCreatedAt))
-                .convert(this::toDto);
+                .convert(this::entity2Dto);
         return ResultVO.ok(result);
     }
 
@@ -104,9 +109,24 @@ public class UserController extends BaseController<User, UserDto> {
         dto.setPasswordHash(passwordEncoder.encode(passwordHash));
     }
 
-    private UserDto toDto(User user) {
-        UserDto dto = new UserDto();
-        BeanUtils.copyProperties(user, dto);
-        return dto;
+    private HttpServletRequest currentRequest() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return attributes.getRequest();
+    }
+
+    private UserPermission parsePermission(String permission) {
+        if (!StringUtils.hasText(permission)) {
+            return null;
+        }
+
+        return UserPermission.valueOf(permission);
+    }
+
+    private Integer parseStatus(String status) {
+        if (!StringUtils.hasText(status)) {
+            return null;
+        }
+
+        return Integer.valueOf(status);
     }
 }
