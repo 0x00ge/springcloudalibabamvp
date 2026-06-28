@@ -1,7 +1,10 @@
 package com.mvp.user.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mvp.common.controller.BaseController;
+import com.mvp.user.enums.UserPermission;
 import com.mvp.user.dto.UserDto;
 import com.mvp.user.entity.User;
 import com.mvp.common.vo.ResultVO;
@@ -17,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.BeanUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 
@@ -42,11 +47,25 @@ public class UserController extends BaseController<User, UserDto> {
         return super.getById(id);
     }
 
-    @Override
     @GetMapping("/page")
     public ResultVO<IPage<UserDto>> page(@RequestParam(defaultValue = "1") Long page,
-                                         @RequestParam(defaultValue = "10") Long size) {
-        return super.page(page, size);
+                                         @RequestParam(defaultValue = "10") Long size,
+                                         @RequestParam(required = false) String name,
+                                         @RequestParam(required = false) String phone,
+                                         @RequestParam(required = false) String email,
+                                         @RequestParam(required = false) UserPermission permission,
+                                         @RequestParam(required = false) Integer status) {
+        Page<User> queryPage = new Page<>(page, size);
+        IPage<UserDto> result = userService.page(queryPage, Wrappers.<User>lambdaQuery()
+                .like(StringUtils.hasText(name), User::getName, name)
+                .like(StringUtils.hasText(phone), User::getPhone, phone)
+                .like(StringUtils.hasText(email), User::getEmail, email)
+                .eq(permission != null, User::getPermission, permission)
+                .eq(status != null, User::getStatus, status)
+                .isNull(User::getDeletedAt)
+                .orderByDesc(User::getCreatedAt))
+                .convert(this::toDto);
+        return ResultVO.ok(result);
     }
 
     @Override
@@ -83,5 +102,11 @@ public class UserController extends BaseController<User, UserDto> {
         }
 
         dto.setPasswordHash(passwordEncoder.encode(passwordHash));
+    }
+
+    private UserDto toDto(User user) {
+        UserDto dto = new UserDto();
+        BeanUtils.copyProperties(user, dto);
+        return dto;
     }
 }

@@ -1,6 +1,6 @@
 import {del, get, post, put} from '@/utils/http/http.ts'
 
-import type {UserForm, UserItem, UserPageConfig} from '@/types/userTypes.ts'
+import type {UserForm, UserItem, UserPageConfig, UserQuery} from '@/types/userTypes.ts'
 
 interface UserDto {
     id?: string
@@ -85,8 +85,16 @@ export const fetchUserPageConfig =
     })
 
 export const selectUsers =
-    async () => {
-        const page = await get<PageResult<UserDto>>('/user/page', {page: 1, size: 100})
+    async (query?: Partial<UserQuery>) => {
+        const page = await get<PageResult<UserDto>>('/user/page', {
+            page: 1,
+            size: 100,
+            name: query?.name || undefined,
+            phone: query?.phone || undefined,
+            email: query?.email || undefined,
+            permission: query?.role ? roleValueMap[query.role] || query.role : undefined,
+            status: query?.status ? statusValueMap[query.status] : undefined,
+        })
         return page.records.map(toUserItem)
     }
 

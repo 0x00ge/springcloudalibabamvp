@@ -51,6 +51,17 @@ export interface UserForm {
 }
 
 /**
+ * 用户列表查询条件。
+ */
+export interface UserQuery {
+    name: string
+    phone: string
+    email: string
+    role: string
+    status: string
+}
+
+/**
  * 用户管理页面配置。
  * 页面初始化时从 /users/config 获取，避免角色、状态和默认表单写死在组件里。
  */

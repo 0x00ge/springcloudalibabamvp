@@ -4,7 +4,7 @@ import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'elemen
 
 import {createUser, deleteUser, fetchUserPageConfig, selectUsers, updateUser} from '@/api/apiUser.js'
 import type {OptionItem} from '@/types/types.js'
-import type {UserForm, UserItem} from '@/types/userTypes'
+import type {UserForm, UserItem, UserQuery} from '@/types/userTypes'
 
 const userId = ref<string>('')
 const userList = ref<UserItem[]>([])
@@ -14,17 +14,7 @@ const tableLoading = ref(false)
 const configLoading = ref(false)
 
 // 查询输入区的临时表单值。用户在输入框里改值时，只先改这里，不立刻过滤表格。
-const queryForm = reactive({
-  name: '',
-  phone: '',
-  role: '',
-  email: '',
-  status: '',
-})
-
-// 已生效的查询条件。点击“查询”时由 queryForm 复制到这里，filteredUsers 只读取 activeQuery。
-// 这样用户输入一半时不会频繁改变表格结果，也方便“清空”一次性撤销所有条件。
-const activeQuery = reactive({
+const queryForm = reactive<UserQuery>({
   name: '',
   phone: '',
   role: '',
@@ -87,31 +77,6 @@ const statusTagTypeMap = computed(() =>
     }, {}),
 )
 
-// 表格最终展示的数据。
-//
-// 查询规则：
-// 1. 每个字段都可以单独查询，例如只填手机号。
-// 2. 多个字段同时填写时采用 AND 联合查询，所有条件都满足才展示。
-// 3. 文本比较统一转成小写，降低大小写输入差异带来的影响。
-const filteredUsers = computed(() => {
-  // Object.entries 会把 activeQuery 转成 [字段名, 查询值] 列表。
-  // 空字符串条件会被过滤掉，避免未填写字段参与匹配。
-  const queryEntries = Object.entries(activeQuery)
-      .map(([field, value]) => [field, value.trim().toLowerCase()] as const)
-      .filter(([, value]) => value)
-
-  if (queryEntries.length === 0) return userList.value
-
-  // every 表示联合查询：只有所有已填写字段都命中，当前用户才会保留。
-  return userList.value.filter((user) =>
-      queryEntries.every(([field, value]) =>
-          String(user[field as keyof Pick<UserItem, 'name' | 'phone' | 'role' | 'email' | 'status'>] || '')
-              .toLowerCase()
-              .includes(value),
-      ),
-  )
-})
-
 // 加载用户管理页面配置：
 // - roleOptions：角色下拉选项。
 // - statusOptions：状态单选项和表格 tag 颜色。
@@ -143,14 +108,13 @@ const resetUserForm =
     }
 
 
-// 应用查询条件。
-// 注意这里只更新 activeQuery，不重新请求后端；查询基于当前 users 列表在前端完成。
-const handleQuery = () => {
-    Object.assign(activeQuery, queryForm)
+// 应用查询条件，请求后端 /user/page 按条件查询。
+const handleQuery = async () => {
+  await handleSelectUsers()
 }
 
-// 清空查询条件，并同步清空已经生效的 activeQuery。
-const handleClearQuery = () => {
+// 清空查询条件，并重新请求后端列表。
+const handleClearQuery = async () => {
   Object.assign(queryForm, {
     name: '',
     phone: '',
@@ -158,14 +122,14 @@ const handleClearQuery = () => {
     email: '',
     status: '',
   })
-  Object.assign(activeQuery, queryForm)
+  await handleSelectUsers()
 }
 
 const handleSelectUsers = async () => {
   tableLoading.value = true
 
   try {
-    userList.value = await selectUsers()
+    userList.value = await selectUsers(queryForm)
   } finally {
     tableLoading.value = false
   }
@@ -276,7 +240,7 @@ onMounted(
     <!-- 用户列表：loading 绑定 pageLoading，让配置或列表请求期间都有反馈。 -->
     <div v-loading="pageLoading" class="table-wrap">
       <!-- 用户表格：数据来自 users，操作列调用同一个弹窗和删除流程。 -->
-      <el-table v-loading="tableLoading" :data="filteredUsers" stripe>
+      <el-table v-loading="tableLoading" :data="userList" stripe>
         <el-table-column prop="name" label="用户名" min-width="140"/>
         <el-table-column prop="phone" label="手机号" min-width="140"/>
         <el-table-column prop="role" label="角色" min-width="140"/>
