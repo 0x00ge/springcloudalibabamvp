@@ -86,14 +86,12 @@ const handleUserInfoConfig = async () => {
 
 // 重置弹窗表单：
 // 新增前、弹窗关闭后都会调用，保证上一次编辑的数据不会残留到下一次新增。
-const handleResetUserForm =
-    () => {
-      isCreateOrUpdate.value = undefined
-      userId.value = ''
-      Object.assign(userForm, defaultUserForm)
-      formInstance.value?.clearValidate()
-    }
-
+const handleResetUserForm = () => {
+  isCreateOrUpdate.value = undefined
+  userId.value = ''
+  Object.assign(userForm, defaultUserForm)
+  formInstance.value?.clearValidate()
+}
 
 // 应用查询条件，请求后端 /user/page 按条件查询。
 const handleQuery = async () => {
@@ -122,64 +120,60 @@ const handleSaveUser = () => {
   isVisibleOfCreateOrUpdate.value = true
 }
 
-const handleUpdateUser =
-    (user: UserItem) => {
-      isCreateOrUpdate.value = false
-      userId.value = user.id
-      Object.assign(userForm, {
-        name: user.name,
-        phone: user.phone,
-        role: user.role,
-        status: user.status,
-        email: user.email,
-        passwordHash: user.passwordHash,
-      })
-      isVisibleOfCreateOrUpdate.value = true
-    }
+const handleUpdateUser = (user: UserItem) => {
+  isCreateOrUpdate.value = false
+  userId.value = user.id
+  Object.assign(userForm, {
+    name: user.name,
+    phone: user.phone,
+    role: user.role,
+    status: user.status,
+    email: user.email,
+    passwordHash: user.passwordHash,
+  })
+  isVisibleOfCreateOrUpdate.value = true
+}
 
-const handleSaveOrUpdateSubmit =
-    async () => {
-      if (!formInstance.value) return
+const handleSaveOrUpdateSubmit = async () => {
+  if (!formInstance.value) return
 
-      await formInstance.value.validate()
+  await formInstance.value.validate()
 
-      if (isCreateOrUpdate.value === true) {
-        await createUser(userForm)
-        ElMessage.success('用户新增成功')
-      } else {
-        await updateUser(userId.value, userForm)
-        ElMessage.success('用户更新成功')
-      }
+  if (isCreateOrUpdate.value === true) {
+    await createUser(userForm)
+    ElMessage.success('用户新增成功')
+  } else {
+    await updateUser(userId.value, userForm)
+    ElMessage.success('用户更新成功')
+  }
 
-      isVisibleOfCreateOrUpdate.value = false
-      await handleSelectUsers()
-    }
+  isVisibleOfCreateOrUpdate.value = false
+  await handleSelectUsers()
+}
 
-const handleDeleteUser =
-    async (user: UserItem) => {
-      await ElMessageBox.confirm(`确定删除用户「${user.name}」吗？`, '删除确认', {
-        type: 'warning',
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-      })
+const handleDeleteUser = async (user: UserItem) => {
+  await ElMessageBox.confirm(`确定删除用户「${user.name}」吗？`, '删除确认', {
+    type: 'warning',
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+  })
 
-      await deleteUser(user.id)
-      ElMessage.success('用户删除成功')
-      await handleSelectUsers()
-    }
+  await deleteUser(user.id)
+  ElMessage.success('用户删除成功')
+  await handleSelectUsers()
+}
 
 // 状态颜色由配置中的 tagType 决定，页面不关心具体状态文案。
 // 如果后端新增了别的状态但没给颜色，默认使用 info，避免页面报错。
-const getStatusTagType =
-    (status: string) => statusTagTypeMap.value[status] || 'info'
+const getStatusTagType = (status: string) =>
+    statusTagTypeMap.value[status] || 'info'
 
 // 页面挂载后先加载字典配置，再加载列表。
 // 这样表格状态颜色、弹窗默认值都能在数据展示前准备好。
-onMounted(
-    async () => {
-      await handleUserInfoConfig()
-      await handleSelectUsers()
-    })
+onMounted(async () => {
+  await handleUserInfoConfig()
+  await handleSelectUsers()
+})
 </script>
 
 <template>
@@ -239,7 +233,8 @@ onMounted(
     </el-table>
 
     <!-- 新增/编辑弹窗：通过 isCreateOrUpdate 区分模式，表单结构完全复用。 -->
-    <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px" @closed="handleResetUserForm">
+    <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px"
+               @closed="handleResetUserForm">
       <el-form ref="formInstance" :model="userForm" :rules="rules" label-width="80px">
         <!-- 用户名：普通输入框，必填校验在 rules.name 中维护。 -->
         <el-form-item label="用户名" prop="name">
