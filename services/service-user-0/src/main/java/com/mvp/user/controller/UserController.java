@@ -68,7 +68,7 @@ public class UserController extends BaseController<User, UserDto> {
                 .eq(permission != null, User::getPermission, permission)
                 .eq(status != null, User::getStatus, status)
                 .isNull(User::getDeletedAt)
-                .orderByDesc(User::getCreatedAt))
+                .orderByAsc(User::getCreatedAt))
                 .convert(this::entity2Dto);
         return ResultVO.ok(result);
     }
