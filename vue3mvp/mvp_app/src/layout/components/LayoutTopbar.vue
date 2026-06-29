@@ -41,7 +41,7 @@ defineEmits<{
       </el-button>
       <el-dropdown>
         <span v-loading="loading" class="user-entry">
-          <el-avatar :size="32">{{ user?.avatarText || '-' }}</el-avatar>
+          <el-avatar :size="32">{{ user?.name?.slice(0, 1).toUpperCase() || '-' }}</el-avatar>
           <span>{{ user?.name || 'Loading' }}</span>
         </span>
         <template #dropdown>

@@ -1,6 +1,6 @@
 import {del, get, post, put} from '@/utils/http/http.ts'
 
-import type {UserForm, UserItem, UserInfoConfig, UserQuery} from '@/types/userTypes.ts'
+import type {UserForm, UserInfo, UserInfoConfig, UserQuery} from '@/types/userTypes.ts'
 
 interface UserDto {
     id?: string
@@ -41,8 +41,8 @@ const statusValueMap: Record<string, number> = {
     注销: 2,
 }
 
-const toUserItem =
-    (user: UserDto): UserItem => ({
+const toUserInfo =
+    (user: UserDto): UserInfo => ({
         id: user.id || '',
         name: user.name,
         phone: user.phone,
@@ -95,7 +95,7 @@ export const selectUsers =
             permission: query?.role ? roleValueMap[query.role] || query.role : undefined,
             status: query?.status ? statusValueMap[query.status] : undefined,
         })
-        return page.records.map(toUserItem)
+        return page.records.map(toUserInfo)
     }
 
 export const createUser =
@@ -104,7 +104,7 @@ export const createUser =
         return {
             id,
             ...data,
-        } as UserItem
+        } as UserInfo
     }
 
 export const updateUser =
@@ -113,7 +113,7 @@ export const updateUser =
         return {
             id,
             ...data,
-        } as UserItem
+        } as UserInfo
     }
 
 export const deleteUser =

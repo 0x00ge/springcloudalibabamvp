@@ -163,10 +163,12 @@ export const useAuthStore =
             const displayName = currentAuth.value.name || currentAuth.value.phone || '用户'
 
             return {
-                userId: currentAuth.value.id,
+                id: currentAuth.value.id || '',
                 phone: currentAuth.value.phone,
+                email: '',
+                role: '',
+                status: '',
                 name: displayName,
-                avatarText: displayName.slice(0, 1).toUpperCase(),
             }
         })
 
