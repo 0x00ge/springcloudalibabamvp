@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onBeforeUnmount, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Cellphone, Lock, Message, User } from '@element-plus/icons-vue'
+import {onBeforeUnmount, reactive, ref} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {ElMessage, type FormInstance, type FormRules} from 'element-plus'
+import {Cellphone, Lock, Message, User} from '@element-plus/icons-vue'
 
-import { registerCodeByPhone } from '@/api/apiAuth.js'
-import { useAuthStore } from '@/stores/authStore.ts'
+import {registerCodeByPhone} from '@/api/apiAuth.js'
+import {useAuthStore} from '@/stores/authStore.ts'
 
 interface LoginForm {
   phone: string
@@ -13,14 +13,14 @@ interface LoginForm {
 }
 
 interface RegisterForm {
+  name: string
   phone: string
   smsCode: string
   password: string
   confirmPassword: string
-  name: string
 }
 
-type AuthMode = 'login' | 'register'
+type LoginOrRegister = 'login' | 'register'
 
 // router 用于登录成功后跳转，route 用于读取 redirect 参数。
 const router = useRouter()
@@ -41,7 +41,7 @@ const sendCodeLoading = ref(false)
 const smsCountdown = ref(0)
 
 // 登录页通过 segmented 在登录表单和注册表单之间切换。
-const authMode = ref<AuthMode>('login')
+const isLoginOrRegister = ref<LoginOrRegister>('login')
 
 // 保存倒计时定时器 ID，组件卸载时清理，避免离开页面后定时器继续运行。
 let countdownTimer: number | undefined
@@ -64,33 +64,33 @@ const registerForm = reactive<RegisterForm>({
 // 登录表单只做基础格式校验；账号是否存在、密码是否正确交给后端判断。
 const loginRules: FormRules<LoginForm> = {
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
+    {required: true, message: '请输入手机号', trigger: 'blur'},
+    {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
   ],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  password: [{required: true, message: '请输入密码', trigger: 'blur'}],
 }
 
 // 注册表单前端校验用于提前拦截明显错误；最终仍以后端校验结果为准。
 const registerRules: FormRules<RegisterForm> = {
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
+    {required: true, message: '请输入手机号', trigger: 'blur'},
+    {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
   ],
   smsCode: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-    { pattern: /^\d{6}$/, message: '验证码为 6 位数字', trigger: 'blur' },
+    {required: true, message: '请输入验证码', trigger: 'blur'},
+    {pattern: /^\d{6}$/, message: '验证码为 6 位数字', trigger: 'blur'},
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码至少 6 位', trigger: 'blur' },
+    {required: true, message: '请输入密码', trigger: 'blur'},
+    {min: 6, message: '密码至少 6 位', trigger: 'blur'},
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入密码', trigger: 'blur' },
-    { min: 6, message: '密码至少 6 位', trigger: 'blur' },
+    {required: true, message: '请再次输入密码', trigger: 'blur'},
+    {min: 6, message: '密码至少 6 位', trigger: 'blur'},
   ],
   name: [
-    { required: true, message: '请输入姓名', trigger: 'blur' },
-    { max: 50, message: '姓名长度不能超过 50 位', trigger: 'blur' },
+    {required: true, message: '请输入姓名', trigger: 'blur'},
+    {max: 50, message: '姓名长度不能超过 50 位', trigger: 'blur'},
   ],
 }
 
@@ -100,8 +100,8 @@ const registerRules: FormRules<RegisterForm> = {
 // 3. 没有 redirect 时默认进入 /home。
 const redirectToTarget = () => {
   const redirect = Array.isArray(route.query.redirect)
-    ? route.query.redirect[0]
-    : route.query.redirect
+      ? route.query.redirect[0]
+      : route.query.redirect
 
   router.replace((redirect as string) || '/home')
 }
@@ -196,7 +196,7 @@ const handleRegister = async () => {
 
     loginForm.phone = registerForm.phone
     loginForm.password = ''
-    authMode.value = 'login'
+    isLoginOrRegister.value = 'login'
     ElMessage.success('注册成功，请登录')
   } finally {
     loading.value = false
@@ -205,7 +205,7 @@ const handleRegister = async () => {
 
 // 回车提交时，根据当前模式决定执行登录还是注册。
 const handleSubmit = () => {
-  if (authMode.value === 'login') {
+  if (isLoginOrRegister.value === 'login') {
     handleLogin()
     return
   }
@@ -220,52 +220,37 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- 登录页是独立页面，不使用后台 AppLayout。 -->
-  <main class="login-page">
-    <section class="login-panel">
-      <!-- 顶部品牌区，只展示系统名称。 -->
+  <div class="login-page">
+
+    <!--  登录面板  -->
+    <div class="login-panel">
       <div class="login-brand">
-        <span class="brand-mark">V</span>
-        <div>
-          <h1>Vue3 MVP</h1>
-          <p>后台管理系统</p>
-        </div>
+        <h1>MVP后台管理系统</h1>
       </div>
 
-      <!-- 登录/注册模式切换，切换后对应表单会重新渲染。 -->
-      <el-segmented
-        v-model="authMode"
-        class="auth-mode"
-        :options="[
-          { label: '登录', value: 'login' },
-          { label: '注册', value: 'register' },
-        ]"
+      <el-segmented class="auth-mode"
+                    v-model="isLoginOrRegister"
+                    :options="[
+                      { label: '登录', value: 'login' },
+                      { label: '注册', value: 'register' },
+                    ]"
       />
 
-      <!-- 登录表单 -->
-      <el-form
-        v-if="authMode === 'login'"
-        ref="loginFormRef"
-        class="login-form"
-        :model="loginForm"
-        :rules="loginRules"
-        size="large"
-        @keyup.enter="handleSubmit"
+      <el-form class="login-form"
+               v-if="isLoginOrRegister === 'login'"
+               ref="loginFormRef"
+               :model="loginForm"
+               :rules="loginRules"
+               size="large"
+               @keyup.enter="handleSubmit"
       >
         <el-form-item prop="phone">
-          <!-- 手机号是当前项目的登录账号。 -->
-          <el-input v-model="loginForm.phone" placeholder="请输入手机号" :prefix-icon="Cellphone" />
+          <el-input v-model="loginForm.phone" placeholder="请输入手机号" :prefix-icon="Cellphone"/>
         </el-form-item>
 
         <el-form-item prop="password">
-          <!-- show-password 允许用户临时查看密码，减少输入错误。 -->
-          <el-input
-            v-model="loginForm.password"
-            placeholder="请输入密码"
-            :prefix-icon="Lock"
-            show-password
-            type="password"
-          />
+          <el-input v-model="loginForm.password" placeholder="请输入密码" :prefix-icon="Lock"
+                    type="password" show-password/>
         </el-form-item>
 
         <el-button class="login-button" type="primary" :loading="loading" @click="handleLogin">
@@ -274,33 +259,32 @@ onBeforeUnmount(() => {
       </el-form>
 
       <!-- 注册表单 -->
-      <el-form
-        v-else
-        ref="registerFormRef"
-        class="login-form"
-        :model="registerForm"
-        :rules="registerRules"
-        size="large"
-        @keyup.enter="handleSubmit"
+      <el-form class="login-form"
+               v-else
+               ref="registerFormRef"
+               :model="registerForm"
+               :rules="registerRules"
+               size="large"
+               @keyup.enter="handleSubmit"
       >
         <el-form-item prop="phone">
           <!-- 注册手机号也是后续登录账号。 -->
-          <el-input v-model="registerForm.phone" placeholder="请输入手机号" :prefix-icon="Cellphone" />
+          <el-input v-model="registerForm.phone" placeholder="请输入手机号" :prefix-icon="Cellphone"/>
         </el-form-item>
 
         <el-form-item prop="smsCode">
           <!-- 验证码输入框和发送按钮并排展示，倒计时期间禁止重复发送。 -->
           <div class="sms-code-row">
             <el-input
-              v-model="registerForm.smsCode"
-              placeholder="请输入验证码"
-              :prefix-icon="Message"
+                v-model="registerForm.smsCode"
+                placeholder="请输入验证码"
+                :prefix-icon="Message"
             />
             <el-button
-              class="sms-code-button"
-              :loading="sendCodeLoading"
-              :disabled="smsCountdown > 0"
-              @click="handleSendRegisterCode"
+                class="sms-code-button"
+                :loading="sendCodeLoading"
+                :disabled="smsCountdown > 0"
+                @click="handleSendRegisterCode"
             >
               {{ smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码' }}
             </el-button>
@@ -310,36 +294,36 @@ onBeforeUnmount(() => {
         <el-form-item prop="password">
           <!-- 密码明文只存在于当前表单，提交后由后端 BCrypt 加密入库。 -->
           <el-input
-            v-model="registerForm.password"
-            placeholder="请输入密码"
-            :prefix-icon="Lock"
-            show-password
-            type="password"
+              v-model="registerForm.password"
+              placeholder="请输入密码"
+              :prefix-icon="Lock"
+              show-password
+              type="password"
           />
         </el-form-item>
 
         <el-form-item prop="confirmPassword">
           <!-- 确认密码用于减少误输入，前后端都会校验两次密码一致。 -->
           <el-input
-            v-model="registerForm.confirmPassword"
-            placeholder="请再次输入密码"
-            :prefix-icon="Lock"
-            show-password
-            type="password"
+              v-model="registerForm.confirmPassword"
+              placeholder="请再次输入密码"
+              :prefix-icon="Lock"
+              show-password
+              type="password"
           />
         </el-form-item>
 
         <el-form-item prop="name">
           <!-- 用户名称对应后端 User.name 字段。 -->
-          <el-input v-model="registerForm.name" placeholder="请输入姓名" :prefix-icon="User" />
+          <el-input v-model="registerForm.name" placeholder="请输入姓名" :prefix-icon="User"/>
         </el-form-item>
 
         <el-button class="login-button" type="primary" :loading="loading" @click="handleRegister">
           注册
         </el-button>
       </el-form>
-    </section>
-  </main>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="less">
