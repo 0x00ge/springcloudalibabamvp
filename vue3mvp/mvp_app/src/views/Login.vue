@@ -131,23 +131,6 @@ const handleLogin = async () => {
   }
 }
 
-// 开始验证码按钮倒计时。
-//
-// 注意这里只是防止用户频繁点击按钮；真正防刷、验证码有效期和验证码校验都应该以后端为准。
-const startSmsCountdown = () => {
-  smsCountdown.value = 60
-  window.clearInterval(countdownTimer)
-
-  countdownTimer = window.setInterval(() => {
-    smsCountdown.value -= 1
-
-    if (smsCountdown.value <= 0) {
-      window.clearInterval(countdownTimer)
-      countdownTimer = undefined
-    }
-  }, 1000)
-}
-
 // 注册：
 // 1. 先校验手机号、验证码、密码、确认密码、姓名；
 // 2. 前端再校验一次两次密码是否一致；
@@ -197,10 +180,25 @@ const handleSmsCode = async () => {
     })
 
     ElMessage.success('验证码已发送')
-    startSmsCountdown()
+    smsCodeCountdown()
   } finally {
     sendCodeLoading.value = false
   }
+}
+
+// 验证码按钮倒计时
+const smsCodeCountdown = () => {
+  smsCountdown.value = 60
+  window.clearInterval(countdownTimer)
+
+  countdownTimer = window.setInterval(() => {
+    smsCountdown.value -= 1
+
+    if (smsCountdown.value <= 0) {
+      window.clearInterval(countdownTimer)
+      countdownTimer = undefined
+    }
+  }, 1000)
 }
 
 // 提交
