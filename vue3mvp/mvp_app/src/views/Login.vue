@@ -54,11 +54,11 @@ const loginForm = reactive<LoginForm>({
 
 // 注册表单响应式数据，字段和后端 /auth/register 参数保持一致。
 const registerForm = reactive<RegisterForm>({
+  name: '',
   phone: '',
   smsCode: '',
   password: '',
   confirmPassword: '',
-  name: '',
 })
 
 // 登录校验
