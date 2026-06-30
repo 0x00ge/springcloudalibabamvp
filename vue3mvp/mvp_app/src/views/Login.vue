@@ -61,7 +61,7 @@ const registerForm = reactive<RegisterForm>({
   name: '',
 })
 
-// 登录表单只做基础格式校验；账号是否存在、密码是否正确交给后端判断。
+// 登录校验
 const loginRules = reactive<FormRules<RegisterForm>>({
   phone: [
     {required: true, message: '请输入手机号', trigger: 'blur'},
@@ -70,7 +70,7 @@ const loginRules = reactive<FormRules<RegisterForm>>({
   password: [{required: true, message: '请输入密码', trigger: 'blur'}],
 })
 
-// 注册表单前端校验用于提前拦截明显错误；最终仍以后端校验结果为准。
+// 注册校验
 const registerRules = reactive<FormRules<RegisterForm>>({
   phone: [
     {required: true, message: '请输入手机号', trigger: 'blur'},
