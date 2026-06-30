@@ -148,29 +148,7 @@ const startSmsCountdown = () => {
   }, 1000)
 }
 
-// 发送注册验证码流程：
-// 1. 只校验手机号字段，不要求用户提前填完整注册表单；
-// 2. 调用真实 /auth/register/code；
-// 3. 成功后启动前端倒计时。
-const handleSendRegisterCode = async () => {
-  if (!registerFormRef.value || smsCountdown.value > 0) return
-
-  await registerFormRef.value.validateField('phone')
-  sendCodeLoading.value = true
-
-  try {
-    await registerCodeByPhone({
-      phone: registerForm.phone,
-    })
-
-    ElMessage.success('验证码已发送')
-    startSmsCountdown()
-  } finally {
-    sendCodeLoading.value = false
-  }
-}
-
-// 注册流程：
+// 注册：
 // 1. 先校验手机号、验证码、密码、确认密码、姓名；
 // 2. 前端再校验一次两次密码是否一致；
 // 3. 调用 /auth/register；
@@ -187,11 +165,11 @@ const handleRegister = async () => {
 
   try {
     await authStore.registerAction({
+      name: registerForm.name,
       phone: registerForm.phone,
       password: registerForm.password,
       confirmPassword: registerForm.confirmPassword,
       smsCode: registerForm.smsCode,
-      name: registerForm.name,
     })
 
     loginForm.phone = registerForm.phone
@@ -200,6 +178,28 @@ const handleRegister = async () => {
     ElMessage.success('注册成功，请登录')
   } finally {
     loading.value = false
+  }
+}
+
+// 验证码
+// 1. 只校验手机号字段，不要求用户提前填完整注册表单；
+// 2. 调用 /auth/register/code；
+// 3. 成功后启动前端倒计时。
+const handleSmsCode = async () => {
+  if (!registerFormRef.value || smsCountdown.value > 0) return
+
+  await registerFormRef.value.validateField('phone')
+  sendCodeLoading.value = true
+
+  try {
+    await registerCodeByPhone({
+      phone: registerForm.phone,
+    })
+
+    ElMessage.success('验证码已发送')
+    startSmsCountdown()
+  } finally {
+    sendCodeLoading.value = false
   }
 }
 
@@ -236,6 +236,7 @@ onBeforeUnmount(() => {
                     ]"
       />
 
+      <!-- 登录 -->
       <el-form class="login-form"
                v-if="isLoginOrRegister === 'login'"
                ref="loginFormRef"
@@ -258,7 +259,7 @@ onBeforeUnmount(() => {
         </el-button>
       </el-form>
 
-      <!-- 注册表单 -->
+      <!-- 注册 -->
       <el-form class="login-form"
                v-else
                ref="registerFormRef"
@@ -267,13 +268,15 @@ onBeforeUnmount(() => {
                size="large"
                @keyup.enter="handleSubmit"
       >
+        <el-form-item prop="name">
+          <el-input v-model="registerForm.name" placeholder="请输入姓名" :prefix-icon="User"/>
+        </el-form-item>
+
         <el-form-item prop="phone">
-          <!-- 注册手机号也是后续登录账号。 -->
           <el-input v-model="registerForm.phone" placeholder="请输入手机号" :prefix-icon="Cellphone"/>
         </el-form-item>
 
         <el-form-item prop="smsCode">
-          <!-- 验证码输入框和发送按钮并排展示，倒计时期间禁止重复发送。 -->
           <div class="sms-code-row">
             <el-input
                 v-model="registerForm.smsCode"
@@ -284,7 +287,7 @@ onBeforeUnmount(() => {
                 class="sms-code-button"
                 :loading="sendCodeLoading"
                 :disabled="smsCountdown > 0"
-                @click="handleSendRegisterCode"
+                @click="handleSmsCode"
             >
               {{ smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码' }}
             </el-button>
@@ -303,7 +306,6 @@ onBeforeUnmount(() => {
         </el-form-item>
 
         <el-form-item prop="confirmPassword">
-          <!-- 确认密码用于减少误输入，前后端都会校验两次密码一致。 -->
           <el-input
               v-model="registerForm.confirmPassword"
               placeholder="请再次输入密码"
@@ -313,16 +315,12 @@ onBeforeUnmount(() => {
           />
         </el-form-item>
 
-        <el-form-item prop="name">
-          <!-- 用户名称对应后端 User.name 字段。 -->
-          <el-input v-model="registerForm.name" placeholder="请输入姓名" :prefix-icon="User"/>
-        </el-form-item>
-
         <el-button class="login-button" type="primary" :loading="loading" @click="handleRegister">
           注册
         </el-button>
       </el-form>
     </div>
+
   </div>
 </template>
 
