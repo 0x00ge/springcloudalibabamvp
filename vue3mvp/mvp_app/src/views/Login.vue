@@ -203,7 +203,7 @@ const handleRegister = async () => {
   }
 }
 
-// 回车提交
+// 提交
 const handleSubmit = () => {
   if (isLoginOrRegister.value === 'login') {
     handleLogin()
