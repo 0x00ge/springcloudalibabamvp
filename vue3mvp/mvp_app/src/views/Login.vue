@@ -203,7 +203,7 @@ const handleRegister = async () => {
   }
 }
 
-// 回车提交时，根据当前模式决定执行登录还是注册。
+// 回车提交
 const handleSubmit = () => {
   if (isLoginOrRegister.value === 'login') {
     handleLogin()
