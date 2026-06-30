@@ -62,16 +62,16 @@ const registerForm = reactive<RegisterForm>({
 })
 
 // 登录表单只做基础格式校验；账号是否存在、密码是否正确交给后端判断。
-const loginRules: FormRules<LoginForm> = {
+const loginRules = reactive<FormRules<RegisterForm>>({
   phone: [
     {required: true, message: '请输入手机号', trigger: 'blur'},
     {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
   ],
   password: [{required: true, message: '请输入密码', trigger: 'blur'}],
-}
+})
 
 // 注册表单前端校验用于提前拦截明显错误；最终仍以后端校验结果为准。
-const registerRules: FormRules<RegisterForm> = {
+const registerRules = reactive<FormRules<RegisterForm>>({
   phone: [
     {required: true, message: '请输入手机号', trigger: 'blur'},
     {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
@@ -92,7 +92,7 @@ const registerRules: FormRules<RegisterForm> = {
     {required: true, message: '请输入姓名', trigger: 'blur'},
     {max: 50, message: '姓名长度不能超过 50 位', trigger: 'blur'},
   ],
-}
+})
 
 // 登录成功后的跳转目标：
 // 1. 如果路由守卫曾经把用户拦到 /login，会带上 redirect；
