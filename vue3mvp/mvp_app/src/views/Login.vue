@@ -173,7 +173,7 @@ const handleSendRegisterCode = async () => {
 // 注册流程：
 // 1. 先校验手机号、验证码、密码、确认密码、姓名；
 // 2. 前端再校验一次两次密码是否一致；
-// 3. 调用真实 /auth/register；
+// 3. 调用 /auth/register；
 // 4. 注册成功后不自动登录，而是切回登录表单，让用户显式登录获取 token。
 const handleRegister = async () => {
   if (!registerFormRef.value) return
