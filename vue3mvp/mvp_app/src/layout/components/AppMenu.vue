@@ -4,7 +4,7 @@ import { Menu as MenuIcon } from '@element-plus/icons-vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { MenuItem } from '@/types/types.js'
-import LayoutMenuItem from '@/layout/components/LayoutMenuItem.vue'
+import LayoutMenuItem from '@/layout/components/AppMenuItem.vue'
 
 const route = useRoute()
 const activeMenu = computed(() => route.path)

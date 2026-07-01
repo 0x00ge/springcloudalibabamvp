@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import {computed, onMounted, ref} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {ElMessage, ElMessageBox} from 'element-plus'
 
-import { useAuthStore } from '@/stores/authStore.ts'
-import type { BreadcrumbItem, MenuItem } from '@/types/types'
-import AppMain from './components/LayoutMain.vue'
-import AppMenu from './components/LayoutMenu.vue'
-import AppTopbar from './components/LayoutTopbar.vue'
+import {useAuthStore} from '@/stores/authStore.ts'
+import type {BreadcrumbItem, MenuItem} from '@/types/types'
+import AppMain from './components/AppMain.vue'
+import AppMenu from './components/AppMenu.vue'
+import AppTopbar from './components/AppTopbar.vue'
 
 const isCollapse = ref(false)
 const loading = ref(false)
@@ -18,19 +18,19 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const menus: MenuItem[] = [
-  { id: 'user', title: '用户管理', path: '/home/user', icon: 'UserFilled' },
+  {id: 'user', title: '用户管理', path: '/home/user', icon: 'UserFilled'},
 ]
 
 const asideWidth = computed(() => (isCollapse.value ? '64px' : '220px'))
 const currentUser = computed(() => authStore.currentUserInfo)
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() =>
-  route.matched
-    .filter((matchedRoute) => matchedRoute.meta.title)
-    .map((matchedRoute) => ({
-      title: matchedRoute.meta.title as string,
-      path: matchedRoute.path,
-    })),
+    route.matched
+        .filter((matchedRoute) => matchedRoute.meta.title)
+        .map((matchedRoute) => ({
+          title: matchedRoute.meta.title as string,
+          path: matchedRoute.path,
+        })),
 )
 
 const toggleSidebar = () => {
@@ -43,8 +43,8 @@ const handleLogout = async () => {
     confirmButtonText: '退出',
     cancelButtonText: '取消',
   })
-    .then(() => true)
-    .catch(() => false)
+      .then(() => true)
+      .catch(() => false)
 
   if (!confirmed) return
 
@@ -72,23 +72,27 @@ onMounted(async () => {
 </script>
 
 <template>
+  <!-- 布局 -->
   <el-container class="app-layout">
+
+    <!-- 侧边 -->
     <el-aside class="app-aside" :width="asideWidth">
-      <AppMenu :collapse="isCollapse" :menus="menus" />
+      <AppMenu :collapse="isCollapse" :menus="menus"/>
     </el-aside>
-
     <el-container class="app-body">
+      <!-- 顶部 -->
       <AppTopbar
-        :breadcrumbs="breadcrumbs"
-        :collapse="isCollapse"
-        :loading="loading || logoutLoading"
-        :user="currentUser"
-        @toggle-collapse="toggleSidebar"
-        @logout="handleLogout"
+          :breadcrumbs="breadcrumbs"
+          :collapse="isCollapse"
+          :loading="loading || logoutLoading"
+          :user="currentUser"
+          @toggle-collapse="toggleSidebar"
+          @logout="handleLogout"
       />
-
-      <AppMain />
+      <!-- 主体 -->
+      <AppMain/>
     </el-container>
+
   </el-container>
 </template>
 
