@@ -32,14 +32,6 @@ export interface MenuItem {
     title: string
     /** 菜单跳转路径。 */
     path: string
-    /** 菜单图标名称。 */
-    icon?: MenuIconName
     /** 子菜单。 */
     children?: MenuItem[]
 }
-
-/**
- * 菜单图标名称。
- * 侧边栏当前只保留用户管理入口。
- */
-export type MenuIconName = 'UserFilled'

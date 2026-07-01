@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Menu as MenuIcon } from '@element-plus/icons-vue'
-
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { MenuItem } from '@/types/types.js'
@@ -18,10 +16,10 @@ defineProps<{
 </script>
 
 <template>
-  <!-- 品牌区：展开时显示项目名称，折叠时只保留图标，避免窄侧栏中文字溢出。 -->
+  <!-- 品牌区：展开时显示项目名称，折叠时保留项目缩写，避免窄侧栏中文字溢出。 -->
   <div class="brand" :class="{ 'brand-collapsed': collapse }">
-    <el-icon class="brand-icon"><MenuIcon /></el-icon>
-    <span v-show="!collapse" class="brand-title">Vue3 MVP</span>
+    <span v-if="collapse" class="brand-short">MVP</span>
+    <span v-else class="brand-title">Vue3 MVP</span>
   </div>
 
   <!--
@@ -64,16 +62,9 @@ defineProps<{
 }
 
 .brand-collapsed {
-  /* 折叠后居中显示图标，和 64px 侧栏宽度匹配。 */
+  /* 折叠后居中显示项目缩写，和 64px 侧栏宽度匹配。 */
   justify-content: center;
   padding: 0;
-}
-
-.brand-icon {
-  /* 防止图标在侧栏折叠动画中被压缩变形。 */
-  flex: 0 0 auto;
-  /* 品牌图标略大于菜单图标，形成视觉层级。 */
-  font-size: 22px;
 }
 
 .brand-title {
@@ -84,6 +75,12 @@ defineProps<{
   /* 加粗品牌名，提升左上角项目识别度。 */
   font-weight: 700;
   /* 保证品牌名始终单行显示，折叠时配合 v-show 隐藏。 */
+  white-space: nowrap;
+}
+
+.brand-short {
+  font-size: 13px;
+  font-weight: 700;
   white-space: nowrap;
 }
 

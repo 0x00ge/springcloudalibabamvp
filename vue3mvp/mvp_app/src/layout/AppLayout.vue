@@ -18,10 +18,10 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const menus: MenuItem[] = [
-  {id: 'user', title: '用户管理', path: '/home/user', icon: 'UserFilled'},
+  {id: 'user', title: '用户管理', path: '/home/user'},
 ]
 
-const asideWidth = computed(() => (isCollapse.value ? '64px' : '220px'))
+const asideWidth = computed(() => (isCollapse.value ? '65px' : '220px'))
 const currentUser = computed(() => authStore.currentUserInfo)
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() =>
