@@ -4,12 +4,11 @@ import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 
 import {useAuthStore} from '@/stores/authStore.ts'
-import type {BreadcrumbItem, MenuItem} from '@/types/types'
+import type {BreadcrumbItem, MenuItem} from '@/types/layoutTypes'
 import AppMain from './components/AppMain.vue'
 import AppMenu from './components/AppMenu.vue'
 import AppTopbar from './components/AppTopbar.vue'
 
-const isCollapse = ref(false)
 const loading = ref(false)
 const logoutLoading = ref(false)
 
@@ -21,7 +20,6 @@ const menus: MenuItem[] = [
   {id: 'user', title: '用户管理', path: '/home/user'},
 ]
 
-const asideWidth = computed(() => (isCollapse.value ? '65px' : '220px'))
 const currentUser = computed(() => authStore.currentUserInfo)
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() =>
@@ -32,10 +30,6 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() =>
           path: matchedRoute.path,
         })),
 )
-
-const toggleSidebar = () => {
-  isCollapse.value = !isCollapse.value
-}
 
 const handleLogout = async () => {
   const confirmed = await ElMessageBox.confirm('确定退出当前账号吗？', '退出登录', {
@@ -76,17 +70,15 @@ onMounted(async () => {
   <el-container class="app-layout">
 
     <!-- 侧边 -->
-    <el-aside class="app-aside" :width="asideWidth">
-      <AppMenu :collapse="isCollapse" :menus="menus"/>
+    <el-aside class="app-aside" width="220px">
+      <AppMenu :menus="menus"/>
     </el-aside>
     <el-container class="app-body">
       <!-- 顶部 -->
       <AppTopbar
           :breadcrumbs="breadcrumbs"
-          :collapse="isCollapse"
           :loading="loading || logoutLoading"
           :user="currentUser"
-          @toggle-collapse="toggleSidebar"
           @logout="handleLogout"
       />
       <!-- 主体 -->
@@ -119,6 +111,5 @@ onMounted(async () => {
   flex-shrink: 0;
   overflow: hidden;
   background: #172033;
-  transition: width 0.2s ease;
 }
 </style>

@@ -1,4 +1,4 @@
-import type { OptionItem } from '@/types/types.ts'
+import type { OptionItem } from '@/types/layoutTypes.ts'
 
 /**
  * 用户基础信息。

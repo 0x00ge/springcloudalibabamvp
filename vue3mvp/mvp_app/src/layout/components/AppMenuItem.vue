@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MenuItem } from '@/types/types.js'
+import type { MenuItem } from '@/types/layoutTypes'
 
 // 单个菜单项数据由父组件 LayoutMenu.vue 传入。
 defineProps<{

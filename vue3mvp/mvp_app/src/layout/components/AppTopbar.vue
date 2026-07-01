@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { Bell, Expand, Fold } from '@element-plus/icons-vue'
+import { Bell } from '@element-plus/icons-vue'
 
-import type { BreadcrumbItem } from '@/types/types.js'
+import type { BreadcrumbItem } from '@/types/layoutTypes'
 import type { UserInfo } from '@/types/userTypes'
 
 defineProps<{
   breadcrumbs: BreadcrumbItem[]
-  collapse: boolean
   loading: boolean
   user?: UserInfo
 }>()
 
 defineEmits<{
-  toggleCollapse: []
   logout: []
 }>()
 </script>
@@ -20,13 +18,6 @@ defineEmits<{
 <template>
   <el-header class="app-header">
     <div class="header-left">
-      <el-button class="collapse-button" text @click="$emit('toggleCollapse')">
-        <el-icon :size="20">
-          <Fold v-if="!collapse" />
-          <Expand v-else />
-        </el-icon>
-      </el-button>
-
       <el-skeleton v-if="loading" class="breadcrumb-loading" animated :rows="0" />
       <el-breadcrumb v-else separator="/">
         <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.title" :to="item.path">
@@ -89,11 +80,6 @@ defineEmits<{
 .breadcrumb-loading :deep(.el-skeleton__first-line) {
   height: 18px;
   margin-top: 0;
-}
-
-.collapse-button {
-  width: 36px;
-  height: 36px;
 }
 
 .user-entry {
