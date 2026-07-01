@@ -17,7 +17,17 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const menus: MenuItem[] = [
-  {id: 'user', title: '用户管理', path: '/home/user'},
+  {
+    id: 'user', title: '用户管理', path: '/home/user', children: [
+      {
+        id: 'user-profile', title: '个人中心', path: '/auth', children: [
+          {id: 'user-profile-1', title: '1', path: '/auth'},
+          {id: 'user-profile-2', title: '2', path: '/auth'},
+        ]
+      },
+    ]
+  },
+  {id: 'auth', title: '个人中心', path: '/auth'},
 ]
 
 const currentUser = computed(() => authStore.currentUserInfo)
@@ -70,7 +80,7 @@ onMounted(async () => {
   <el-container class="app-layout">
 
     <!-- 侧边 -->
-    <el-aside class="app-aside" width="220px">
+    <el-aside class="app-aside" width="200px">
       <AppMenu :menus="menus"/>
     </el-aside>
     <el-container class="app-body">

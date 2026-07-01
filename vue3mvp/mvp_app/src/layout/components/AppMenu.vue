@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { MenuItem } from '@/types/layoutTypes'
-import LayoutMenuItem from '@/layout/components/AppMenuItem.vue'
+import AppMenuItem from '@/layout/components/AppMenuItem.vue'
 
 const route = useRoute()
 const activeMenu = computed(() => route.path)
@@ -26,15 +26,17 @@ defineProps<{
   -->
   <el-menu
     class="side-menu"
+    background-color="#545c64"
     :default-active="activeMenu"
-    background-color="#172033"
-    text-color="#c8d1e2"
+    text-color="#fff"
     active-text-color="#ffffff"
     router
   >
     <!-- 菜单项拆到独立组件中，父组件只负责循环数据，子组件负责判断普通菜单/二级菜单。 -->
-    <LayoutMenuItem v-for="menu in menus" :key="menu.id" :menu="menu" />
+    <AppMenuItem v-for="menu in menus" :key="menu.id" :menu="menu" />
+    
   </el-menu>
+
 </template>
 
 <style scoped lang="less">
@@ -68,7 +70,7 @@ defineProps<{
 .side-menu {
   /* 去掉 Element Plus 菜单默认右边框，侧栏整体更干净。 */
   border-right: 0;
-  width: 220px;
+  width: 200px;
 }
 
 .side-menu :deep(.el-menu-item),
