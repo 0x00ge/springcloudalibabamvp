@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onBeforeUnmount, reactive, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {ElMessage, type FormInstance, type FormRules} from 'element-plus'
+import {ElMessage, type FormInstance, type FormItemRule, type FormRules} from 'element-plus'
 import {Cellphone, Lock, Message, User} from '@element-plus/icons-vue'
 
 import {registerCodeByPhone} from '@/api/apiAuth.js'
@@ -61,14 +61,14 @@ const registerForm = reactive<RegisterForm>({
   confirmPassword: '',
 })
 
-// 登录校验
-const loginRules = reactive<FormRules<RegisterForm>>({
-  phone: [
-    {required: true, message: '请输入手机号', trigger: 'blur'},
-    {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
-  ],
-  password: [{required: true, message: '请输入密码', trigger: 'blur'}],
-})
+// 登录校验，原先规则注释保留。
+// const loginRules = reactive<FormRules<LoginForm>>({
+//   phone: [
+//     {required: true, message: '请输入手机号', trigger: 'blur'},
+//     {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
+//   ],
+//   password: [{required: true, message: '请输入密码', trigger: 'blur'}],
+// })
 
 // 注册校验
 const registerRules = reactive<FormRules<RegisterForm>>({
@@ -219,8 +219,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="login-page">
-
-    <!--  登录面板  -->
     <div class="login-panel">
       <div class="login-brand">
         <h1>MVP后台管理系统</h1>
@@ -234,20 +232,29 @@ onBeforeUnmount(() => {
                     ]"
       />
 
-      <!-- 登录 -->
+      <!-- 登录表单 -->
+      <!-- 原先登录表单规则注释保留：:rules="loginRules" -->
       <el-form class="login-form"
                v-if="isLoginOrRegister === 'login'"
                ref="loginFormRef"
                :model="loginForm"
-               :rules="loginRules"
                size="large"
                @keyup.enter="handleSubmit"
       >
-        <el-form-item prop="phone">
+        <el-form-item prop="phone"
+                      :rules="[
+                        {required: true, message: '请输入手机号', trigger: 'blur'},
+                        {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
+                      ]"
+        >
           <el-input v-model="loginForm.phone" placeholder="请输入手机号" :prefix-icon="Cellphone"/>
         </el-form-item>
 
-        <el-form-item prop="password">
+        <el-form-item prop="password"
+                      :rules="[
+                        {required: true, message: '请输入密码', trigger: 'blur'},
+                      ]"
+        >
           <el-input v-model="loginForm.password" placeholder="请输入密码" :prefix-icon="Lock"
                     type="password" show-password/>
         </el-form-item>
@@ -257,7 +264,7 @@ onBeforeUnmount(() => {
         </el-button>
       </el-form>
 
-      <!-- 注册 -->
+      <!-- 注册表单 -->
       <el-form class="login-form"
                v-else
                ref="registerFormRef"
@@ -293,7 +300,6 @@ onBeforeUnmount(() => {
         </el-form-item>
 
         <el-form-item prop="password">
-          <!-- 密码明文只存在于当前表单，提交后由后端 BCrypt 加密入库。 -->
           <el-input
               v-model="registerForm.password"
               placeholder="请输入密码"
@@ -318,7 +324,6 @@ onBeforeUnmount(() => {
         </el-button>
       </el-form>
     </div>
-
   </div>
 </template>
 
