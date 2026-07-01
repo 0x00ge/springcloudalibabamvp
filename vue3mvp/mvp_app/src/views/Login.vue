@@ -94,18 +94,6 @@ const registerRules = reactive<FormRules<RegisterForm>>({
   ],
 })
 
-// 登录成功后的跳转目标：
-// 1. 如果路由守卫曾经把用户拦到 /login，会带上 redirect；
-// 2. 登录成功后优先回到 redirect；
-// 3. 没有 redirect 时默认进入 /home。
-const redirectToTarget = () => {
-  const redirect = Array.isArray(route.query.redirect)
-      ? route.query.redirect[0]
-      : route.query.redirect
-
-  router.replace((redirect as string) || '/home')
-}
-
 // 登录流程：
 // 1. 先触发表单校验；
 // 2. 校验通过后调用 authStore.loginAction；
@@ -125,7 +113,7 @@ const handleLogin = async () => {
     })
 
     ElMessage.success('登录成功')
-    redirectToTarget()
+    handleRedirectToHome()
   } finally {
     loading.value = false
   }
@@ -180,14 +168,14 @@ const handleSmsCode = async () => {
     })
 
     ElMessage.success('验证码已发送')
-    smsCodeCountdown()
+    handleSmsCodeCountdown()
   } finally {
     sendCodeLoading.value = false
   }
 }
 
 // 验证码按钮倒计时
-const smsCodeCountdown = () => {
+const handleSmsCodeCountdown = () => {
   smsCountdown.value = 60
   window.clearInterval(countdownTimer)
 
@@ -209,6 +197,18 @@ const handleSubmit = () => {
   }
 
   handleRegister()
+}
+
+// 登录成功后的跳转目标：
+// 1. 如果路由守卫曾经把用户拦到 /login，会带上 redirect；
+// 2. 登录成功后优先回到 redirect；
+// 3. 没有 redirect 时默认进入 /home。
+const handleRedirectToHome = () => {
+  const redirect = Array.isArray(route.query.redirect)
+      ? route.query.redirect[0]
+      : route.query.redirect
+
+  router.replace((redirect as string) || '/home')
 }
 
 // 离开登录页时清理倒计时定时器，避免内存泄漏或重复倒计时。
