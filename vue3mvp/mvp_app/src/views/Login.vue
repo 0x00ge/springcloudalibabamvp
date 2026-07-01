@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onBeforeUnmount, reactive, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {ElMessage, type FormInstance, type FormItemRule, type FormRules} from 'element-plus'
+import {ElMessage, type FormInstance, type FormRules} from 'element-plus'
 import {Cellphone, Lock, Message, User} from '@element-plus/icons-vue'
 
 import {registerCodeByPhone} from '@/api/apiAuth.js'
