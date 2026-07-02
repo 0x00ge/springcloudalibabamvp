@@ -1,0 +1,57 @@
+.brand {
+  /* 品牌区使用横向布局，让标题在侧栏中自然排列。 */
+  display: flex;
+  /* 垂直居中对齐，和顶部栏 60px 高度保持一致。 */
+  align-items: center;
+  /* 固定品牌区高度，和右侧顶部栏对齐。 */
+  height: 60px;
+  /* 展开状态下给品牌内容留出左右呼吸空间。 */
+  padding: 0 20px;
+  /* 品牌文字用白色，在深色侧栏上保持对比度。 */
+  color: #ffffff;
+  /* 底部分割线用于区分品牌区和菜单区，透明白比纯灰更贴合深色背景。 */
+  border-bottom: 1px solid rgb(255 255 255 / 8%);
+}
+
+.brand-title {
+  overflow: hidden;
+  /* 品牌名字号略小于页面标题，适合作为侧栏识别信息。 */
+  font-size: 17px;
+  /* 加粗品牌名，提升左上角项目识别度。 */
+  font-weight: 700;
+  /* 保证品牌名始终单行显示。 */
+  white-space: nowrap;
+}
+
+.side-menu {
+  /* 去掉 Ant Design 菜单默认右边框，侧栏整体更干净。 */
+  width: 200px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  color: #ffffff;
+  background: #545c64;
+  border-inline-end: 0;
+}
+
+.side-menu.ant-menu-dark,
+.side-menu .ant-menu-sub,
+.side-menu .ant-menu-item,
+.side-menu .ant-menu-submenu-title {
+  background: #545c64;
+}
+
+.side-menu .ant-menu-item,
+.side-menu .ant-menu-submenu-title {
+  /* 菜单项高度和 Vue 版保持一致。 */
+  height: 48px;
+  line-height: 48px;
+}
+
+.side-menu .ant-menu-title-content,
+.side-menu .ant-menu-submenu-arrow {
+  color: #ffffff;
+}
+
+.side-menu .ant-menu-item-selected {
+  background: #4096ff;
+}

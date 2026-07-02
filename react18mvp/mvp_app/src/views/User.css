@@ -1,0 +1,60 @@
+.page-view {
+  /* 当前页面内部统一盒模型，配合全局清零样式保证宽度计算稳定。 */
+  box-sizing: border-box;
+  /* 页面使用网格纵向排列，统一控制头部和表格之间的间距。 */
+  display: grid;
+  gap: 16px;
+}
+
+.page-view *,
+.page-view *::before,
+.page-view *::after {
+  /* 只在当前页面范围内继承 border-box，不修改全局清零样式。 */
+  box-sizing: border-box;
+}
+
+.page-header {
+  /* 标题区和新增按钮左右分布，保持后台页面常见操作区结构。 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.query-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.query-input {
+  width: 150px;
+}
+
+.query-select {
+  width: 128px;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    /* 小屏下改成纵向排列，避免按钮和输入框被挤压。 */
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .query-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .query-input,
+  .query-select,
+  .query-panel .ant-btn {
+    width: 100%;
+  }
+}
