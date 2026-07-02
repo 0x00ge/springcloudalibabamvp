@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { Bell } from '@element-plus/icons-vue'
+import {Bell} from '@element-plus/icons-vue'
 
-import type { BreadcrumbItem } from '@/types/layoutTypes'
-import type { UserInfo } from '@/types/userTypes'
+import type {BreadcrumbItem} from '@/types/layoutTypes'
+import type {UserInfo} from '@/types/userTypes'
 
 defineProps<{
   breadcrumbs: BreadcrumbItem[]
-  loading: boolean
   user?: UserInfo
 }>()
 
@@ -17,9 +16,9 @@ defineEmits<{
 
 <template>
   <el-header class="app-header">
+
     <div class="header-left">
-      <el-skeleton v-if="loading" class="breadcrumb-loading" animated :rows="0" />
-      <el-breadcrumb v-else separator="/">
+      <el-breadcrumb separator="/">
         <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.title" :to="item.path">
           {{ item.title }}
         </el-breadcrumb-item>
@@ -27,14 +26,13 @@ defineEmits<{
     </div>
 
     <div class="header-right">
-      <el-button text circle>
-        <el-icon :size="18"><Bell /></el-icon>
-      </el-button>
       <el-dropdown>
-        <span v-loading="loading" class="user-entry">
-          <el-avatar :size="32">{{ user?.name?.slice(0, 1).toUpperCase() || '-' }}</el-avatar>
-          <span>{{ user?.name || 'Loading' }}</span>
-        </span>
+        <div class="user-entry">
+          <el-avatar :size="32">
+            {{ user?.name?.slice(0, 1).toUpperCase() || '-' }}
+          </el-avatar>
+          <div>{{ user?.name || 'Loading' }}</div>
+        </div>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item @click="$emit('logout')">退出登录</el-dropdown-item>
@@ -42,6 +40,7 @@ defineEmits<{
         </template>
       </el-dropdown>
     </div>
+
   </el-header>
 </template>
 
