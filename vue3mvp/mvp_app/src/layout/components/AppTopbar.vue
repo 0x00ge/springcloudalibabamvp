@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import {Bell} from '@element-plus/icons-vue'
 
 import type {BreadcrumbItem} from '@/types/layoutTypes'
 import type {UserInfo} from '@/types/userTypes'

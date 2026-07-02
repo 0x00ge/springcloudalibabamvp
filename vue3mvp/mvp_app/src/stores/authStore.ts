@@ -157,18 +157,20 @@ export const useAuthStore =
          * 顶部栏需要的用户展示模型。
          * 后端 CurrentAuthDTO 只返回认证维度字段，这里转换成布局组件通用的 UserInfo。
          */
-        const currentUserInfo = computed<UserInfo | undefined>(() => {
-            if (!currentAuth.value) return undefined
+        const currentUserInfo = computed<UserInfo>(() => {
+            if (!currentAuth.value) {
+                return {id: '', name: '', phone: '', email: '', role: '', status: ''}
+            }
 
             const displayName = currentAuth.value.name || currentAuth.value.phone || '用户'
 
             return {
                 id: currentAuth.value.id || '',
+                name: displayName,
                 phone: currentAuth.value.phone,
                 email: '',
                 role: '',
                 status: '',
-                name: displayName,
             }
         })
 
