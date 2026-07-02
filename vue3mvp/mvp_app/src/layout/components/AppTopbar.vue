@@ -6,7 +6,7 @@ import type {UserInfo} from '@/types/userTypes'
 
 defineProps<{
   breadcrumbs: BreadcrumbItem[]
-  user?: UserInfo
+  user: UserInfo
 }>()
 
 defineEmits<{
@@ -18,6 +18,7 @@ defineEmits<{
   <el-header class="app-header">
 
     <div class="header-left">
+      <!-- 面包屑 -->
       <el-breadcrumb separator="/">
         <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.title" :to="item.path">
           {{ item.title }}
@@ -26,6 +27,7 @@ defineEmits<{
     </div>
 
     <div class="header-right">
+      <!-- 下拉菜单 -->
       <el-dropdown>
         <div class="user-entry">
           <el-avatar :size="32">
