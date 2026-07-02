@@ -23,7 +23,7 @@ export default function Login() {
     const [loading, setLoading] = useState(false)
     const [sendCodeLoading, setSendCodeLoading] = useState(false)
     const [smsCountdown, setSmsCountdown] = useState(0)
-    const [mode, setMode] = useState<LoginOrRegister>('login')
+    const [isLoginOrRegister, setIsLoginOrRegister] = useState<LoginOrRegister>('login')
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -67,7 +67,7 @@ export default function Login() {
                 phone: values.phone,
                 password: '',
             })
-            setMode('login')
+            setIsLoginOrRegister('login')
             message.success('注册成功，请登录')
         } finally {
             setLoading(false)
@@ -127,16 +127,16 @@ export default function Login() {
 
                 <Segmented<LoginOrRegister>
                     className="auth-mode"
-                    value={mode}
+                    value={isLoginOrRegister}
                     options={[
                         {label: '登录', value: 'login'},
                         {label: '注册', value: 'register'},
                     ]}
                     block
-                    onChange={setMode}
+                    onChange={setIsLoginOrRegister}
                 />
 
-                {mode === 'login' ? (
+                {isLoginOrRegister === 'login' ? (
                     /* 登录表单 */
                     /* 原先登录表单规则注释保留：rules={loginRules} */
                     <Form className="login-form" form={loginForm} size="large" onFinish={handleLogin}>
