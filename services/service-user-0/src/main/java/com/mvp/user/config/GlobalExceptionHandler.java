@@ -4,6 +4,7 @@ import com.mvp.common.enums.ResultCode;
 import com.mvp.common.vo.ResultVO;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -47,7 +48,7 @@ public class GlobalExceptionHandler {
     public ResultVO<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .findFirst()
-                .map(error -> error.getDefaultMessage())
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .orElse(ResultCode.PARAM_ERROR.getMessage());
 
         return ResultVO.fail(ResultCode.PARAM_ERROR.getCode(), message);
