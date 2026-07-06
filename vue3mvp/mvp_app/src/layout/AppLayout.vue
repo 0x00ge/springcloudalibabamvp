@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from 'vue'
+import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 
@@ -53,23 +53,33 @@ const handleLogout = async () => {
   }
 }
 
+const handleLoadMenus = async () => {
+  const menuTree = await getMenuTree()
+  if (menuTree.length > 0) {
+    menus.value = menuTree
+    return
+  }
+
+  menus.value = await resetMenuTree()
+}
+
 onMounted(async () => {
   loading.value = true
   try {
     await authStore.getAuthAction().catch(() => undefined)
-
-    const menuTree = await getMenuTree()
-    if (menuTree.length > 0) {
-      menus.value = menuTree
-      return
-    }
-
-    menus.value = await resetMenuTree()
+    await handleLoadMenus()
   } catch {
+    menus.value = []
     ElMessage.error('菜单加载失败')
   } finally {
     loading.value = false
   }
+})
+
+window.addEventListener('mvp:menu-updated', handleLoadMenus)
+
+onBeforeUnmount(() => {
+  window.removeEventListener('mvp:menu-updated', handleLoadMenus)
 })
 </script>
 

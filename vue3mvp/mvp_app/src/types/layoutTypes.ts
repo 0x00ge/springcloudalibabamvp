@@ -28,6 +28,8 @@ export interface BreadcrumbItem {
 export interface MenuItem {
     /** 菜单唯一标识，用于 v-for 的 key。 */
     id: string
+    /** 父菜单 id，顶级菜单为空。 */
+    parentId?: string
     /** 菜单显示名称。 */
     title: string
     /** 菜单跳转路径。 */

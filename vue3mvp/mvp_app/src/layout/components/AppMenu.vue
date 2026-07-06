@@ -8,9 +8,28 @@ const route = useRoute()
 const activeMenu = computed(() => route.path)
 
 // 子组件接收父组件数据
-defineProps<{
+const props = defineProps<{
   menus: MenuItem[]
 }>()
+
+const openedMenus = computed(() => {
+  const indexes: string[] = []
+
+  const collectOpenedMenus = (menus: MenuItem[]) => {
+    for (const menu of menus) {
+      if (menu.children?.length) {
+        indexes.push(menu.path || menu.id)
+        collectOpenedMenus(menu.children)
+      }
+    }
+  }
+
+  collectOpenedMenus(props.menus)
+
+  return indexes
+})
+
+const menuRenderKey = computed(() => openedMenus.value.join('|') || 'empty-menu')
 </script>
 
 <template>
@@ -25,9 +44,11 @@ defineProps<{
     - index 建议与路由 path 保持一致，后续接真实页面时更容易维护
   -->
   <el-menu
+    :key="menuRenderKey"
     class="side-menu"
     background-color="#545c64"
     :default-active="activeMenu"
+    :default-openeds="openedMenus"
     text-color="#fff"
     active-text-color="#ffffff"
     router
