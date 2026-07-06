@@ -1,0 +1,37 @@
+.menu-page {
+  /* 页面使用网格纵向排列，统一控制头部和表格之间的间距。 */
+  display: grid;
+  gap: 16px;
+}
+
+.menu-page-header {
+  /* 左侧标题说明、右侧操作按钮，符合后台配置页常见布局。 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.menu-page-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.menu-page-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.sort-input {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .menu-page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

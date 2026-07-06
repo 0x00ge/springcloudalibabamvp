@@ -1,0 +1,274 @@
+# ============================================================================
+# MySQL 主从复制 + 用户分库分表 + 公共库 - Docker Compose 配置文件
+# ============================================================================
+#
+# 设计目标：
+#   - 用 Docker 在本机提供一套接近真实项目的数据层拓扑。
+#   - Java 服务仍然运行在宿主机，通过 127.0.0.1 + 端口映射访问 MySQL。
+#   - Docker 内部 MySQL 主从之间通过 mvp-network 和 service hostname 通信。
+#
+# 拓扑设计：
+#   1. 用户垂直分库 + 跨库水平分表：
+#      - mvp_user_0 只放 t_user_0 和 t_user_menu_0。
+#      - mvp_user_1 只放 t_user_1 和 t_user_menu_1。
+#      - 逻辑表路由由应用层负责，MySQL 本身不知道“逻辑表”的概念。
+#   2. 公共库：
+#      - mvp_common 放除 user 以外的公共业务表，例如 t_goods、t_order、t_order_message_processed。
+#      - goods/order 不再单独建库，也不做水平分表。
+#   3. 主从复制：
+#      - 每个物理库都有 1 个 master + 1 个 replica。
+#      - master 负责写入；replica 用于本地验证读写分离。
+#
+# 宿主机端口：
+#   user_0: master 3310, replica 3311
+#   user_1: master 3312, replica 3313
+#   common: master 3320, replica 3321
+#
+# 账号说明：
+#   - root 密码：rootroot
+#   - 主从复制账号：repl / replpass
+#   - 本文件不依赖 .env，镜像版本、密码、复制账号都直接写在 compose 中。
+#   - 这些密码只适合本机开发环境，生产或共享环境必须改为更安全的凭据管理方式。
+#
+# MySQL 复制参数说明：
+#   - server-id：主从复制要求每个 MySQL 实例全局唯一。
+#   - log-bin=mysql-bin：开启 binlog，主库必须开启，从库开启后方便级联复制和排查。
+#   - binlog-format=ROW：记录行级变更，最适合主从复制和分库分表场景。
+#   - gtid-mode=ON：开启 GTID，让从库用 SOURCE_AUTO_POSITION=1 自动定位同步位点。
+#   - enforce-gtid-consistency=ON：限制不兼容 GTID 的 SQL，保证复制一致性。
+#   - log-replica-updates=ON：从库也记录复制来的变更，便于后续扩展级联复制。
+#   - skip-name-resolve：跳过 DNS 反查，加快连接认证，也避免容器 DNS 反查异常。
+#
+# ============================================================================
+
+# 公共配置块：所有 MySQL 容器共享镜像、基础账号、时区、网络和健康检查。
+# 注意：replica 服务需要额外声明 MYSQL_SOURCE_HOST，所以它们会覆盖 environment 并重复写基础变量。
+x-mysql-common: &mysql-common
+  # 固定 MySQL 8.4.3，避免 latest 自动升级导致复制语法或默认配置发生变化。
+  image: mysql:8.4.3
+  # Docker 或宿主机重启后自动恢复；手动 docker compose down 后不会自动拉起。
+  restart: unless-stopped
+  environment:
+    # MySQL 官方镜像首次初始化数据目录时会创建 root 账号并设置该密码。
+    MYSQL_ROOT_PASSWORD: rootroot
+    # 复制账号由 init/master/00-replication-user.sh 在 master 初始化时创建。
+    MYSQL_REPL_USER: repl
+    MYSQL_REPL_PASSWORD: replpass
+    # 容器时区，保证数据库时间和本机开发环境一致。
+    TZ: Asia/Shanghai
+  networks:
+    # 复用项目公共 Docker 网络，和 Redis/Nacos/RocketMQ/Nginx 保持一致。
+    - mvp-network
+  healthcheck:
+    # mysqladmin ping 能确认 mysqld 已经可以接受连接；depends_on 会基于该状态等待 master。
+    # 这里的 $${MYSQL_ROOT_PASSWORD} 是给容器内 shell 展开的，双 $ 是为了避免 compose 提前替换。
+    test: ["CMD-SHELL", "mysqladmin ping -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+    interval: 5s
+    timeout: 3s
+    retries: 30
+    start_period: 30s
+
+services:
+  # --------------------------------------------------------------------------
+  # 用户分片 0 master：承载 mvp_user_0.t_user_0 / t_user_menu_0 的写流量。
+  # --------------------------------------------------------------------------
+  mysql-user-0-master:
+    <<: *mysql-common
+    container_name: mvp-mysql-user-0-master
+    hostname: mysql-user-0-master
+    command:
+      - mysqld
+      # 用户分片 0 master 的复制 ID。101/102 表示 user_0 这一组。
+      - --server-id=101
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --log-replica-updates=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --skip-name-resolve
+    ports:
+      # 宿主机 Java 服务访问 127.0.0.1:3310，容器内仍是 MySQL 默认 3306。
+      - "3310:3306"
+    volumes:
+      # 数据目录持久化；首次初始化后，docker-entrypoint-initdb.d 中脚本不会再次执行。
+      - /Users/zhongtao/.my_docker/mysql-sharding/user-0-master/data:/var/lib/mysql
+      # 创建复制账号 repl，供 user_0 replica 连接本 master。
+      - ./init/master/00-replication-user.sh:/docker-entrypoint-initdb.d/00-replication-user.sh:ro
+      # 初始化用户分片 0 的库表结构。
+      - ./init/master/10-user-0-schema.sql:/docker-entrypoint-initdb.d/10-user-0-schema.sql:ro
+
+  # --------------------------------------------------------------------------
+  # 用户分片 0 replica：从 mysql-user-0-master 同步，用于读写分离验证。
+  # --------------------------------------------------------------------------
+  mysql-user-0-replica:
+    <<: *mysql-common
+    container_name: mvp-mysql-user-0-replica
+    hostname: mysql-user-0-replica
+    depends_on:
+      # 等 master 通过 healthcheck 后再初始化从库，降低 CHANGE REPLICATION 连接失败概率。
+      mysql-user-0-master:
+        condition: service_healthy
+    environment:
+      MYSQL_ROOT_PASSWORD: rootroot
+      MYSQL_REPL_USER: repl
+      MYSQL_REPL_PASSWORD: replpass
+      # 从库初始化脚本会读取这个 hostname，并配置 SOURCE_HOST。
+      MYSQL_SOURCE_HOST: mysql-user-0-master
+      TZ: Asia/Shanghai
+    command:
+      - mysqld
+      # 用户分片 0 replica 的复制 ID，必须和所有 master/replica 不同。
+      - --server-id=102
+      # relay log 保存从 master 拉取但尚未应用或用于恢复的复制日志。
+      - --relay-log=mysql-relay-bin
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --log-replica-updates=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --skip-name-resolve
+    ports:
+      - "3311:3306"
+    volumes:
+      - /Users/zhongtao/.my_docker/mysql-sharding/user-0-replica/data:/var/lib/mysql
+      # 首次初始化数据目录时自动挂到 mysql-user-0-master，并设置只读。
+      - ./init/replica/20-start-replica.sh:/docker-entrypoint-initdb.d/20-start-replica.sh:ro
+
+  # --------------------------------------------------------------------------
+  # 用户分片 1 master：承载 mvp_user_1.t_user_1 / t_user_menu_1 的写流量。
+  # --------------------------------------------------------------------------
+  mysql-user-1-master:
+    <<: *mysql-common
+    container_name: mvp-mysql-user-1-master
+    hostname: mysql-user-1-master
+    command:
+      - mysqld
+      # 用户分片 1 master 的复制 ID。111/112 表示 user_1 这一组。
+      - --server-id=111
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --log-replica-updates=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --skip-name-resolve
+    ports:
+      - "3312:3306"
+    volumes:
+      - /Users/zhongtao/.my_docker/mysql-sharding/user-1-master/data:/var/lib/mysql
+      - ./init/master/00-replication-user.sh:/docker-entrypoint-initdb.d/00-replication-user.sh:ro
+      - ./init/master/10-user-1-schema.sql:/docker-entrypoint-initdb.d/10-user-1-schema.sql:ro
+
+  # --------------------------------------------------------------------------
+  # 用户分片 1 replica：从 mysql-user-1-master 同步。
+  # --------------------------------------------------------------------------
+  mysql-user-1-replica:
+    <<: *mysql-common
+    container_name: mvp-mysql-user-1-replica
+    hostname: mysql-user-1-replica
+    depends_on:
+      mysql-user-1-master:
+        condition: service_healthy
+    environment:
+      MYSQL_ROOT_PASSWORD: rootroot
+      MYSQL_REPL_USER: repl
+      MYSQL_REPL_PASSWORD: replpass
+      MYSQL_SOURCE_HOST: mysql-user-1-master
+      TZ: Asia/Shanghai
+    command:
+      - mysqld
+      # 用户分片 1 replica 的复制 ID。
+      - --server-id=112
+      - --relay-log=mysql-relay-bin
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --log-replica-updates=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --skip-name-resolve
+    ports:
+      - "3313:3306"
+    volumes:
+      - /Users/zhongtao/.my_docker/mysql-sharding/user-1-replica/data:/var/lib/mysql
+      - ./init/replica/20-start-replica.sh:/docker-entrypoint-initdb.d/20-start-replica.sh:ro
+
+  # --------------------------------------------------------------------------
+  # 公共库 master：承载除 user 外的公共业务表，例如商品表和订单表。
+  # --------------------------------------------------------------------------
+  mysql-common-master:
+    <<: *mysql-common
+    container_name: mvp-mysql-common-master
+    hostname: mysql-common-master
+    command:
+      - mysqld
+      # 公共库 master 的复制 ID。201/202 表示 common 这一组。
+      - --server-id=201
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --log-replica-updates=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --skip-name-resolve
+    ports:
+      - "3320:3306"
+    volumes:
+      - /Users/zhongtao/.my_docker/mysql-sharding/common-master/data:/var/lib/mysql
+      - ./init/master/00-replication-user.sh:/docker-entrypoint-initdb.d/00-replication-user.sh:ro
+      - ./init/master/10-common-schema.sql:/docker-entrypoint-initdb.d/10-common-schema.sql:ro
+
+  # --------------------------------------------------------------------------
+  # 公共库 replica：从 mysql-common-master 同步，承载公共库读流量验证。
+  # --------------------------------------------------------------------------
+  mysql-common-replica:
+    <<: *mysql-common
+    container_name: mvp-mysql-common-replica
+    hostname: mysql-common-replica
+    depends_on:
+      mysql-common-master:
+        condition: service_healthy
+    environment:
+      MYSQL_ROOT_PASSWORD: rootroot
+      MYSQL_REPL_USER: repl
+      MYSQL_REPL_PASSWORD: replpass
+      MYSQL_SOURCE_HOST: mysql-common-master
+      TZ: Asia/Shanghai
+    command:
+      - mysqld
+      # 公共库 replica 的复制 ID。
+      - --server-id=202
+      - --relay-log=mysql-relay-bin
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --log-replica-updates=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --skip-name-resolve
+    ports:
+      - "3321:3306"
+    volumes:
+      - /Users/zhongtao/.my_docker/mysql-sharding/common-replica/data:/var/lib/mysql
+      - ./init/replica/20-start-replica.sh:/docker-entrypoint-initdb.d/20-start-replica.sh:ro
+
+networks:
+  # 统一使用项目公共网络。该网络通常由 redis-cluster/init-redis-cluster.sh 创建。
+  # 如果单独启动本目录，可先执行：docker network create --subnet 172.19.0.0/16 mvp-network
+  mvp-network:
+    name: mvp-network
+    external: true
