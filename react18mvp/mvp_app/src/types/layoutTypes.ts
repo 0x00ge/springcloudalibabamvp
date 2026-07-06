@@ -32,6 +32,10 @@ export interface MenuItem {
   title: string
   /** 菜单跳转路径。 */
   path: string
+  /** 菜单排序值，越小越靠前。 */
+  sort?: number
+  /** 内置菜单不允许删除，避免把入口删没。 */
+  locked?: boolean
   /** 子菜单。 */
   children?: MenuItem[]
 }

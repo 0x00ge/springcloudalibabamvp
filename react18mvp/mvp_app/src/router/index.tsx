@@ -3,6 +3,7 @@ import { Navigate, createBrowserRouter, redirect } from 'react-router-dom'
 import AppLayout from '@/layout/AppLayout'
 import { authStore, getAccessToken } from '@/stores/authStore'
 import Login from '@/views/Login'
+import MenuManagement from '@/views/MenuManagement'
 import NotFound from '@/views/NotFound'
 import User from '@/views/User'
 
@@ -59,6 +60,13 @@ export const router = createBrowserRouter([
         element: <User />,
         handle: {
           title: '用户管理',
+        },
+      },
+      {
+        path: 'menu',
+        element: <MenuManagement />,
+        handle: {
+          title: '菜单管理',
         },
       },
     ],

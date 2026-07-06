@@ -17,6 +17,9 @@
 cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/redis-cluster
 ./init-redis-cluster.sh
 
+cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/mysql-sharding
+docker compose -f docker-compose-mysql-sharding.yml up -d
+
 cd /Users/zhongtao/IdeaProjects/javaProjects/SpringCloudAlibabaMVP/deploy/docker/nacos-cluster
 docker compose -f docker-compose-nacos-cluster.yml up -d
 

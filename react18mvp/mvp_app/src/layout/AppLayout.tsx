@@ -6,28 +6,9 @@ import AppMain from '@/layout/components/AppMain'
 import AppMenu from '@/layout/components/AppMenu'
 import AppTopbar from '@/layout/components/AppTopbar'
 import { authStore, useAuthSnapshot } from '@/stores/authStore'
-import type { BreadcrumbItem, MenuItem } from '@/types/layoutTypes'
+import { useMenuSnapshot } from '@/stores/menuStore'
+import type { BreadcrumbItem } from '@/types/layoutTypes'
 import './AppLayout.css'
-
-const menus: MenuItem[] = [
-  {
-    id: 'user',
-    title: '用户管理',
-    path: '/home/user',
-    children: [
-      {
-        id: 'user-profile',
-        title: '个人中心',
-        path: '/auth',
-        children: [
-          { id: 'user-profile-1', title: '1', path: '/auth' },
-          { id: 'user-profile-2', title: '2', path: '/auth' },
-        ],
-      },
-    ],
-  },
-  { id: 'auth', title: '个人中心', path: '/auth' },
-]
 
 export default function AppLayout() {
   const [loading, setLoading] = useState(false)
@@ -37,6 +18,7 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const matches = useMatches()
   const auth = useAuthSnapshot()
+  const menus = useMenuSnapshot()
 
   const breadcrumbs = useMemo<BreadcrumbItem[]>(
     () =>
