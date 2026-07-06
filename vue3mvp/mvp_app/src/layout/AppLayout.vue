@@ -3,6 +3,7 @@ import {computed, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 
+import {getMenuTree, resetMenuTree} from '@/api/apiMenu.ts'
 import {useAuthStore} from '@/stores/authStore.ts'
 import type {BreadcrumbItem, MenuItem} from '@/types/layoutTypes'
 import AppMain from './components/AppMain.vue'
@@ -15,20 +16,7 @@ const logoutLoading = ref(false)
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-
-const menus: MenuItem[] = [
-  {
-    id: 'user', title: '用户管理', path: '/home/user', children: [
-      {
-        id: 'user-profile', title: '个人中心', path: '/auth', children: [
-          {id: 'user-profile-1', title: '1', path: '/auth'},
-          {id: 'user-profile-2', title: '2', path: '/auth'},
-        ]
-      },
-    ]
-  },
-  {id: 'auth', title: '个人中心', path: '/auth'},
-]
+const menus = ref<MenuItem[]>([])
 
 const currentUser = computed(() => authStore.currentUserInfo)
 
@@ -68,7 +56,17 @@ const handleLogout = async () => {
 onMounted(async () => {
   loading.value = true
   try {
-    await authStore.getAuthAction()
+    await authStore.getAuthAction().catch(() => undefined)
+
+    const menuTree = await getMenuTree()
+    if (menuTree.length > 0) {
+      menus.value = menuTree
+      return
+    }
+
+    menus.value = await resetMenuTree()
+  } catch {
+    ElMessage.error('菜单加载失败')
   } finally {
     loading.value = false
   }

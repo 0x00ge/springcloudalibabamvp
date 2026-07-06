@@ -13,6 +13,12 @@ spring:
           predicates:
             - Path=/user/** # 匹配用户接口
 
+        # 菜单服务路由
+        - id: service-menu-route # 侧边栏菜单接口由 service-user-0 提供
+          uri: lb://service-user-0
+          predicates:
+            - Path=/menu/** # 匹配菜单接口
+
         # 鉴权接口路由
         - id: service-auth-route # 注册、登录、刷新、登出暂时都由 service-user-0 提供
           uri: lb://service-user-0
