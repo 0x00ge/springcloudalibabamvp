@@ -5,9 +5,9 @@ import type { MenuItem } from '@/types/layoutTypes'
  * 定义组件选项
  * - name: 组件名称，用于递归调用自身和 Vue DevTools 调试
  */
-defineOptions({
-  name: 'AppMenuItem',
-})
+// defineOptions({
+//   name: 'AppMenuItem',
+// })
 
 /**
  * 组件 Props
