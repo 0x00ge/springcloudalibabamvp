@@ -14,7 +14,7 @@ defineOptions({
  * 接收一个菜单项数据，由父组件 AppMenu.vue 传入
  */
 defineProps<{
-  menu: MenuItem
+  menuItem: MenuItem
 }>()
 </script>
 
@@ -24,12 +24,12 @@ defineProps<{
     判断条件：menu.children 存在且有内容
   -->
   <el-sub-menu
-      v-if="menu.children?.length"
-      :index="menu.path || menu.id"
+      v-if="menuItem.children?.length"
+      :index="menuItem.path || menuItem.id"
   >
     <!-- 子菜单标题插槽 -->
     <template #title>
-      <span>{{ menu.title }}</span>
+      <span>{{ menuItem.title }}</span>
     </template>
 
     <!--
@@ -37,9 +37,9 @@ defineProps<{
       每个子项继续使用 AppMenuItem 组件，支持任意层级嵌套
     -->
     <AppMenuItem
-      v-for="item in menu.children"
+      v-for="item in menuItem.children"
       :key="item.id"
-      :menu="item"
+      :menuItem="item"
     />
   </el-sub-menu>
 
@@ -47,8 +47,8 @@ defineProps<{
     没有子菜单的情况：渲染为普通菜单项（叶子节点）
     点击后跳转到对应的 path 路径
   -->
-  <el-menu-item v-else :index="menu.path">
+  <el-menu-item v-else :index="menuItem.path">
     <!-- 菜单项标题 -->
-    <template #title>{{ menu.title }}</template>
+    <template #title>{{ menuItem.title }}</template>
   </el-menu-item>
 </template>

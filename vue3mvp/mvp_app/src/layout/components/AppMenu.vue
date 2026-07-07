@@ -54,7 +54,7 @@ const menuRenderKey = computed(() => openedMenus.value.join('|') || 'empty-menu'
     router
   >
     <!-- 菜单项拆到独立组件中，父组件只负责循环数据，子组件负责判断普通菜单/二级菜单。 -->
-    <AppMenuItem v-for="menu in menuItems" :key="menu.id" :menu="menu" />
+    <AppMenuItem v-for="item in menuItems" :key="item.id" :menuItem="item" />
     
   </el-menu>
 
