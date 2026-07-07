@@ -123,12 +123,11 @@ export const getAccessToken = () => authToken.accessToken || undefined
  * 判断 accessToken 是否已经过期或即将过期。
  * 没有 token、没有过期时间、进入提前刷新窗口，都视为不可继续直接使用。
  */
-export const isAccessTokenExpired =
-    () => {
-        if (!authToken.accessToken || authToken.accessTokenExpiresIn <= 0) return true
+export const isAccessTokenExpired = () => {
+    if (!authToken.accessToken || authToken.accessTokenExpiresIn <= 0) return true
 
-        return authToken.accessTokenExpiresIn <= TOKEN_EXPIRE_BUFFER_SECONDS
-    }
+    return authToken.accessTokenExpiresIn <= TOKEN_EXPIRE_BUFFER_SECONDS
+}
 
 export const useAuthStore =
     defineStore('auth', () => {
