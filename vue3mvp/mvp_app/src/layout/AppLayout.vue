@@ -16,7 +16,7 @@ const logoutLoading = ref(false)
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const menus = ref<MenuItem[]>([])
+const menuItems = ref<MenuItem[]>([])
 
 const currentUser = computed(() => authStore.currentUserInfo)
 
@@ -56,30 +56,39 @@ const handleLogout = async () => {
 const handleLoadMenus = async () => {
   const menuTree = await getMenuTree()
   if (menuTree.length > 0) {
-    menus.value = menuTree
+    menuItems.value = menuTree
     return
   }
 
-  menus.value = await resetMenuTree()
+  menuItems.value = await resetMenuTree()
 }
 
-onMounted(async () => {
+const handleLoadMenusWithRetry = async () => {
+  try {
+    await handleLoadMenus()
+  } catch (error) {
+    await handleLoadMenus()
+  }
+}
+
+const handleReloadMenus = async () => {
   loading.value = true
   try {
-    await authStore.getAuthAction().catch(() => undefined)
-    await handleLoadMenus()
+    await handleLoadMenusWithRetry()
   } catch {
-    menus.value = []
+    menuItems.value = []
     ElMessage.error('菜单加载失败')
   } finally {
     loading.value = false
   }
-})
+}
 
-window.addEventListener('mvp:menu-updated', handleLoadMenus)
+onMounted(handleReloadMenus)
+
+window.addEventListener('mvp:menu-updated', handleReloadMenus)
 
 onBeforeUnmount(() => {
-  window.removeEventListener('mvp:menu-updated', handleLoadMenus)
+  window.removeEventListener('mvp:menu-updated', handleReloadMenus)
 })
 </script>
 
@@ -89,7 +98,7 @@ onBeforeUnmount(() => {
 
     <!-- 侧边 -->
     <el-aside class="app-aside" width="200px">
-      <AppMenu :menus="menus"/>
+      <AppMenu :menuItems="menuItems"/>
     </el-aside>
     <el-container class="app-body">
       <!-- 顶部 -->

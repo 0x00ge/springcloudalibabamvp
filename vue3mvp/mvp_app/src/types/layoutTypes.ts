@@ -37,7 +37,7 @@ export interface MenuItem {
     /** 菜单图标名称，和后端 t_menu.icon 对应。 */
     icon?: string
     /** 菜单排序值，越小越靠前。 */
-    sort?: number
+    sortOrder?: number
     /** 子菜单。 */
     children?: MenuItem[]
 }

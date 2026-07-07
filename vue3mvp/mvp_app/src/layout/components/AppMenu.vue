@@ -9,7 +9,7 @@ const activeMenu = computed(() => route.path)
 
 // 子组件接收父组件数据
 const props = defineProps<{
-  menus: MenuItem[]
+  menuItems: MenuItem[]
 }>()
 
 const openedMenus = computed(() => {
@@ -24,7 +24,7 @@ const openedMenus = computed(() => {
     }
   }
 
-  collectOpenedMenus(props.menus)
+  collectOpenedMenus(props.menuItems)
 
   return indexes
 })
@@ -54,7 +54,7 @@ const menuRenderKey = computed(() => openedMenus.value.join('|') || 'empty-menu'
     router
   >
     <!-- 菜单项拆到独立组件中，父组件只负责循环数据，子组件负责判断普通菜单/二级菜单。 -->
-    <AppMenuItem v-for="menu in menus" :key="menu.id" :menu="menu" />
+    <AppMenuItem v-for="menu in menuItems" :key="menu.id" :menu="menu" />
     
   </el-menu>
 

@@ -1,54 +1,35 @@
 import {del, get, post, postParams, put} from '@/utils/http/http.ts'
 
 import type { MenuItem } from '@/types/layoutTypes.ts'
-
-export interface MenuForm {
-    parentId?: string
-    title: string
-    path: string
-    icon?: string
-    sortOrder?: number
-}
-
-interface MenuDto {
-    id: string
-    parentId?: string
-    title: string
-    path: string
-    icon?: string
-    level?: number
-    sortOrder?: number
-    userId?: string
-    children?: MenuDto[]
-}
+import type {MenuForm} from "@/types/appMenuTypes.ts";
 
 const toMenuItem =
-    (menu: MenuDto): MenuItem => ({
+    (menu: MenuItem): MenuItem => ({
         id: menu.id,
         parentId: menu.parentId,
         title: menu.title,
         path: menu.path,
         icon: menu.icon,
-        sort: menu.sortOrder ?? 0,
+        sortOrder: menu.sortOrder ?? 0,
         children: menu.children?.length ? menu.children.map(toMenuItem) : undefined,
     })
 
 export const getMenuTree =
     async () => {
-        const menus = await get<MenuDto[]>('/menu/tree')
+        const menus = await get<MenuItem[]>('/menu/tree')
 
         return menus.map(toMenuItem)
     }
 
 export const resetMenuTree =
     async () => {
-        const menus = await postParams<MenuDto[]>('/menu/reset')
+        const menus = await postParams<MenuItem[]>('/menu/reset')
 
         return menus.map(toMenuItem)
     }
 
 const toMenuDto =
-    (data: MenuForm): Partial<MenuDto> => ({
+    (data: MenuForm): Partial<MenuItem> => ({
         parentId: data.parentId || undefined,
         title: data.title,
         path: data.path,
