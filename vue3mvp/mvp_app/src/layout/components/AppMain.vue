@@ -1,7 +1,7 @@
 <template>
   <el-main class="app-main">
     <section class="content-panel">
-      <router-view />
+      <RouterView />
     </section>
   </el-main>
 </template>
