@@ -117,8 +117,7 @@ export const clearStoredAuthInfo = () => {
  * 给 axios、路由守卫读取当前 accessToken。
  * 空字符串统一转换成 undefined，调用方只需要判断 truthy/falsy。
  */
-export const getAccessToken =
-    () => authToken.accessToken || undefined
+export const getAccessToken = () => authToken.accessToken || undefined
 
 /**
  * 判断 accessToken 是否已经过期或即将过期。
