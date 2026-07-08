@@ -8,9 +8,9 @@ import {
   getMenuTree,
   resetMenuTree,
   updateMenu,
-  type MenuForm,
 } from '@/api/apiMenu.ts'
 import type {MenuItem} from '@/types/layoutTypes.ts'
+import type {MenuForm} from "@/types/appMenuTypes.ts";
 
 interface MenuOption {
   id: string
@@ -145,7 +145,7 @@ const handleUpdateMenu = (menu: MenuItem) => {
     title: menu.title,
     path: menu.path,
     icon: menu.icon || '',
-    sortOrder: menu.sort ?? 0,
+    sortOrder: menu.sortOrder ?? 0,
   })
   isVisibleOfCreateOrUpdate.value = true
 }
