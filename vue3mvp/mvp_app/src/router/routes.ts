@@ -8,26 +8,25 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/login',
-    name: 'Login',
     // 路由懒加载，登录页代码会被拆成单独 chunk。
     component: () => import('@/views/Login.vue'),
+    name: 'Login',
   },
   {
-    // 后台首页，承载整体后台布局。
     path: '/home',
-    name: 'Home',
     component: () => import('@/views/Home.vue'),
+    name: 'Home',
     redirect: '/home/user',
     meta: {
-      // 需要登录后才能访问，路由守卫会检查 token。
+      // 路由守卫会检查 token，非继承。
       requiresAuth: true,
       title: '首页',
     },
     children: [
       {
         path: 'user',
-        name: 'User',
         component: () => import('@/views/User.vue'),
+        name: 'User',
         meta: {
           requiresAuth: true,
           title: '用户管理',
@@ -35,8 +34,8 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'menu',
-        name: 'MenuManagement',
         component: () => import('@/views/Menu.vue'),
+        name: 'Menu',
         meta: {
           requiresAuth: true,
           title: '菜单管理',
@@ -45,12 +44,12 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/404',
-    name: 'NotFound',
-    component: () => import('@/views/NotFound.vue'),
-  },
-  {
     path: '/:pathMatch(.*)*',
     redirect: '/404',
+  },
+  {
+    path: '/404',
+    component: () => import('@/views/NotFound.vue'),
+    name: 'NotFound',
   },
 ]
