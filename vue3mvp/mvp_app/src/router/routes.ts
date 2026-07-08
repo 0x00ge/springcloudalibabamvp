@@ -17,9 +17,10 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/views/Home.vue'),
     name: 'Home',
     redirect: '/home/user',
+    // 路由元信息，自定义数据
     meta: {
       // 路由守卫会检查 token，非继承。
-      requiresAuth: true,
+      isAuth: true,
       title: '首页',
     },
     children: [
@@ -28,7 +29,7 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/User.vue'),
         name: 'User',
         meta: {
-          requiresAuth: true,
+          isAuth: true,
           title: '用户管理',
         },
       },
@@ -37,7 +38,7 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/Menu.vue'),
         name: 'Menu',
         meta: {
-          requiresAuth: true,
+          isAuth: true,
           title: '菜单管理',
         },
       },
