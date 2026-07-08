@@ -20,7 +20,7 @@ export const routes: RouteRecordRaw[] = [
     // 路由元信息，自定义数据
     meta: {
       // 路由守卫会检查 token，非继承。
-      isAuth: true,
+      requireAuth: true,
       title: '首页',
     },
     children: [
@@ -29,7 +29,7 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/User.vue'),
         name: 'User',
         meta: {
-          isAuth: true,
+          requireAuth: true,
           title: '用户管理',
         },
       },
@@ -38,7 +38,7 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/Menu.vue'),
         name: 'Menu',
         meta: {
-          isAuth: true,
+          requireAuth: true,
           title: '菜单管理',
         },
       },
