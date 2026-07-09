@@ -12,18 +12,7 @@ export interface OptionItem {
 }
 
 /**
- * 面包屑项。
- * 当前项目由路由 matched 动态生成，用于顶部栏展示当前位置。
- */
-export interface BreadcrumbItem {
-    /** 面包屑显示文字。 */
-    title: string
-    /** 可点击跳转的路径；没有 path 时只展示文字。 */
-    path?: string
-}
-
-/**
- * 左侧菜单项。
+ * 左侧菜单项
  */
 export interface MenuItem {
     /** 菜单唯一标识，用于 v-for 的 key。 */
@@ -40,4 +29,14 @@ export interface MenuItem {
     sortOrder?: number
     /** 子菜单。 */
     children?: MenuItem[]
+}
+
+/**
+ * 面包屑项
+ */
+export interface BreadcrumbItem {
+    /** 面包屑显示文字。 */
+    title: string
+    /** 可点击跳转的路径；没有 path 时只展示文字。 */
+    path?: string
 }
