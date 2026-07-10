@@ -26,8 +26,6 @@ import AppTopbar from './components/AppTopbar.vue'
 .app-layout {
   box-sizing: border-box;
   min-height: 100vh;
-  color: #1f2937;
-  background: #f4f6fa;
 }
 
 .app-layout *,
