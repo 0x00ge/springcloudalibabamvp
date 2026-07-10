@@ -127,27 +127,20 @@ const menuRenderKey = computed(() => openedMenus.value.join('|') || 'empty-menu'
 
 <template>
   <div v-loading="loading" class="menu-shell">
-    <!-- 品牌区。 -->
     <div class="brand">
-      <span class="brand-title">Vue3 MVP</span>
+      <span class="brand-title">Vue3 MVP 菜单</span>
     </div>
 
-    <!--
-      Element Plus 菜单：
-      - router 表示点击菜单项时使用 vue-router 跳转
-      - index 建议与路由 path 保持一致，后续接真实页面时更容易维护
-      - 子菜单由 AppMenuItem 递归渲染，后端返回多少层就展示多少层
-    -->
     <el-menu
-      :key="menuRenderKey"
-      class="side-menu"
-      :default-active="activeMenu"
-      :default-openeds="openedMenus"
-      text-color="#fff"
-      active-text-color="#ffffff"
-      router
+        class="side-menu"
+        :key="menuRenderKey"
+        :default-active="activeMenu"
+        :default-openeds="openedMenus"
+        text-color="#fff"
+        active-text-color="#ffffff"
+        router
     >
-      <AppMenuItem v-for="item in menuItems" :key="item.id" :menuItem="item" />
+      <AppMenuItem v-for="item in menuItems" :key="item.id" :menuItem="item"/>
     </el-menu>
   </div>
 
