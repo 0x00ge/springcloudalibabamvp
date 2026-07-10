@@ -1,17 +1,110 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import type { MenuItem } from '@/types/layoutTypes'
+import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
+import {useRoute} from 'vue-router'
+import {ElMessage} from 'element-plus'
+
+import {getMenuTree, resetMenuTree} from '@/api/apiMenu.ts'
+import type {MenuItem} from '@/types/layoutTypes'
 import AppMenuItem from '@/layout/components/AppMenuItem.vue'
 
 const route = useRoute()
+const loading = ref(false)
+
+// 侧边栏菜单只保存后端返回的数据，不在前端写死兜底菜单。
+const menuItems = ref<MenuItem[]>([])
+
+// 生产环境应由 Nginx、gateway 和认证服务保证登录态、转发头、Cookie、Token 校验逻辑一致。
+// 前端这里只做一次短重试，用来处理偶发网络抖动；它不是轮询问题的根治方案。
+// 重试仍然只请求后端菜单，不改变菜单来源，也不生成前端默认菜单。
+const menuRetryDelay = 300
+
+// 菜单加载版本号用于处理并发请求：
+// 例如页面刚挂载加载一次菜单，同时菜单管理页又触发 mvp:menu-updated。
+// 如果旧请求后返回，不允许它覆盖新请求已经设置好的菜单。
+let menuLoadVersion = 0
+
+// 当前激活菜单由侧边栏自己根据路由判断，AppLayout 不再传入菜单状态。
 const activeMenu = computed(() => route.path)
 
-// 子组件接收父组件数据
-const props = defineProps<{
-  menuItems: MenuItem[]
-}>()
+// 简单延迟工具，只用于菜单接口失败后的短暂重试。
+const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
 
+// 从后端加载菜单树：
+// 1. 优先读取 /menu/tree，这是用户当前真实菜单。
+// 2. 如果后端返回空数组，说明当前用户还没有初始化菜单，再调用 /menu/reset 创建默认菜单。
+// 3. 这里不 catch 错误，让外层 reloadMenus 统一处理 loading、重试和错误提示。
+const loadMenusFromServer = async () => {
+  const menuTree = await getMenuTree()
+  if (menuTree.length > 0) {
+    return menuTree
+  }
+
+  return resetMenuTree()
+}
+
+// 菜单加载重试：
+// 只在第一次接口调用失败时等待 300ms 后再试一次。
+// 重试仍然失败就继续抛给 reloadMenus，最终显示“菜单加载失败”。
+const loadMenusWithRetry = async () => {
+  try {
+    return await loadMenusFromServer()
+  } catch {
+    await sleep(menuRetryDelay)
+    return loadMenusFromServer()
+  }
+}
+
+// 统一刷新侧边栏菜单。
+// 这里是 AppMenu 中唯一负责写入 menuItems 的入口，避免多个地方直接改菜单状态。
+const reloadMenus = async () => {
+  // 每次开始加载时递增版本号，当前请求只认自己的版本。
+  const currentVersion = ++menuLoadVersion
+  loading.value = true
+
+  try {
+    const nextMenuItems = await loadMenusWithRetry()
+
+    // 只有最后一次发起的加载请求可以更新菜单，防止旧请求晚返回覆盖新数据。
+    if (currentVersion === menuLoadVersion) {
+      menuItems.value = nextMenuItems
+    }
+  } catch {
+    // 如果当前请求已经不是最新请求，不再清空菜单，也不重复弹错误提示。
+    if (currentVersion === menuLoadVersion) {
+      menuItems.value = []
+      ElMessage.error('菜单加载失败')
+    }
+  } finally {
+    // loading 也只由最后一次请求关闭，避免并发请求导致 loading 提前结束。
+    if (currentVersion === menuLoadVersion) {
+      loading.value = false
+    }
+  }
+}
+
+// 菜单管理页新增、编辑、删除菜单后，会派发 mvp:menu-updated。
+// AppMenu 收到事件后重新请求后端菜单，让侧边栏立刻同步最新树形结构。
+const handleMenuUpdated = () => {
+  void reloadMenus()
+}
+
+onMounted(() => {
+  // 侧边栏挂载后加载菜单，AppLayout 不参与菜单获取流程。
+  void reloadMenus()
+
+  // 事件监听放在组件挂载后注册，避免模块加载阶段就绑定全局事件。
+  window.addEventListener('mvp:menu-updated', handleMenuUpdated)
+})
+
+onBeforeUnmount(() => {
+  // 组件卸载时让当前未完成的请求失效，避免异步返回后再写已经卸载的菜单状态。
+  menuLoadVersion += 1
+
+  // 移除全局事件监听，防止重复进入布局后累积多个监听器。
+  window.removeEventListener('mvp:menu-updated', handleMenuUpdated)
+})
+
+// 默认展开所有有 children 的父菜单，保证后端返回多级菜单时可以完整显示。
 const openedMenus = computed(() => {
   const indexes: string[] = []
 
@@ -24,7 +117,7 @@ const openedMenus = computed(() => {
     }
   }
 
-  collectOpenedMenus(props.menuItems)
+  collectOpenedMenus(menuItems.value)
 
   return indexes
 })
@@ -33,34 +126,38 @@ const menuRenderKey = computed(() => openedMenus.value.join('|') || 'empty-menu'
 </script>
 
 <template>
-  <!-- 品牌区。 -->
-  <div class="brand">
-    <span class="brand-title">Vue3 MVP</span>
-  </div>
+  <div v-loading="loading" class="menu-shell">
+    <!-- 品牌区。 -->
+    <div class="brand">
+      <span class="brand-title">Vue3 MVP</span>
+    </div>
 
-  <!--
-    Element Plus 菜单：
-    - router 表示点击菜单项时使用 vue-router 跳转
-    - index 建议与路由 path 保持一致，后续接真实页面时更容易维护
-  -->
-  <el-menu
-    :key="menuRenderKey"
-    class="side-menu"
-    background-color="#545c64"
-    :default-active="activeMenu"
-    :default-openeds="openedMenus"
-    text-color="#fff"
-    active-text-color="#ffffff"
-    router
-  >
-    <!-- 菜单项拆到独立组件中，父组件只负责循环数据，子组件负责判断普通菜单/二级菜单。 -->
-    <AppMenuItem v-for="item in menuItems" :key="item.id" :menuItem="item" />
-    
-  </el-menu>
+    <!--
+      Element Plus 菜单：
+      - router 表示点击菜单项时使用 vue-router 跳转
+      - index 建议与路由 path 保持一致，后续接真实页面时更容易维护
+      - 子菜单由 AppMenuItem 递归渲染，后端返回多少层就展示多少层
+    -->
+    <el-menu
+      :key="menuRenderKey"
+      class="side-menu"
+      :default-active="activeMenu"
+      :default-openeds="openedMenus"
+      text-color="#fff"
+      active-text-color="#ffffff"
+      router
+    >
+      <AppMenuItem v-for="item in menuItems" :key="item.id" :menuItem="item" />
+    </el-menu>
+  </div>
 
 </template>
 
 <style scoped lang="less">
+.menu-shell {
+  min-height: 100vh;
+}
+
 .brand {
   /* 品牌区使用横向布局，让图标和标题在展开状态下自然排列。 */
   display: flex;

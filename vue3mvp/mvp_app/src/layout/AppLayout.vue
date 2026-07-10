@@ -1,95 +1,7 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
-import {ElMessage, ElMessageBox} from 'element-plus'
-
-import {getMenuTree, resetMenuTree} from '@/api/apiMenu.ts'
-import {useAuthStore} from '@/stores/authStore.ts'
-import type {BreadcrumbItem, MenuItem} from '@/types/layoutTypes'
 import AppMain from './components/AppMain.vue'
 import AppMenu from './components/AppMenu.vue'
 import AppTopbar from './components/AppTopbar.vue'
-
-const loading = ref(false)
-const logoutLoading = ref(false)
-
-const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
-const menuItems = ref<MenuItem[]>([])
-
-const currentUser = computed(() => authStore.currentUserInfo)
-
-const breadcrumbs = computed<BreadcrumbItem[]>(() =>
-    route.matched
-        .filter((matchedRoute) => matchedRoute.meta.title)
-        .map((matchedRoute) => ({
-          title: matchedRoute.meta.title as string,
-          path: matchedRoute.path,
-        })),
-)
-
-const handleLogout = async () => {
-  const confirmed = await ElMessageBox.confirm('确定退出当前账号吗？', '退出登录', {
-    type: 'warning',
-    confirmButtonText: '退出',
-    cancelButtonText: '取消',
-  })
-      .then(() => true)
-      .catch(() => false)
-
-  if (!confirmed) return
-
-  logoutLoading.value = true
-
-  try {
-    await authStore.logoutAction()
-    ElMessage.success('已退出登录')
-  } catch {
-    ElMessage.warning('已清理本地登录状态')
-  } finally {
-    logoutLoading.value = false
-    router.replace('/login')
-  }
-}
-
-const handleLoadMenus = async () => {
-  const menuTree = await getMenuTree()
-  if (menuTree.length > 0) {
-    menuItems.value = menuTree
-    return
-  }
-
-  menuItems.value = await resetMenuTree()
-}
-
-const handleLoadMenusWithRetry = async () => {
-  try {
-    await handleLoadMenus()
-  } catch (error) {
-    await handleLoadMenus()
-  }
-}
-
-const handleReloadMenus = async () => {
-  loading.value = true
-  try {
-    await handleLoadMenusWithRetry()
-  } catch {
-    menuItems.value = []
-    ElMessage.error('菜单加载失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(handleReloadMenus)
-
-window.addEventListener('mvp:menu-updated', handleReloadMenus)
-
-onBeforeUnmount(() => {
-  window.removeEventListener('mvp:menu-updated', handleReloadMenus)
-})
 </script>
 
 <template>
@@ -98,16 +10,11 @@ onBeforeUnmount(() => {
 
     <!-- 侧边 -->
     <el-aside class="app-aside" width="200px">
-      <AppMenu :menuItems="menuItems"/>
+      <AppMenu/>
     </el-aside>
     <el-container class="app-body">
       <!-- 顶部 -->
-      <AppTopbar
-          :breadcrumbs="breadcrumbs"
-          :loading="loading || logoutLoading"
-          :user="currentUser"
-          @logout="handleLogout"
-      />
+      <AppTopbar/>
       <!-- 主体 -->
       <AppMain/>
     </el-container>
