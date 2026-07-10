@@ -210,7 +210,6 @@ onMounted(handleSelectMenus)
     <div class="page-header">
       <div>
         <h2>菜单管理</h2>
-        <p>维护登录后侧边栏展示的多级菜单。</p>
       </div>
 
       <div class="actions">
@@ -229,7 +228,7 @@ onMounted(handleSelectMenus)
     >
       <el-table-column prop="title" label="菜单名称" min-width="180"/>
       <el-table-column prop="path" label="路由路径" min-width="220"/>
-      <el-table-column prop="sort" label="排序" width="100"/>
+      <el-table-column prop="sortOrder" label="排序" width="100"/>
       <el-table-column prop="id" label="菜单 ID" min-width="260"/>
       <el-table-column label="操作" width="240" fixed="right">
         <template #default="{ row }">
