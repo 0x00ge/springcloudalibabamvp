@@ -187,8 +187,7 @@ const handleTokenExpired = () => {
 }
 
 /**
- * 请求拦截器：
- *
+ * 请求拦截器
  */
 axiosInstance.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
@@ -219,8 +218,7 @@ axiosInstance.interceptors.request.use(
 )
 
 /**
- * 响应拦截器：
- *
+ * 响应拦截器
  */
 axiosInstance.interceptors.response.use(
     (response: AxiosResponse<ResponseData>) => {
