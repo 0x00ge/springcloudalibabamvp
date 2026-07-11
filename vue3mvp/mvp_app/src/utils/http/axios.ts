@@ -28,7 +28,7 @@ import {
  * 9. 其他错误：统一使用 Element Plus 消息提示。
  */
 
-interface ResponseData<T = unknown> {
+interface ResponseData<T = any> {
     code: number
     message: string
     data: T
@@ -56,7 +56,6 @@ let refreshPromise: Promise<string> | null = null
 
 // 登录失效处理标记。多个接口同时返回 401 时，只需要弹一次提示、跳一次登录页，避免页面连续闪动。
 let isHandleTokenExpired = false
-
 
 
 const NO_AUTO_REFRESH_AUTH_API_PATHS = ['/auth/login', '/auth/refresh', '/auth/register', '/auth/register/code']
@@ -204,11 +203,10 @@ axiosInstance.interceptors.request.use(
         }
 
         return config
-    },
-    (error: AxiosError) => {
+    },(error: AxiosError) => {
         // 请求还没发出去就出错，例如配置错误、拦截器内部异常。
         ElNotification({
-            title: '错误',
+            title: 'interceptors.request.error',
             message: error.message,
             type: 'error',
         })
@@ -268,8 +266,7 @@ axiosInstance.interceptors.response.use(
         // 业务成功时，把完整 response 交给 http.ts。
         // http.ts 会继续取 response.data.data 返回给页面。
         return response
-    },
-    (error: AxiosError) => {
+    },(error: AxiosError) => {
         // HTTP 状态码为 401：直接认为登录态失效。
         // 这里也不再尝试刷新 token，避免后端已经拒绝后前端继续重复请求。
         if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
@@ -294,7 +291,7 @@ axiosInstance.interceptors.response.use(
 
         // 其他网络错误、超时错误，统一给用户提示。
         ElNotification({
-            title: '错误',
+            title: 'interceptors.response.error',
             message: error.message,
             type: 'error',
         })
