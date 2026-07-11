@@ -43,5 +43,5 @@ import AppTopbar from './components/AppTopbar.vue'
   flex-shrink: 0;
   overflow: hidden;
   background: #172033;
-}
+} 
 </style>
