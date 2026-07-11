@@ -136,8 +136,8 @@ const menuRenderKey = computed(() => openedMenus.value.join('|') || 'empty-menu'
         :key="menuRenderKey"
         :default-active="activeMenu"
         :default-openeds="openedMenus"
-        text-color="#fff"
-        active-text-color="#ffffff"
+        text-color="#0687F1FF"
+        active-text-color="#f1e206"
         router
     >
       <AppMenuItem v-for="item in menuItems" :key="item.id" :menuItem="item"/>
@@ -179,9 +179,9 @@ const menuRenderKey = computed(() => openedMenus.value.join('|') || 'empty-menu'
 }
 
 .side-menu {
-  /* 去掉 Element Plus 菜单默认右边框，侧栏整体更干净。 */
   border-right: 0;
   width: 200px;
+  background: transparent;
 }
 
 .side-menu :deep(.el-menu-item),
