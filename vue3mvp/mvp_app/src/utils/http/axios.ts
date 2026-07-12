@@ -7,7 +7,7 @@ import axios, {
 import {ElNotification} from 'element-plus'
 import type {AuthTokenParams} from '@/types/authTypes.ts'
 import {
-    clearStoredAuthInfo,
+    clearAuthToken,
     getAccessToken,
     isAccessTokenExpired,
     setAuthToken,
@@ -32,38 +32,34 @@ interface ResponseResult<T = any> {
     data: T
 }
 
-// baseURL 优先读取环境变量；没有配置时使用 /api，由 Vite 代理转发到 gateway。
 const baseURL = import.meta.env.VITE_API_URL || '/api'
 
-// 创建 axios 实例。
-// 后续项目中不要直接使用 axios.get/axios.post，而是统一使用这个实例，保证拦截器一定生效。
 const axiosInstance: AxiosInstance = axios.create({
     baseURL,
     timeout: 5000,
     withCredentials: true,
 })
 
-// 刷新 token 的共享 Promise。
 // 当多个请求同时发现 accessToken 过期时，只发起一次 /auth/refresh，其他请求复用这个结果。
-// 例子：
-// - 用户打开页面时同时请求用户列表和个人信息。
-// - 这 2 个请求都发现 accessToken 过期。
-// - 如果没有 isTokenExpired，会发 2 次 /auth/refresh。
-// - 有 isTokenExpired 后，只发 1 次刷新请求，另一个等待同一个结果。
 let isTokenExpired: Promise<string> | null = null;
 
 // 登录失效处理标记。多个接口同时返回 401 时，只需要弹一次提示、跳一次登录页，避免页面连续闪动。
 let isHandleTokenExpired: boolean = false
 
 
-const notTokenPaths = ['/auth/login', '/auth/refresh', '/auth/register', '/auth/register/code']
+const notTokenPaths = [
+    '/auth/login',
+    '/auth/refresh',
+    '/auth/register',
+    '/auth/register/code'
+]
 
 // 统一把请求地址转成 pathname，方便兼容下面几种写法：
 // - /auth/login
 // - /auth/login?type=account
 // - http://localhost:5173/auth/login
 // - http://localhost:5173/api/auth/login
-const getRequestPath = (url = '') => {
+const getApi = (url = '') => {
     try {
         return new URL(url, window.location.origin).pathname
     } catch {
@@ -75,14 +71,14 @@ const getRequestPath = (url = '') => {
 // /auth/login：登录时还没有 token，不需要刷新。
 // /auth/refresh：它自己就是刷新 token 的接口，不能再触发刷新自己。
 // /auth/logout 需要携带 Authorization，让后端能拉黑当前 accessToken。
-const handleIsTokenApi = (url = '') => {
-    const requestPath = getRequestPath(url)
+const isTokenApi = (url = '') => {
+    const requestPath = getApi(url)
 
     return notTokenPaths.some((path) => requestPath === path || requestPath === `/api${path}`)
 }
 
 const isRefreshApi = (url = '') => {
-    const requestPath = getRequestPath(url)
+    const requestPath = getApi(url)
 
     return requestPath === '/auth/refresh' || requestPath === '/api/auth/refresh'
 }
@@ -94,8 +90,8 @@ const isRefreshApi = (url = '') => {
  * 2. accessToken 缺失或过期时，调用 /auth/refresh 尝试恢复登录态。
  * 3. 如果 accessToken 正常，直接返回。
  */
-const handleAccessToken = async (url?: string) => {
-    if (handleIsTokenApi(url)) return undefined
+const handleAccessToken = (url?: string) => {
+    if (isTokenApi(url)) return undefined
 
     const accessToken = getAccessToken()
 
@@ -119,10 +115,10 @@ const handleAccessToken = async (url?: string) => {
  * 因为 axiosInstance 带有请求拦截器，如果刷新接口也走 axiosInstance，可能又触发 getValidAccessToken，
  * 从而造成“刷新 token 的请求又去刷新 token”的循环。
  */
-const handleRefreshToken = async () => {
+const handleRefreshToken = () => {
     // isTokenExpired 为空，说明当前没有刷新请求在进行中，需要新发起一次。
     if (!isTokenExpired) {
-         isTokenExpired = axios
+        isTokenExpired = axios
             .post<ResponseResult<AuthTokenParams>>(
                 '/auth/refresh',
                 undefined,
@@ -158,7 +154,7 @@ const handleRefreshToken = async () => {
  */
 const handleTokenExpired = () => {
     // 清理内存中的 accessToken；refreshToken Cookie 由后端清理或自然过期。
-    clearStoredAuthInfo()
+    clearAuthToken()
 
     // 如果已经在处理登录失效，就不重复弹通知、不重复修改 location。
     if (isHandleTokenExpired) return
@@ -185,9 +181,9 @@ const handleTokenExpired = () => {
  * 请求拦截器
  */
 axiosInstance.interceptors.request.use(
-    async (config: InternalAxiosRequestConfig) => {
+    (config: InternalAxiosRequestConfig) => {
         try {
-            const token = await handleAccessToken(config.url)
+            const token = handleAccessToken(config.url)
             // accessToken 放到 Authorization 请求头，Bearer 是一种常见 token 认证格式。
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`
@@ -227,7 +223,7 @@ axiosInstance.interceptors.response.use(
             }
 
             // 登录这类认证接口自己的 401，只展示后端错误，不当成“业务登录态失效”重复跳转。
-            if (handleIsTokenApi(response.config.url)) {
+            if (isTokenApi(response.config.url)) {
                 ElNotification({
                     title: '错误',
                     message: response.data.message,
@@ -272,7 +268,7 @@ axiosInstance.interceptors.response.use(
             }
 
             // 登录这类认证接口自己的 HTTP 401，只展示错误，不重复走登录失效跳转。
-            if (handleIsTokenApi(error.config?.url)) {
+            if (isTokenApi(error.config?.url)) {
                 ElNotification({
                     title: '错误',
                     message: error.message,
