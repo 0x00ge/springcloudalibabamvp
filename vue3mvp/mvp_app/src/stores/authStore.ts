@@ -1,8 +1,7 @@
 import {computed, reactive, ref} from 'vue'
 import {defineStore} from 'pinia'
 
-import {getCurrentAuth, login, logout, register} from '@/api/apiAuth.ts'
-import type {AuthTokenParams, AuthParams, LoginParams} from '@/types/authTypes.ts'
+import type {AuthTokenParams, AuthParams} from '@/types/authTypes.ts'
 import type {UserInfo} from '@/types/userTypes.ts'
 
 /**
@@ -41,7 +40,6 @@ export const setAuthToken = (token: AuthTokenParams) => {
     authToken.type = token.type || 'Bearer'
     authToken.accessToken = token.accessToken || ''
     authToken.accessTokenExpiresIn = token.accessTokenExpiresIn || 0
-
     setAccessTokenExpire(authToken.accessTokenExpiresIn)
 }
 
@@ -54,12 +52,11 @@ export const setAuthToken = (token: AuthTokenParams) => {
  * - refreshToken Cookie 需要后端 /auth/logout 清理，或等待 Cookie 自然过期。
  */
 export const clearAuthToken = () => {
-    stopAccessTokenExpireTimer()
     authToken.type = ''
     authToken.accessToken = ''
     authToken.accessTokenExpiresIn = 0
+    stopAccessTokenExpireTimer()
 }
-
 
 /**
  * 停止旧的 accessToken 失效定时器。
@@ -93,8 +90,6 @@ const setAccessTokenExpire = (expiresIn = 0) => {
     }, expireDelaySeconds * 1000)
 }
 
-
-
 /**
  * 给 axios、路由守卫读取当前 accessToken。
  * 空字符串统一转换成 undefined，调用方只需要判断 truthy/falsy。
@@ -124,27 +119,6 @@ export const useAuthStore =
         const isLogin = computed(() => Boolean(getAccessToken()))
 
         /**
-         * 顶部栏需要的用户展示模型。
-         * 后端 CurrentAuthDTO 只返回认证维度字段，这里转换成布局组件通用的 UserInfo。
-         */
-        const currentUserInfo = computed<UserInfo>(() => {
-            if (!currentAuth.value) {
-                return {id: '', name: '', phone: '', email: '', role: '', status: ''}
-            }
-
-            const displayName = currentAuth.value.name || currentAuth.value.phone || '用户'
-
-            return {
-                id: currentAuth.value.id || '',
-                name: displayName,
-                phone: currentAuth.value.phone,
-                email: '',
-                role: '',
-                status: '',
-            }
-        })
-
-        /**
          * 清理 Pinia 用户信息和 token 内存缓存。
          * 这个 action 不调用后端，适合路由守卫、axios 401 处理这类“本地兜底清理”场景。
          */
@@ -153,52 +127,10 @@ export const useAuthStore =
             clearAuthToken()
         }
 
-        /**
-         * 登录流程。
-         *
-         * 1. 调用 /auth/login 校验手机号和密码。
-         * 2. 后端响应体返回 accessToken，并通过 HttpOnly Cookie 写入 refreshToken。
-         * 3. 前端只保存 accessToken 及其过期时间，后续业务请求由 axios 自动写入 Authorization。
-         */
-        const loginAction =
-            async (params: LoginParams) => {
-                const tokenResult = await login(params)
-
-                setAuthToken(tokenResult)
-
-                return tokenResult
-            }
-
-        /**
-         * 注册流程。
-         *
-         * 注册成功只返回用户基础信息，不自动写入登录态；
-         * 页面会切回登录表单，让用户显式登录并获取 token。
-         */
-        const registerAction =
-            async (params: AuthParams) => register(params)
-
-        /**
-         * 加载当前登录用户。
-         *
-         * 前端不会伪造 X-User-Id；该请求先经过 gateway 校验 accessToken，
-         * 再由 gateway 把当前用户 ID 透传给 user 服务。
-         */
-        const getAuthAction =
-            async () => {
-                currentAuth.value = await getCurrentAuth()
-
-                return currentAuth.value
-            }
-
         return {
             authToken,
             currentAuth,
-            currentUserInfo,
             isLogin,
             clearLoginState,
-            loginAction,
-            registerAction,
-            getAuthAction,
         }
     })
