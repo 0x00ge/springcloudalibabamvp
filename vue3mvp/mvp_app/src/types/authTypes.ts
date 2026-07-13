@@ -2,7 +2,7 @@ export interface SmsCodeByPhoneParams {
     phone: string
 }
 
-export interface CurrentAuthParams {
+export interface AuthParams {
     id?: string
     name: string
     phone: string
