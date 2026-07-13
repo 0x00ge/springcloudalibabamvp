@@ -1,30 +1,27 @@
-import {computed, reactive, ref} from 'vue'
-import {defineStore} from 'pinia'
-
-import type {AuthTokenParams, AuthParams} from '@/types/authTypes.ts'
-import type {UserInfo} from '@/types/userTypes.ts'
+import { computed, reactive } from 'vue'
+import { defineStore } from 'pinia'
+import type { AuthTokenParams } from '@/types/authTypes.ts'
 
 /**
- * accessToken 提前失效窗口。
+ * Token 提前失效缓冲窗口（秒）。
  *
- * 后端当前 accessToken 有效期是 60 秒，前端缓冲窗口不能大于有效期；
- * 否则登录刚拿到 token 就会被判定为“即将过期”，进入首页时立刻触发 refresh。
+ * 后端 AccessToken 有效期为 60 秒，前端在剩余 5 秒时即视为"已过期"，
+ * 主动触发刷新，避免请求到达后端时 Token 刚好失效返回 401。
+ *
+ * @注意 该值必须小于后端 AccessToken 有效期，否则登录后立即触发刷新。
  */
 const TOKEN_EXPIRE_BUFFER_SECONDS = 5
 
-/**
- * accessToken 内存失效定时器。
- *
- * authToken 中只保留后端返回的 accessTokenExpiresIn，不额外维护绝对过期时间字段。
- * 为了让前端能在 token 快过期时主动刷新，这里用定时器在“剩余秒数进入缓冲窗口”时清掉 accessToken。
- */
+/** Token 失效定时器句柄，用于在 Token 即将过期时主动清空内存。 */
 let accessTokenExpireTimer: number | undefined
 
 /**
+ * 认证令牌状态。
+ *
  * 设计约定：
- * 1. accessToken 只放在内存中，页面刷新后会丢失，避免长期暴露在 localStorage/sessionStorage。
- * 2. refreshToken 不进入 JS，后端通过 HttpOnly Cookie 写入浏览器，刷新时浏览器自动携带。
- * 3. accessTokenExpiresIn 直接使用后端返回的剩余秒数，不再派生额外的绝对过期时间字段。
+ * - AccessToken 仅存于内存，页面刷新即丢失，防御 XSS 窃取。
+ * - RefreshToken 由后端通过 HttpOnly Cookie 下发，JS 不可读，浏览器自动携带。
+ * - `accessTokenExpiresIn` 直接使用后端返回的相对秒数，不派生绝对时间戳。
  */
 const authToken = reactive<AuthTokenParams>({
     type: '',
@@ -32,105 +29,108 @@ const authToken = reactive<AuthTokenParams>({
     accessTokenExpiresIn: 0,
 })
 
-/**
- * 保存登录接口返回的 token 信息。
- * 后端的 refreshToken 通过 HttpOnly Cookie 管理，让浏览器自动带 Cookie。
- */
-export const setAuthToken = (token: AuthTokenParams) => {
-    authToken.type = token.type || 'Bearer'
-    authToken.accessToken = token.accessToken || ''
-    authToken.accessTokenExpiresIn = token.accessTokenExpiresIn || 0
-    setAccessTokenExpire(authToken.accessTokenExpiresIn)
-}
-
-/**
- * 清理前端保存的登录态。
- *
- * 这个方法只负责 JS 内存状态：
- * - accessToken 从内存清掉；
- * - 当前用户信息由 Pinia action 清掉；
- * - refreshToken Cookie 需要后端 /auth/logout 清理，或等待 Cookie 自然过期。
- */
-export const clearAuthToken = () => {
-    authToken.type = ''
-    authToken.accessToken = ''
-    authToken.accessTokenExpiresIn = 0
-    stopAccessTokenExpireTimer()
-}
-
-/**
- * 停止旧的 accessToken 失效定时器。
- * 每次登录、刷新、登出都会先清理旧定时器，避免旧 token 的定时任务影响新 token。
- */
+/** 清除失效定时器，避免旧 Token 的定时任务影响新 Token。 */
 const stopAccessTokenExpireTimer = () => {
     if (accessTokenExpireTimer === undefined) return
-
     window.clearTimeout(accessTokenExpireTimer)
     accessTokenExpireTimer = undefined
 }
 
 /**
- * 安排 accessToken 自动进入失效状态。
+ * 启动 Token 失效定时器。
  *
- * 后端返回的是 accessTokenExpiresIn 秒数。前端不额外维护绝对过期时间字段，
- * 而是在保存 token 时启动一个定时器：当剩余时间进入缓冲窗口后，清空 accessToken，
- * 下一次 axios 请求自然会走 /auth/refresh。
+ * 在 `expiresIn - 缓冲窗口` 秒后清空内存中的 AccessToken，
+ * 使下一次业务请求因无 Token 而触发 `/auth/refresh`。
  */
-const setAccessTokenExpire = (expiresIn = 0) => {
-    stopAccessTokenExpireTimer()
-
-    if (expiresIn <= 0) return
-
-    const expireDelaySeconds = Math.max(expiresIn - TOKEN_EXPIRE_BUFFER_SECONDS, 0)
+const setAccessTokenExpire = (expiresIn: number) => {
+    const delaySeconds = Math.max(expiresIn - TOKEN_EXPIRE_BUFFER_SECONDS, 0)
 
     accessTokenExpireTimer = window.setTimeout(() => {
         authToken.accessToken = ''
         authToken.accessTokenExpiresIn = 0
         accessTokenExpireTimer = undefined
-    }, expireDelaySeconds * 1000)
+    }, delaySeconds * 1000)
 }
 
 /**
- * 给 axios、路由守卫读取当前 accessToken。
- * 空字符串统一转换成 undefined，调用方只需要判断 truthy/falsy。
+ * 保存认证令牌。
+ *
+ * @param token 后端返回的令牌数据，包含类型、AccessToken 及其有效期。
+ *
+ * @example
+ * setAuthToken({ type: 'Bearer', accessToken: 'xxx', accessTokenExpiresIn: 60 })
+ */
+export const setAuthToken = (token: AuthTokenParams) => {
+    stopAccessTokenExpireTimer()
+
+    authToken.type = token.type || 'Bearer'
+    authToken.accessToken = token.accessToken || ''
+    authToken.accessTokenExpiresIn = token.accessTokenExpiresIn || 0
+
+    if (authToken.accessTokenExpiresIn > 0) {
+        setAccessTokenExpire(authToken.accessTokenExpiresIn)
+    }
+}
+
+/**
+ * 清理内存中的认证令牌。
+ *
+ * 仅清理前端状态，不涉及后端操作。
+ * RefreshToken Cookie 由后端 `/auth/logout` 接口清理或等待自然过期。
+ */
+export const clearAuthToken = () => {
+    stopAccessTokenExpireTimer()
+    authToken.type = ''
+    authToken.accessToken = ''
+    authToken.accessTokenExpiresIn = 0
+}
+
+/**
+ * 获取当前 AccessToken 字符串。
+ *
+ * 供 Axios 请求拦截器使用，自动注入 `Authorization` 头。
+ *
+ * @returns Token 字符串，无 Token 时返回空字符串。
  */
 export const getAccessToken = () => authToken.accessToken
 
 /**
- * 判断 accessToken 是否已经过期或即将过期。
- * 没有 token、没有过期时间、进入提前刷新窗口，都视为不可继续直接使用。
+ * 判断 AccessToken 是否已过期或即将过期。
+ *
+ * 供路由守卫和 Axios 拦截器使用，决定是否需要提前刷新。
+ *
+ * @returns `true` 表示 Token 不可用，需刷新；`false` 表示可直接使用。
  */
 export const isAccessTokenExpired = () => {
     if (!authToken.accessToken || authToken.accessTokenExpiresIn <= 0) return true
-
     return authToken.accessTokenExpiresIn <= TOKEN_EXPIRE_BUFFER_SECONDS
 }
 
-export const useAuthStore =
-    defineStore('auth', () => {
+// ============================================================
+// Pinia Store
+// ============================================================
 
-        // 当前登录用户基础信息
-        const currentAuth = ref<AuthParams>()
+export const useAuthStore = defineStore('auth', () => {
+    /**
+     * 用户是否处于登录状态。
+     *
+     * 仅依据内存中是否存在 AccessToken 判断，不保证 RefreshToken 仍有效。
+     * 页面刷新后该值为 `false`，需由路由守卫通过 RefreshToken 静默恢复。
+     */
+    const isLogin = computed(() => Boolean(getAccessToken()))
 
-        /**
-         * 是否处于已登录运行态。
-         * 这里只判断当前内存中是否有 accessToken，不代表 refreshToken Cookie 一定有效。
-         */
-        const isLogin = computed(() => Boolean(getAccessToken()))
+    return {
+        // ---------- 状态 ----------
+        /** 认证令牌原始数据，仅用于调试，生产环境不建议直接修改。 */
+        authToken,
 
-        /**
-         * 清理 Pinia 用户信息和 token 内存缓存。
-         * 这个 action 不调用后端，适合路由守卫、axios 401 处理这类“本地兜底清理”场景。
-         */
-        const clearLoginState = () => {
-            currentAuth.value = undefined
-            clearAuthToken()
-        }
+        // ---------- 计算属性 ----------
+        isLogin,
 
-        return {
-            authToken,
-            currentAuth,
-            isLogin,
-            clearLoginState,
-        }
-    })
+        // ---------- 操作 ----------
+        setAuthToken,
+        clearAuthToken,
+        getAccessToken,
+        isAccessTokenExpired,
+    }
+})
