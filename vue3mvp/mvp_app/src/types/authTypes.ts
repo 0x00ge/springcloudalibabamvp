@@ -24,6 +24,4 @@ export interface AuthTokenParams {
     accessToken: string
     /** accessToken 过期秒数。 */
     accessTokenExpiresIn: number
-    /** refreshToken Cookie 过期秒数，前端只用于调试或展示，不保存 refreshToken 原值。 */
-    refreshTokenExpiresIn: number
 }

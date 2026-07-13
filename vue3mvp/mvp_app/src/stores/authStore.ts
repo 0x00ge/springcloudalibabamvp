@@ -1,7 +1,7 @@
 import {computed, reactive, ref} from 'vue'
 import {defineStore} from 'pinia'
 
-import {getCurrentAuth, login, logout, refreshAccessToken, register} from '@/api/apiAuth.ts'
+import {getCurrentAuth, login, logout, register} from '@/api/apiAuth.ts'
 import type {AuthTokenParams, CurrentAuthParams, LoginParams} from '@/types/authTypes.ts'
 import type {UserInfo} from '@/types/userTypes.ts'
 
@@ -31,21 +31,18 @@ const authToken = reactive<AuthTokenParams>({
     type: '',
     accessToken: '',
     accessTokenExpiresIn: 0,
-    refreshTokenExpiresIn: 0,
 })
 
 /**
- * 保存登录/刷新接口返回的 token 信息。
- *
+ * 保存登录接口返回的 token 信息。
  * 后端的 refreshToken 通过 HttpOnly Cookie 管理，让浏览器自动带 Cookie。
  */
 export const setAuthToken = (token: AuthTokenParams) => {
     authToken.type = token.type || 'Bearer'
     authToken.accessToken = token.accessToken || ''
     authToken.accessTokenExpiresIn = token.accessTokenExpiresIn || 0
-    authToken.refreshTokenExpiresIn = token.refreshTokenExpiresIn || 0
 
-    handleAccessTokenExpire(authToken.accessTokenExpiresIn)
+    setAccessTokenExpire(authToken.accessTokenExpiresIn)
 }
 
 /**
@@ -61,7 +58,6 @@ export const clearAuthToken = () => {
     authToken.type = ''
     authToken.accessToken = ''
     authToken.accessTokenExpiresIn = 0
-    authToken.refreshTokenExpiresIn = 0
 }
 
 
@@ -83,7 +79,7 @@ const stopAccessTokenExpireTimer = () => {
  * 而是在保存 token 时启动一个定时器：当剩余时间进入缓冲窗口后，清空 accessToken，
  * 下一次 axios 请求自然会走 /auth/refresh。
  */
-const handleAccessTokenExpire = (expiresIn = 0) => {
+const setAccessTokenExpire = (expiresIn = 0) => {
     stopAccessTokenExpireTimer()
 
     if (expiresIn <= 0) return
