@@ -1,13 +1,12 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { getCurrentAuth } from '@/api/apiAuth'
-import type { AuthParams } from '@/types/authTypes.ts'
-import type { UserInfo } from '@/types/userTypes.ts'
+import { getCurrentAuth } from '@/api/apiUser.ts'
+import type { UserParams } from '@/types/userTypes.ts'
 
 export const useUserStore = defineStore('user', () => {
-    const currentAuth = ref<AuthParams>()
+    const currentAuth = ref<UserParams>()
 
-    const currentUserInfo = computed<UserInfo>(() => {
+    const currentUser = computed<UserParams>(() => {
         if (!currentAuth.value) {
             return { id: '', name: '', phone: '', email: '', role: '', status: '' }
         }
@@ -34,7 +33,7 @@ export const useUserStore = defineStore('user', () => {
 
     return {
         currentAuth,
-        currentUserInfo,
+        currentUser,
         fetchUserInfo,
         clearUserInfo,
     }

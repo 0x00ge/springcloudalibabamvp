@@ -1,5 +1,5 @@
 import type { Router, RouteLocationNormalized } from 'vue-router'
-import { refreshAccessToken } from '@/api/apiAuth.ts'
+import { refreshAccessToken } from '@/api/apiUser.ts'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserStore } from '@/stores/userStore'
 

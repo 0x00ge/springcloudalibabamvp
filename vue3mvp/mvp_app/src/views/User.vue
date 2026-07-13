@@ -4,10 +4,10 @@ import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'elemen
 
 import {createUser, deleteUser, getUserInfoConfig, selectUsers, updateUser} from '@/api/apiUser.js'
 import type {OptionItem} from '@/types/layoutTypes'
-import type {UserForm, UserInfo, UserQuery} from '@/types/userTypes'
+import type {UserForm, UserParams, UserQuery} from '@/types/userTypes'
 
 const userId = ref<string>('')
-const userList = ref<UserInfo[]>([])
+const userList = ref<UserParams[]>([])
 
 // 查询输入区的临时表单值。用户在输入框里改值时，只先改这里，不立刻过滤表格。
 const queryForm = reactive<UserQuery>({
@@ -120,9 +120,9 @@ const handleSaveUser = () => {
   isVisibleOfCreateOrUpdate.value = true
 }
 
-const handleUpdateUser = (user: UserInfo) => {
+const handleUpdateUser = (user: UserParams) => {
   isCreateOrUpdate.value = false
-  userId.value = user.id
+  userId.value = user.id || ''
   Object.assign(userForm, {
     name: user.name,
     phone: user.phone,
@@ -151,7 +151,9 @@ const handleSaveOrUpdateSubmit = async () => {
   await handleSelectUsers()
 }
 
-const handleDeleteUser = async (user: UserInfo) => {
+const handleDeleteUser = async (user: UserParams) => {
+  if (!user.id) return
+
   await ElMessageBox.confirm(`确定删除用户「${user.name}」吗？`, '删除确认', {
     type: 'warning',
     confirmButtonText: '删除',

@@ -3,7 +3,7 @@ import {computed, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 
-import {logout} from '@/api/apiAuth.ts'
+import {logout} from '@/api/apiUser.ts'
 import type {BreadcrumbItem} from '@/types/layoutTypes'
 import {useAuthStore} from '@/stores/authStore.ts'
 import {useUserStore} from '@/stores/userStore.ts'
