@@ -2,7 +2,7 @@ import {computed, reactive, ref} from 'vue'
 import {defineStore} from 'pinia'
 
 import {getCurrentAuth, login, logout, register} from '@/api/apiAuth.ts'
-import type {AuthTokenParams, CurrentAuthParams, LoginParams} from '@/types/authTypes.ts'
+import type {AuthTokenParams, AuthParams, LoginParams} from '@/types/authTypes.ts'
 import type {UserInfo} from '@/types/userTypes.ts'
 
 /**
@@ -115,7 +115,7 @@ export const useAuthStore =
     defineStore('auth', () => {
 
         // 当前登录用户基础信息
-        const currentAuth = ref<CurrentAuthParams>()
+        const currentAuth = ref<AuthParams>()
 
         /**
          * 是否处于已登录运行态。
@@ -176,7 +176,7 @@ export const useAuthStore =
          * 页面会切回登录表单，让用户显式登录并获取 token。
          */
         const registerAction =
-            async (params: CurrentAuthParams) => register(params)
+            async (params: AuthParams) => register(params)
 
         /**
          * 加载当前登录用户。
@@ -191,22 +191,6 @@ export const useAuthStore =
                 return currentAuth.value
             }
 
-        /**
-         * 退出登录。
-         *
-         * 有 accessToken 时先通知后端拉黑当前 token、删除 refreshToken 白名单并清 Cookie；
-         * 无论接口成功失败，finally 都会清理前端内存，避免页面继续显示已登录状态。
-         */
-        const logoutAction = async () => {
-            try {
-                if (getAccessToken()) {
-                    await logout()
-                }
-            } finally {
-                clearLoginState()
-            }
-        }
-
         return {
             authToken,
             currentAuth,
@@ -216,6 +200,5 @@ export const useAuthStore =
             loginAction,
             registerAction,
             getAuthAction,
-            logoutAction,
         }
     })
