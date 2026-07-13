@@ -1,7 +1,7 @@
 import { get, post, postParams } from '@/utils/http/http.ts'
 
 import type {
-    CurrentAuthParams,
+    AuthParams,
     LoginParams,
     SmsCodeByPhoneParams,
     AuthTokenParams,
@@ -24,8 +24,8 @@ export const registerCodeByPhone =
 // 2. 注册接口使用 CurrentAuthDTO JSON body 入参。
 // 3. 注册成功后返回当前用户基础信息，前端再调用登录接口获取双 token。
 export const register =
-    (data: CurrentAuthParams) => {
-    const request: CurrentAuthParams = {
+    (data: AuthParams) => {
+    const request: AuthParams = {
         id: data.id,
         phone: data.phone,
         password: data.password,
@@ -34,7 +34,7 @@ export const register =
         name: data.name,
     }
 
-    return post<CurrentAuthParams>('/auth/register', request)
+    return post<AuthParams>('/auth/register', request)
 }
 
 // 登录接口：
@@ -56,7 +56,7 @@ export const login =
 // 2. Gateway 校验 token 后把用户 ID 透传成 X-User-Id。
 // 3. user 服务读取 X-User-Id，并返回 CurrentAuthDTO。
 export const getCurrentAuth =
-    () => get<CurrentAuthParams>('/auth/me')
+    () => get<AuthParams>('/auth/me')
 
 // 刷新 accessToken：
 // 1. accessToken 过期后，axios 拦截器会调用这个接口。

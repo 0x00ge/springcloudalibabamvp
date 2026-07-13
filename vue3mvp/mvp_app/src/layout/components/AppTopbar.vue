@@ -3,12 +3,15 @@ import {computed, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 
+import {logout} from '@/api/apiAuth.ts'
 import type {BreadcrumbItem} from '@/types/layoutTypes'
 import {useAuthStore} from '@/stores/authStore.ts'
+import {useUserStore} from '@/stores/userStore.ts'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const userStore = useUserStore()
 const logoutLoading = ref(false)
 
 // 顶部栏自己根据当前路由生成面包屑，AppLayout 不再关心路由展示细节。
@@ -21,8 +24,8 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() =>
         })),
 )
 
-// 顶部栏自己从 authStore 读取用户展示信息，AppLayout 只负责放置顶部栏。
-const currentUser = computed(() => authStore.currentUserInfo)
+// 顶部栏自己从 userStore 读取用户展示信息，AppLayout 只负责放置顶部栏。
+const currentUser = computed(() => userStore.currentUserInfo)
 
 // 退出登录属于顶部用户下拉菜单的行为，直接放在 AppTopbar 内部维护。
 const handleLogout = async () => {
@@ -39,11 +42,15 @@ const handleLogout = async () => {
   logoutLoading.value = true
 
   try {
-    await authStore.logoutAction()
+    if (authStore.isLogin) {
+      await logout()
+    }
     ElMessage.success('已退出登录')
   } catch {
     ElMessage.warning('已清理本地登录状态')
   } finally {
+    authStore.clearAuthToken()
+    userStore.clearUserInfo()
     logoutLoading.value = false
     router.replace('/login')
   }

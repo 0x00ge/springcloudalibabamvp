@@ -4,7 +4,7 @@ import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, type FormInstance, type FormRules} from 'element-plus'
 import {Cellphone, Lock, Message, User} from '@element-plus/icons-vue'
 
-import {registerCodeByPhone} from '@/api/apiAuth.js'
+import {login, register, registerCodeByPhone} from '@/api/apiAuth.ts'
 import {useAuthStore} from '@/stores/authStore.ts'
 
 interface LoginForm {
@@ -26,7 +26,7 @@ type LoginOrRegister = 'login' | 'register'
 const router = useRouter()
 const route = useRoute()
 
-// 登录、注册、刷新、登出都属于认证职责，统一从 authStore 进入。
+// authStore 只管理 token；登录、注册这些接口调用放在登录页对应流程里。
 const authStore = useAuthStore()
 
 // Element Plus 表单实例，用于手动触发表单校验。
@@ -96,8 +96,8 @@ const registerRules = reactive<FormRules<RegisterForm>>({
 
 // 登录流程：
 // 1. 先触发表单校验；
-// 2. 校验通过后调用 authStore.loginAction；
-// 3. authStore 内部会请求真实 /auth/login，并保存响应体中的 accessToken；
+// 2. 校验通过后调用 /auth/login；
+// 3. 登录成功后把响应体中的 accessToken 保存到 authStore；
 // 4. refreshToken 不进入前端 JS，由后端通过 HttpOnly Cookie 写入浏览器。
 const handleLogin = async () => {
   if (!loginFormRef.value) return
@@ -106,11 +106,11 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
-    // 登录逻辑交给 authStore 统一处理：接口请求、保存 token 都放在一起。
-    await authStore.loginAction({
+    const tokenResult = await login({
       phone: loginForm.phone,
       password: loginForm.password,
     })
+    authStore.setAuthToken(tokenResult)
 
     ElMessage.success('登录成功')
     handleRedirectToHome()
@@ -135,7 +135,7 @@ const handleRegister = async () => {
   loading.value = true
 
   try {
-    await authStore.registerAction({
+    await register({
       name: registerForm.name,
       phone: registerForm.phone,
       password: registerForm.password,

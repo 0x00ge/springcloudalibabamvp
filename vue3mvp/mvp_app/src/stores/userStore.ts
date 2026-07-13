@@ -1,17 +1,41 @@
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { getCurrentAuth } from '@/api/apiAuth'
+import type { AuthParams } from '@/types/authTypes.ts'
+import type { UserInfo } from '@/types/userTypes.ts'
 
-/**
- * 用户业务 store。
- *
- * 只放“用户管理”相关的页面状态，例如：
- * - 用户列表查询条件；
- * - 用户表格选中项；
- * - 新增/编辑用户弹窗状态；
- * - 用户详情缓存。
- *
- * 登录、登出、token、当前登录用户、权限认证都属于 authStore 职责，
- * 本文件不作为 authStore 的中转入口，避免认证状态和用户业务状态混在一起。
- */
 export const useUserStore = defineStore('user', () => {
-  return {}
+    const currentAuth = ref<AuthParams>()
+
+    const currentUserInfo = computed<UserInfo>(() => {
+        if (!currentAuth.value) {
+            return { id: '', name: '', phone: '', email: '', role: '', status: '' }
+        }
+        const displayName = currentAuth.value.name || currentAuth.value.phone || '用户'
+        return {
+            id: currentAuth.value.id || '',
+            name: displayName,
+            phone: currentAuth.value.phone || '',
+            email: '',
+            role: '',
+            status: '',
+        }
+    })
+
+    const fetchUserInfo = async () => {
+        const user = await getCurrentAuth()
+        currentAuth.value = user
+        return user
+    }
+
+    const clearUserInfo = () => {
+        currentAuth.value = undefined
+    }
+
+    return {
+        currentAuth,
+        currentUserInfo,
+        fetchUserInfo,
+        clearUserInfo,
+    }
 })

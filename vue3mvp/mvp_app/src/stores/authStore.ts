@@ -90,9 +90,9 @@ export const clearAuthToken = () => {
  *
  * 供 Axios 请求拦截器使用，自动注入 `Authorization` 头。
  *
- * @returns Token 字符串，无 Token 时返回空字符串。
+ * @returns Token 字符串，无 Token 时返回 undefined。
  */
-export const getAccessToken = () => authToken.accessToken
+export const getAccessToken = () => authToken.accessToken || undefined
 
 /**
  * 判断 AccessToken 是否已过期或即将过期。
@@ -105,6 +105,13 @@ export const isAccessTokenExpired = () => {
     if (!authToken.accessToken || authToken.accessTokenExpiresIn <= 0) return true
     return authToken.accessTokenExpiresIn <= TOKEN_EXPIRE_BUFFER_SECONDS
 }
+
+/**
+ * 判断当前内存中的 AccessToken 是否可以直接使用。
+ *
+ * 这里只判断 token 本身，不读取用户信息、不调用后端接口。
+ */
+export const hasValidAccessToken = () => Boolean(getAccessToken() && !isAccessTokenExpired())
 
 // ============================================================
 // Pinia Store
@@ -119,6 +126,13 @@ export const useAuthStore = defineStore('auth', () => {
      */
     const isLogin = computed(() => Boolean(getAccessToken()))
 
+    /**
+     * 当前 AccessToken 是否还在可用窗口内。
+     *
+     * 路由守卫用它决定是否可以直接放行，Axios 用它决定是否需要刷新。
+     */
+    const hasValidToken = computed(() => hasValidAccessToken())
+
     return {
         // ---------- 状态 ----------
         /** 认证令牌原始数据，仅用于调试，生产环境不建议直接修改。 */
@@ -126,11 +140,13 @@ export const useAuthStore = defineStore('auth', () => {
 
         // ---------- 计算属性 ----------
         isLogin,
+        hasValidToken,
 
         // ---------- 操作 ----------
         setAuthToken,
         clearAuthToken,
         getAccessToken,
         isAccessTokenExpired,
+        hasValidAccessToken,
     }
 })

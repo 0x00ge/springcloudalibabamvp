@@ -1,46 +1,131 @@
-import type {Router} from 'vue-router'
+import type { Router, RouteLocationNormalized } from 'vue-router'
+import { refreshAccessToken } from '@/api/apiAuth.ts'
+import { useAuthStore } from '@/stores/authStore'
+import { useUserStore } from '@/stores/userStore'
 
-import {getAccessToken, useAuthStore} from '@/stores/authStore.ts'
+// ============================================================
+// 常量配置
+// ============================================================
+
+/** 登录白名单：不需要认证即可访问的页面 */
+const LOGIN_WHITELIST = ['/login', '/register', '/forgot-password']
+
+/** 登录成功后默认跳转地址 */
+const DEFAULT_REDIRECT = '/home'
+
+// ============================================================
+// 工具函数
+// ============================================================
 
 /**
- * 注册全局路由守卫，统一处理登录重定向、鉴权拦截和登录态恢复。
+ * 判断路由是否需要认证。
+ * 默认需要认证，白名单页面除外。
+ */
+const isRequireAuth = (to: RouteLocationNormalized): boolean => {
+    // 显式标记为不需要认证
+    if (to.meta.requireAuth === false) return false
+    // 在白名单中
+    if (LOGIN_WHITELIST.includes(to.path)) return false
+    // 默认需要认证
+    return true
+}
+
+// ============================================================
+// 路由守卫
+// ============================================================
+
+/**
+ * 注册全局路由守卫。
+ *
+ * 职责：
+ * 1. 登录页重定向：已登录用户访问 /login → 跳转首页
+ * 2. 静默恢复：页面刷新后，通过 RefreshToken 恢复登录态
+ * 3. 鉴权拦截：未登录用户访问受保护页面 → 跳转登录页
  */
 export const guard = (router: Router) => {
-    // 每次路由跳转时读取认证状态，确保守卫使用最新的登录信息。
-    router.beforeEach(
-        async (to) => {
-            const authStore = useAuthStore()
+    router.beforeEach(async (to, _from, next) => {
+        const authStore = useAuthStore()
+        const userStore = useUserStore()
 
-            // 进入登录页时只检查当前页签内是否已有 accessToken。
-            // 未登录用户刷新 /login 时不主动调用 /auth/refresh，避免没有 refreshToken Cookie 时后端报错。
-            // 已登录用户刷新受保护页面时，会在下面的 requireAuth 分支里恢复登录态。
-            if (to.path === '/login') {
-                if (getAccessToken()) {
-                    return (to.query.redirect as string) || '/home'
-                }
+        const redirectToLogin = () => {
+            authStore.clearAuthToken()
+            userStore.clearUserInfo()
 
-                authStore.clearLoginState()
+            next({
+                path: '/login',
+                query: {
+                    // 登录成功后跳回原页面。
+                    redirect: to.fullPath,
+                },
+            })
+        }
+
+        const loadCurrentUser = async () => {
+            if (!userStore.currentAuth) {
+                await userStore.fetchUserInfo()
+            }
+        }
+
+        // ============================================================
+        // 1. 登录页特殊处理
+        // ============================================================
+        if (to.path === '/login') {
+            // 已登录 → 跳转到首页或 redirect 参数指定的页面
+            if (authStore.hasValidToken) {
+                const redirect = (to.query.redirect as string) || DEFAULT_REDIRECT
+                next(redirect)
+                return
+            }
+            // 内存中有过期 Token 时清掉，避免登录页继续显示旧登录态。
+            authStore.clearAuthToken()
+            userStore.clearUserInfo()
+
+            // 未登录 → 正常进入登录页
+            next()
+            return
+        }
+
+        // ============================================================
+        // 2. 不需要认证的页面（公开页面）
+        // ============================================================
+        if (!isRequireAuth(to)) {
+            next()
+            return
+        }
+
+        // ============================================================
+        // 3. 需要认证的页面 → 尝试恢复登录态
+        // ============================================================
+
+        // 3.1 内存已有可用 Token → 加载用户信息后放行
+        if (authStore.hasValidToken) {
+            try {
+                await loadCurrentUser()
+            } catch {
+                redirectToLogin()
                 return
             }
 
-            // 访问受保护页面时，先尝试从内存 accessToken 或 refreshToken 恢复登录态。
-            if (to.meta.requireAuth) {
-                try {
-                    await authStore.refreshLoginStateAction()
-                    if (!authStore.currentAuth) {
-                        await authStore.getAuthAction()
-                    }
-                } catch {
-                    authStore.clearLoginState()
+            next()
+            return
+        }
 
-                    return {
-                        path: '/login',
-                        query: {
-                            // 登录成功后 LoginView 会读取 redirect，并跳回用户原本想访问的页面。
-                            redirect: to.fullPath,
-                        },
-                    }
-                }
-            }
-        })
+        // 3.2 内存无 Token → 尝试用 RefreshToken 静默恢复
+        try {
+            // 调用刷新接口，浏览器自动携带 HttpOnly Cookie
+            const tokenResult = await refreshAccessToken()
+            authStore.setAuthToken(tokenResult)
+
+            // 恢复用户信息
+            await loadCurrentUser()
+
+            // 恢复成功，继续访问目标页面
+            next()
+            return
+        } catch {
+            // 3.3 RefreshToken 也过期了 → 跳转登录页
+            redirectToLogin()
+            return
+        }
+    })
 }
