@@ -5,13 +5,9 @@ import axios, {
     HttpStatusCode,
     type InternalAxiosRequestConfig,
 } from 'axios'
-import { ElNotification } from 'element-plus'
-import type { AuthTokenParams } from '@/types/authTypes.ts'
-import { useAuthStore } from '@/stores/authStore.ts'
-
-// ============================================================
-// 类型定义
-// ============================================================
+import {ElNotification} from 'element-plus'
+import type {AuthTokenParams} from '@/types/authTypes.ts'
+import {useAuthStore} from '@/stores/authStore.ts'
 
 interface ResponseResult<T = any> {
     code: number
@@ -19,25 +15,15 @@ interface ResponseResult<T = any> {
     data: T
 }
 
-// ============================================================
-// 常量配置
-// ============================================================
-
 const baseURL = import.meta.env.VITE_API_URL || '/api'
 
 /** 不需要携带 Token 的认证相关接口 */
 const AUTH_WHITELIST = [
+    '/auth/refresh',
     '/auth/login',
     '/auth/register',
     '/auth/register/code',
-    '/auth/forgot-password',
-    '/auth/reset-password',
-    '/auth/refresh',
 ]
-
-// ============================================================
-// 实例创建
-// ============================================================
 
 const axiosInstance: AxiosInstance = axios.create({
     baseURL,
@@ -45,19 +31,11 @@ const axiosInstance: AxiosInstance = axios.create({
     withCredentials: true,
 })
 
-// ============================================================
-// 刷新锁
-// ============================================================
-
 /** 刷新 Promise 锁，防止并发刷新 */
 let refreshPromise: Promise<string> | null = null
 
 /** 登录失效处理锁，防止重复弹窗跳转 */
 let isHandlingTokenExpired = false
-
-// ============================================================
-// 工具函数
-// ============================================================
 
 /**
  * 标准化 URL，提取路径部分。
@@ -90,20 +68,6 @@ const isRefreshApi = (url = ''): boolean => {
     return path === '/auth/refresh' || path === '/api/auth/refresh'
 }
 
-// ============================================================
-// 错误处理工具
-// ============================================================
-
-/** 显示错误通知 */
-const ElNotification_Error = (title: string, message: string): void => {
-    ElNotification({
-        title,
-        message: message || '未知错误',
-        type: 'error',
-        duration: 3000,
-    })
-}
-
 /**
  * 处理登录失效：清理状态 → 弹窗 → 跳转登录页。
  * 防抖处理，多个请求同时触发时只执行一次。
@@ -116,7 +80,12 @@ const handleTokenExpired = (): void => {
     if (isHandlingTokenExpired) return
     isHandlingTokenExpired = true
 
-    ElNotification_Error('登录已失效', '请重新登录后继续操作')
+    ElNotification({
+        title: '登录已失效',
+        message: '请重新登录后继续操作',
+        type: 'error',
+        duration: 3000,
+    })
 
     if (window.location.pathname === '/login') return
 
@@ -125,10 +94,6 @@ const handleTokenExpired = (): void => {
     )
     window.location.href = `/login?redirect=${redirect}`
 }
-
-// ============================================================
-// Token 刷新核心逻辑
-// ============================================================
 
 /**
  * 刷新 AccessToken。
@@ -149,7 +114,7 @@ const refreshAccessToken = (): Promise<string> => {
         .post<ResponseResult<AuthTokenParams>>(
             '/auth/refresh',
             undefined,
-            { baseURL, timeout: 5000, withCredentials: true }
+            {baseURL, timeout: 5000, withCredentials: true}
         )
         .then((response) => {
             if (response.data.code !== HttpStatusCode.Ok) {
@@ -213,10 +178,9 @@ const getValidAccessToken = async (
     }
 }
 
-// ============================================================
-// 请求拦截器
-// ============================================================
-
+/**
+ * 请求拦截器。
+ */
 axiosInstance.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
         try {
@@ -231,24 +195,33 @@ axiosInstance.interceptors.request.use(
         }
     },
     (error: AxiosError) => {
-        ElNotification_Error('请求配置错误', error.message)
+        ElNotification({
+            title: '请求配置错误',
+            message: error.message,
+            type: 'error',
+            duration: 3000,
+        })
         return Promise.reject(error)
     }
 )
 
-// ============================================================
-// 响应拦截器
-// ============================================================
-
+/**
+ * 响应拦截器。
+ */
 axiosInstance.interceptors.response.use(
     (response: AxiosResponse<ResponseResult>) => {
-        const { data, config } = response
+        const {data, config} = response
 
         // ----- 业务 401（未授权）-----
         if (data.code === HttpStatusCode.Unauthorized) {
             // 认证接口自己的 401 → 只展示错误，不跳转
             if (isAuthRelatedApi(config.url)) {
-                ElNotification_Error('认证失败', data.message || '请检查账号信息')
+                ElNotification({
+                    title: '认证失败',
+                    message: data.message || '请检查账号信息',
+                    type: 'error',
+                    duration: 3000,
+                })
                 return Promise.reject(data)
             }
 
@@ -264,7 +237,12 @@ axiosInstance.interceptors.response.use(
                 return Promise.reject(data)
             }
 
-            ElNotification_Error('操作失败', data.message || '未知错误')
+            ElNotification({
+                title: '操作失败',
+                message: data.message || '未知错误',
+                type: 'error',
+                duration: 3000,
+            })
             return Promise.reject(data)
         }
 
@@ -274,13 +252,18 @@ axiosInstance.interceptors.response.use(
         return response
     },
     (error: AxiosError<ResponseResult>) => {
-        const { response, config } = error
+        const {response, config} = error
 
         // ----- HTTP 401（网络层未授权）-----
         if (response?.status === HttpStatusCode.Unauthorized) {
             // 认证接口自身的 401 → 只展示错误
             if (isAuthRelatedApi(config?.url)) {
-                ElNotification_Error('认证失败', error.message)
+                ElNotification({
+                    title: '认证失败',
+                    message: error.message,
+                    type: 'error',
+                    duration: 3000,
+                })
                 return Promise.reject(error)
             }
 
@@ -290,7 +273,12 @@ axiosInstance.interceptors.response.use(
         }
 
         // ----- 网络错误 / 超时 -----
-        ElNotification_Error('网络请求失败', error.message || '请检查网络连接')
+        ElNotification({
+            title: '网络请求失败',
+            message: error.message || '请检查网络连接',
+            type: 'error',
+            duration: 3000,
+        })
         return Promise.reject(error)
     }
 )
