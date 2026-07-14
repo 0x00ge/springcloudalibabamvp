@@ -113,18 +113,7 @@ export const isAccessTokenExpired = () => {
  */
 export const hasValidAccessToken = () => Boolean(getAccessToken() && !isAccessTokenExpired())
 
-// ============================================================
-// Pinia Store
-// ============================================================
-
 export const useAuthStore = defineStore('auth', () => {
-    /**
-     * 用户是否处于登录状态。
-     *
-     * 仅依据内存中是否存在 AccessToken 判断，不保证 RefreshToken 仍有效。
-     * 页面刷新后该值为 `false`，需由路由守卫通过 RefreshToken 静默恢复。
-     */
-    const isLogin = computed(() => Boolean(getAccessToken()))
 
     /**
      * 当前 AccessToken 是否还在可用窗口内。
@@ -139,7 +128,6 @@ export const useAuthStore = defineStore('auth', () => {
         authToken,
 
         // ---------- 计算属性 ----------
-        isLogin,
         hasValidToken,
 
         // ---------- 操作 ----------
