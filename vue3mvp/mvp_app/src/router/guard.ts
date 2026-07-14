@@ -35,7 +35,7 @@ export const guard = (router: Router) => {
         const authStore = useAuthStore()
         const userStore = useUserStore()
 
-        const redirectToLogin = () => {
+        const toLogin = () => {
             authStore.clearAuthToken()
             userStore.clearUserInfo()
 
@@ -89,7 +89,7 @@ export const guard = (router: Router) => {
             try {
                 await loadCurrentUser()
             } catch {
-                redirectToLogin()
+                toLogin()
                 return
             }
 
@@ -111,7 +111,7 @@ export const guard = (router: Router) => {
             return
         } catch {
             // 3.3 RefreshToken 也过期了 → 跳转登录页
-            redirectToLogin()
+            toLogin()
             return
         }
     })

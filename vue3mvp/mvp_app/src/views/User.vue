@@ -13,7 +13,7 @@ const userList = ref<UserParams[]>([])
 const queryForm = reactive<UserQuery>({
   name: '',
   phone: '',
-  role: '',
+  permission: '',
   email: '',
   status: '',
 })
