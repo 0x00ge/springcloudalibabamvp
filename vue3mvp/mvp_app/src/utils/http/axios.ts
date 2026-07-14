@@ -193,8 +193,7 @@ axiosInstance.interceptors.request.use(
             // 错误已在 getValidAccessToken 中处理，这里直接拒绝
             return Promise.reject(error)
         }
-    },
-    (error: AxiosError) => {
+    }, (error: AxiosError) => {
         ElNotification({
             title: '请求配置错误',
             message: error.message,
@@ -250,8 +249,7 @@ axiosInstance.interceptors.response.use(
         // 重置登录失效锁（说明 Token 已恢复正常）
         isHandlingTokenExpired = false
         return response
-    },
-    (error: AxiosError<ResponseResult>) => {
+    }, (error: AxiosError<ResponseResult>) => {
         const {response, config} = error
 
         // ----- HTTP 401（网络层未授权）-----
