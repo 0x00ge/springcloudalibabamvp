@@ -26,9 +26,9 @@ const isRequireAuth = (to: RouteLocationNormalized): boolean => {
  * 注册全局路由守卫。
  *
  * 职责：
- * 1. 登录页重定向：已登录用户访问 /login → 跳转首页
+ * 1. 登录页重定向：已登录用户访问 /login -> 跳转首页
  * 2. 静默恢复：页面刷新后，通过 RefreshToken 恢复登录态
- * 3. 鉴权拦截：未登录用户访问受保护页面 → 跳转登录页
+ * 3. 鉴权拦截：未登录用户访问受保护页面 -> 跳转登录页
  */
 export const guard = (router: Router) => {
     router.beforeEach(async (to, _from, next) => {
@@ -58,7 +58,7 @@ export const guard = (router: Router) => {
          * 1. 登录页特殊处理
          */
         if (to.path === '/login') {
-            // 已登录 → 跳转到首页或 redirect 参数指定的页面
+            // 已登录 -> 跳转到首页或 redirect 参数指定的页面
             if (authStore.hasValidToken) {
                 const redirect = (to.query.redirect as string) || DEFAULT_REDIRECT
                 next(redirect)
@@ -68,7 +68,7 @@ export const guard = (router: Router) => {
             authStore.clearAuthToken()
             userStore.clearUserInfo()
 
-            // 未登录 → 正常进入登录页
+            // 未登录 -> 正常进入登录页
             next()
             return
         }
@@ -82,9 +82,9 @@ export const guard = (router: Router) => {
         }
 
         /**
-         * 3. 需要认证的页面 → 尝试恢复登录态
+         * 3. 需要认证的页面 -> 尝试恢复登录态
          */
-        // 3.1 内存已有可用 Token → 加载用户信息后放行
+        // 3.1 内存已有可用 Token -> 加载用户信息后放行
         if (authStore.hasValidToken) {
             try {
                 await loadCurrentUser()
@@ -97,7 +97,7 @@ export const guard = (router: Router) => {
             return
         }
 
-        // 3.2 内存无 Token → 尝试用 RefreshToken 静默恢复
+        // 3.2 内存无 Token -> 尝试用 RefreshToken 静默恢复
         try {
             // 调用刷新接口，浏览器自动携带 HttpOnly Cookie
             const tokenResult = await refreshAccessToken()
@@ -110,7 +110,7 @@ export const guard = (router: Router) => {
             next()
             return
         } catch {
-            // 3.3 RefreshToken 也过期了 → 跳转登录页
+            // 3.3 RefreshToken 也过期了 -> 跳转登录页
             toLogin()
             return
         }
