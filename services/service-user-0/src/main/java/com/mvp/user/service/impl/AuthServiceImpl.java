@@ -12,7 +12,8 @@ import com.mvp.user.enums.UserPermission;
 import com.mvp.user.service.AuthService;
 import com.mvp.user.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -40,17 +41,17 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
-    private final StringRedisTemplate stringRedisTemplate;
+    private final RedissonClient redissonClient;
     private final AuthProperties authProperties;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public AuthServiceImpl(UserService userService,
                            JwtUtil jwtUtil,
-                           StringRedisTemplate stringRedisTemplate,
+                           RedissonClient redissonClient,
                            AuthProperties authProperties) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
-        this.stringRedisTemplate = stringRedisTemplate;
+        this.redissonClient = redissonClient;
         this.authProperties = authProperties;
     }
 
@@ -72,11 +73,8 @@ public class AuthServiceImpl implements AuthService {
         String smsCode = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
 
         // 3. 写入 Redis，并设置过期时间。
-        stringRedisTemplate.opsForValue().set(
-                registerSmsCodeKey(phone),
-                smsCode,
-                Duration.ofSeconds(authProperties.getRegisterSmsCodeSeconds())
-        );
+        redissonClient.<String>getBucket(registerSmsCodeKey(phone))
+                .set(smsCode, Duration.ofSeconds(authProperties.getRegisterSmsCodeSeconds()));
 
         // 4. 本地开发用日志模拟短信发送；生产环境不要在日志中打印验证码。
         log.info("注册短信验证码已生成 phone={} smsCode={} ttlSeconds={}",
@@ -115,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 5. 保存用户，并删除已使用的验证码，避免同一个验证码重复注册。
         userService.save(user);
-        stringRedisTemplate.delete(registerSmsCodeKey(currentAuthDTO.getPhone()));
+        redissonClient.getBucket(registerSmsCodeKey(currentAuthDTO.getPhone())).delete();
         log.info("用户注册成功 userId={} phone={}", user.getId(), currentAuthDTO.getPhone());
         return toCurrentAuthDTO(user);
     }
@@ -164,8 +162,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 2. 校验 refreshToken 是否仍在 Redis 白名单中，不在白名单说明已过期、已登出或已被使用过。
         String refreshKey = refreshKey(refreshPayload.getSub(), refreshPayload.getJti());
-        Boolean exists = stringRedisTemplate.hasKey(refreshKey);
-        if (!Boolean.TRUE.equals(exists)) {
+        if (!redissonClient.getBucket(refreshKey).isExists()) {
             throw new IllegalArgumentException("refreshToken 已失效");
         }
 
@@ -201,14 +198,11 @@ public class AuthServiceImpl implements AuthService {
 
         // 3. 按 accessToken 剩余有效期写入黑名单，过期后 Redis 会自动删除该黑名单 key。
         long accessTtlSeconds = Math.max(1, accessPayload.getExp() - Instant.now().getEpochSecond());
-        stringRedisTemplate.opsForValue().set(
-                authProperties.getBlacklistKeyPrefix() + accessPayload.getJti(),
-                accessPayload.getSub(),
-                Duration.ofSeconds(accessTtlSeconds)
-        );
+        redissonClient.<String>getBucket(authProperties.getBlacklistKeyPrefix() + accessPayload.getJti())
+                .set(accessPayload.getSub(), Duration.ofSeconds(accessTtlSeconds));
 
         // 4. 删除 refreshToken 白名单记录，阻止它继续刷新新的双 token。
-        stringRedisTemplate.delete(refreshKey(refreshPayload.getSub(), refreshPayload.getJti()));
+        redissonClient.getBucket(refreshKey(refreshPayload.getSub(), refreshPayload.getJti())).delete();
         log.info("用户登出成功 userId={} accessJti={}", accessPayload.getSub(), accessPayload.getJti());
     }
 
@@ -249,11 +243,8 @@ public class AuthServiceImpl implements AuthService {
      */
     private void saveRefreshToken(String userId, String refreshToken) {
         JwtPayload refreshPayload = jwtUtil.parseAndValidate(refreshToken, JwtUtil.TYPE_REFRESH);
-        stringRedisTemplate.opsForValue().set(
-                refreshKey(userId, refreshPayload.getJti()),
-                userId,
-                Duration.ofSeconds(jwtUtil.getRefreshTokenSeconds())
-        );
+        redissonClient.<String>getBucket(refreshKey(userId, refreshPayload.getJti()))
+                .set(userId, Duration.ofSeconds(jwtUtil.getRefreshTokenSeconds()));
     }
 
     /**
@@ -294,7 +285,8 @@ public class AuthServiceImpl implements AuthService {
      */
     private void validateRegisterSmsCode(String phone, String smsCode) {
         String smsCodeKey = registerSmsCodeKey(phone);
-        String cachedSmsCode = stringRedisTemplate.opsForValue().get(smsCodeKey);
+        RBucket<String> smsCodeBucket = redissonClient.getBucket(smsCodeKey);
+        String cachedSmsCode = smsCodeBucket.get();
         if (!StringUtils.hasText(cachedSmsCode)) {
             throw new IllegalArgumentException("验证码已过期");
         }
