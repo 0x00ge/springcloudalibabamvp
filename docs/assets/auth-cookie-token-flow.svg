@@ -89,7 +89,7 @@
 
   <rect x="120" y="585" width="430" height="130" rx="18" class="card"/>
   <text x="150" y="625" class="box-title">请求</text>
-  <text x="150" y="660" class="packet">POST /api/auth/login</text>
+  <text x="150" y="660" class="packet">POST /api/user/login</text>
   <text x="150" y="692" class="packet">body: loginName + password</text>
 
   <rect x="725" y="585" width="430" height="130" rx="18" class="service"/>
@@ -163,7 +163,7 @@
   <text x="285" y="1574" class="box-title">登出：清前端内存、删 Cookie、删 Redis refreshToken、拉黑 accessToken</text>
 
   <rect x="120" y="1640" width="500" height="110" rx="18" class="card"/>
-  <text x="150" y="1680" class="packet">POST /api/auth/logout</text>
+  <text x="150" y="1680" class="packet">POST /api/user/logout</text>
   <text x="150" y="1712" class="packet">Authorization: Bearer accessToken</text>
 
   <rect x="760" y="1625" width="450" height="140" rx="18" class="redis"/>

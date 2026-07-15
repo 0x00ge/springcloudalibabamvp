@@ -35,7 +35,7 @@ const statusOptions = ref<OptionItem[]>([])
 const defaultUserForm = reactive<UserForm>({
   name: '',
   phone: '',
-  role: '',
+  permission: '',
   status: '',
   email: '',
   passwordHash: '',
@@ -45,7 +45,7 @@ const defaultUserForm = reactive<UserForm>({
 const userForm = reactive<UserForm>({
   name: '',
   phone: '',
-  role: '',
+  permission: '',
   status: '',
   email: '',
   passwordHash: '123456',
@@ -55,7 +55,7 @@ const userForm = reactive<UserForm>({
 const rules: FormRules<UserForm> = {
   name: [{required: true, message: '请输入用户名', trigger: 'blur'}],
   phone: [{required: true, message: '请输入手机号', trigger: 'blur'}],
-  role: [{required: true, message: '请选择角色', trigger: 'change'}],
+  permission: [{required: true, message: '请选择角色', trigger: 'change'}],
   email: [{type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur'}],
   status: [{required: true, message: '请选择状态', trigger: 'change'}],
   passwordHash: [{required: true, message: '请输入初始密码', trigger: 'blur'}],
@@ -103,7 +103,7 @@ const handleClearQuery = async () => {
   Object.assign(queryForm, {
     name: '',
     phone: '',
-    role: '',
+    permission: '',
     email: '',
     status: '',
   })
@@ -126,7 +126,7 @@ const handleUpdateUser = (user: UserParams) => {
   Object.assign(userForm, {
     name: user.name,
     phone: user.phone,
-    role: user.role,
+    permission: user.permission,
     status: user.status,
     email: user.email,
     passwordHash: user.passwordHash,
@@ -188,7 +188,7 @@ onMounted(async () => {
                   @keyup.enter="handleQuery"/>
         <el-input v-model="queryForm.phone" class="query-input" clearable placeholder="手机号"
                   @keyup.enter="handleQuery"/>
-        <el-select v-model="queryForm.role" class="query-select" clearable placeholder="角色">
+        <el-select v-model="queryForm.permission" class="query-select" clearable placeholder="角色">
           <el-option
               v-for="item in roleOptions"
               :key="item.value"
@@ -218,7 +218,7 @@ onMounted(async () => {
     <el-table :data="userList" stripe>
       <el-table-column prop="name" label="用户名" min-width="140"/>
       <el-table-column prop="phone" label="手机号" min-width="140"/>
-      <el-table-column prop="role" label="角色" min-width="140"/>
+      <el-table-column prop="permission" label="角色" min-width="140"/>
       <el-table-column prop="email" label="邮箱" min-width="220"/>
       <el-table-column prop="status" label="状态" width="120">
         <template #default="{ row }">
@@ -246,8 +246,8 @@ onMounted(async () => {
           <el-input v-model="userForm.phone" placeholder="请输入手机号"/>
         </el-form-item>
         <!-- 角色：选项从 /users/config 获取，不在页面里写死。 -->
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" placeholder="请选择角色">
+        <el-form-item label="角色" prop="permission">
+          <el-select v-model="userForm.permission" placeholder="请选择角色">
             <el-option
                 v-for="item in roleOptions"
                 :key="item.value"

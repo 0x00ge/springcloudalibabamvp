@@ -74,7 +74,7 @@ const toUserDto =
 // 2. 验证码保存到 Redis，当前后端用日志模拟短信发送。
 export const registerCodeByPhone =
     (data: Pick<UserParams, 'phone'>) => {
-        return postParams<void>('/auth/register/code', {
+        return postParams<void>('/user/register/code', {
             phone: data.phone,
         })
     }
@@ -94,7 +94,7 @@ export const register =
             name: data.name,
         }
 
-        return post<UserParams>('/auth/register', request)
+        return post<UserParams>('/user/register', request)
     }
 
 // 登录接口：
@@ -108,7 +108,7 @@ export const login =
             password: data.password,
         }
 
-        return post<AuthTokenParams>('/auth/login', request)
+        return post<AuthTokenParams>('/user/login', request)
     }
 
 // 当前登录用户：
@@ -116,18 +116,18 @@ export const login =
 // 2. Gateway 校验 token 后把用户 ID 透传成 X-User-Id。
 // 3. user 服务读取 X-User-Id，并返回 CurrentAuthDTO。
 export const getCurrentAuth =
-    () => get<UserParams>('/auth/me')
+    () => get<UserParams>('/user/me')
 
 // 刷新 accessToken：
 // 1. accessToken 过期后，axios 拦截器会调用这个接口。
 // 2. refreshToken 由浏览器自动携带 HttpOnly Cookie。
-// 3. 后端轮换 refreshToken Cookie，响应体返回新的 accessToken。
+// 3. 后端校验 refreshToken Cookie，响应体返回新的 accessToken。
 export const refreshAccessToken =
     () => postParams<AuthTokenParams>('/auth/refresh')
 
 // 登出接口：后端从 Authorization 请求头读取 accessToken，并从 Cookie 读取 refreshToken。
 export const logout =
-    () => postParams<void>('/auth/logout')
+    () => postParams<void>('/user/logout')
 
 // 用户管理配置来自前端固定字典；用户列表和修改删除走真实后端 /user 接口。
 export const getUserInfoConfig =

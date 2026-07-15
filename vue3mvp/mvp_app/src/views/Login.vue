@@ -52,7 +52,7 @@ const loginForm = reactive<LoginForm>({
   password: '',
 })
 
-// 注册表单响应式数据，字段和后端 /auth/register 参数保持一致。
+// 注册表单响应式数据，字段和后端 /user/register 参数保持一致。
 const registerForm = reactive<RegisterForm>({
   name: '',
   phone: '',
@@ -96,7 +96,7 @@ const registerRules = reactive<FormRules<RegisterForm>>({
 
 // 登录流程：
 // 1. 先触发表单校验；
-// 2. 校验通过后调用 /auth/login；
+// 2. 校验通过后调用 /user/login；
 // 3. 登录成功后把响应体中的 accessToken 保存到 authStore；
 // 4. refreshToken 不进入前端 JS，由后端通过 HttpOnly Cookie 写入浏览器。
 const handleLogin = async () => {
@@ -122,7 +122,7 @@ const handleLogin = async () => {
 // 注册：
 // 1. 先校验手机号、验证码、密码、确认密码、姓名；
 // 2. 前端再校验一次两次密码是否一致；
-// 3. 调用 /auth/register；
+// 3. 调用 /user/register；
 // 4. 注册成功后不自动登录，而是切回登录表单，让用户显式登录获取 token。
 const handleRegister = async () => {
   if (!registerFormRef.value) return
@@ -154,7 +154,7 @@ const handleRegister = async () => {
 
 // 验证码
 // 1. 只校验手机号字段，不要求用户提前填完整注册表单；
-// 2. 调用 /auth/register/code；
+// 2. 调用 /user/register/code；
 // 3. 成功后启动前端倒计时。
 const handleSmsCode = async () => {
   if (!registerFormRef.value || smsCountdown.value > 0) return

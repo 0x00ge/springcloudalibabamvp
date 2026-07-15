@@ -1,7 +1,7 @@
-import type { Router, RouteLocationNormalized } from 'vue-router'
-import { refreshAccessToken } from '@/api/apiUser.ts'
-import { useAuthStore } from '@/stores/authStore'
-import { useUserStore } from '@/stores/userStore'
+import type {RouteLocationNormalized, Router} from 'vue-router'
+import {refreshAccessToken} from '@/api/apiUser.ts'
+import {useAuthStore} from '@/stores/authStore'
+import {useUserStore} from '@/stores/userStore'
 
 /** 登录白名单：不需要认证即可访问的页面 */
 const LOGIN_WHITELIST = ['/login', '/register', '/forgot-password']
@@ -31,22 +31,9 @@ const isRequireAuth = (to: RouteLocationNormalized): boolean => {
  * 3. 鉴权拦截：未登录用户访问受保护页面 -> 跳转登录页
  */
 export const guard = (router: Router) => {
-    router.beforeEach(async (to, _from, next) => {
+    router.beforeEach(async (to, from) => {
         const authStore = useAuthStore()
         const userStore = useUserStore()
-
-        const toLogin = () => {
-            authStore.clearAuthToken()
-            userStore.clearUserInfo()
-
-            next({
-                path: '/login',
-                query: {
-                    // 登录成功后跳回原页面。
-                    redirect: to.fullPath,
-                },
-            })
-        }
 
         const loadCurrentUser = async () => {
             if (!userStore.currentAuth) {
@@ -60,25 +47,21 @@ export const guard = (router: Router) => {
         if (to.path === '/login') {
             // 已登录 -> 跳转到首页或 redirect 参数指定的页面
             if (authStore.hasValidToken) {
-                const redirect = (to.query.redirect as string) || DEFAULT_REDIRECT
-                next(redirect)
-                return
+                return (to.query.redirect as string) || DEFAULT_REDIRECT
             }
             // 内存中有过期 Token 时清掉，避免登录页继续显示旧登录态。
             authStore.clearAuthToken()
             userStore.clearUserInfo()
 
             // 未登录 -> 正常进入登录页
-            next()
-            return
+            return true
         }
 
         /**
          * 2. 不需要认证的页面（公开页面）
          */
         if (!isRequireAuth(to)) {
-            next()
-            return
+            return true
         }
 
         /**
@@ -89,12 +72,14 @@ export const guard = (router: Router) => {
             try {
                 await loadCurrentUser()
             } catch {
-                toLogin()
-                return
+                authStore.clearAuthToken()
+                userStore.clearUserInfo()
+                return {
+                    path: '/login',
+                    query: { redirect: to.fullPath }
+                }
             }
-
-            next()
-            return
+            return true
         }
 
         // 3.2 内存无 Token -> 尝试用 RefreshToken 静默恢复
@@ -107,12 +92,15 @@ export const guard = (router: Router) => {
             await loadCurrentUser()
 
             // 恢复成功，继续访问目标页面
-            next()
-            return
+            return true
         } catch {
             // 3.3 RefreshToken 也过期了 -> 跳转登录页
-            toLogin()
-            return
+            authStore.clearAuthToken()
+            userStore.clearUserInfo()
+            return {
+                path: '/login',
+                query: { redirect: to.fullPath }
+            }
         }
     })
 }

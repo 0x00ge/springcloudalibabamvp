@@ -20,9 +20,9 @@ const baseURL = import.meta.env.VITE_API_URL || '/api'
 /** 不需要携带 Token 的认证相关接口 */
 const AUTH_WHITELIST = [
     '/auth/refresh',
-    '/auth/login',
-    '/auth/register',
-    '/auth/register/code',
+    '/user/login',
+    '/user/register',
+    '/user/register/code',
 ]
 
 const axiosInstance: AxiosInstance = axios.create({

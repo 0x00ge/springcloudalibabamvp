@@ -25,7 +25,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() =>
 )
 
 // 顶部栏自己从 userStore 读取用户展示信息，AppLayout 只负责放置顶部栏。
-const currentUser = computed(() => userStore.currentUserInfo)
+const currentUser = computed(() => userStore.currentUser)
 
 // 退出登录属于顶部用户下拉菜单的行为，直接放在 AppTopbar 内部维护。
 const handleLogout = async () => {
@@ -42,7 +42,7 @@ const handleLogout = async () => {
   logoutLoading.value = true
 
   try {
-    if (authStore.isLogin) {
+    if (authStore.hasValidToken) {
       await logout()
     }
     ElMessage.success('已退出登录')

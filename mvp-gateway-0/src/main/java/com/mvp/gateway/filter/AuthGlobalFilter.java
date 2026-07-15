@@ -57,7 +57,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
      *   ? 匹配单个字符
      *   * 匹配0个或多个字符（不包含路径分隔符）
      *   ** 匹配0个或多个路径段
-     * 示例：/api/auth/** 匹配 /api/auth/login、/api/auth/refresh 等
+     * 示例：/api/auth/** 匹配 /api/auth/refresh 等
      */
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 

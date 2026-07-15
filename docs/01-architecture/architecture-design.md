@@ -91,7 +91,7 @@ flowchart LR
 
 `AuthGlobalFilter`(order 较高,优先执行):
 
-1. 命中白名单(`/auth/register/code`、`/auth/register`、`/auth/login`、`/auth/refresh`)直接放行。
+1. 命中白名单(`/user/register/code`、`/user/register`、`/user/login`、`/auth/refresh`)直接放行。
 2. 取 `Authorization: Bearer <token>`,解析校验 accessToken。
 3. 查 Redis 黑名单(`auth:blacklist:{jti}`),已登出则拒绝。
 4. 通过后注入 `X-User-Id`、`X-Token-Jti` 请求头透传给下游。

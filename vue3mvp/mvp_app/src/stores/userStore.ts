@@ -8,7 +8,7 @@ export const useUserStore = defineStore('user', () => {
 
     const currentUser = computed<UserParams>(() => {
         if (!currentAuth.value) {
-            return { id: '', name: '', phone: '', email: '', role: '', status: '' }
+            return { id: '', name: '', phone: '', email: '', permission: '', status: '' }
         }
         const displayName = currentAuth.value.name || currentAuth.value.phone || '用户'
         return {
@@ -16,7 +16,7 @@ export const useUserStore = defineStore('user', () => {
             name: displayName,
             phone: currentAuth.value.phone || '',
             email: '',
-            role: '',
+            permission: currentAuth.value.permission || '',
             status: '',
         }
     })

@@ -76,7 +76,7 @@ export const setAuthToken = (token: AuthTokenParams) => {
  * 清理内存中的认证令牌。
  *
  * 仅清理前端状态，不涉及后端操作。
- * RefreshToken Cookie 由后端 `/auth/logout` 接口清理或等待自然过期。
+ * RefreshToken Cookie 由后端 `/user/logout` 接口清理或等待自然过期。
  */
 export const clearAuthToken = () => {
     stopAccessTokenExpireTimer()

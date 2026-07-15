@@ -45,8 +45,8 @@ jwt:
 
 auth:
   whitelist:
-    - /auth/register/code
-    - /auth/register
-    - /auth/login
+    - /user/register/code
+    - /user/register
+    - /user/login
     - /auth/refresh
   blacklist-key-prefix: 'auth:blacklist:'
