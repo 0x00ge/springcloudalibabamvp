@@ -12,7 +12,6 @@ import com.mvp.user.config.AuthProperties;
 import com.mvp.user.dto.UserDto;
 import com.mvp.user.entity.User;
 import com.mvp.user.enums.UserPermission;
-import com.mvp.user.service.AuthService;
 import com.mvp.user.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,14 +50,12 @@ import java.time.Duration;
 public class UserController extends BaseController<User, UserDto> {
 
     private final UserService userService;
-    private final AuthService authService;
     private final AuthProperties authProperties;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public UserController(UserService userService, AuthService authService, AuthProperties authProperties) {
+    public UserController(UserService userService, AuthProperties authProperties) {
         super(userService);
         this.userService = userService;
-        this.authService = authService;
         this.authProperties = authProperties;
     }
 
@@ -76,7 +73,7 @@ public class UserController extends BaseController<User, UserDto> {
     @PostMapping("/login")
     public ResultVO<AuthTokenDTO> login(@RequestBody @Validated LoginDTO loginDTO,
                                         HttpServletResponse response) {
-        AuthTokenDTO tokenDTO = authService.login(loginDTO.getPhone(), loginDTO.getPassword());
+        AuthTokenDTO tokenDTO = userService.login(loginDTO.getPhone(), loginDTO.getPassword());
         writeRefreshTokenCookie(response, tokenDTO.getRefreshToken(), tokenDTO.getRefreshTokenExpiresIn());
         tokenDTO.setRefreshToken(null);
         return ResultVO.ok(tokenDTO);
@@ -100,7 +97,7 @@ public class UserController extends BaseController<User, UserDto> {
                                  HttpServletRequest request,
                                  HttpServletResponse response) {
         String refreshToken = getRefreshTokenCookie(request);
-        authService.logout(authorization, refreshToken);
+        userService.logout(authorization, refreshToken);
         clearRefreshTokenCookie(response);
         return ResultVO.ok();
     }
@@ -120,7 +117,7 @@ public class UserController extends BaseController<User, UserDto> {
     public ResultVO<Void> sendRegisterSmsCode(
             @RequestParam @NotBlank(message = "手机号不能为空")
             @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确") String phone) {
-        authService.sendRegisterSmsCode(phone);
+        userService.sendRegisterSmsCode(phone);
         return ResultVO.ok();
     }
 
@@ -136,7 +133,7 @@ public class UserController extends BaseController<User, UserDto> {
      */
     @PostMapping("/register")
     public ResultVO<CurrentAuthDTO> register(@RequestBody @Validated CurrentAuthDTO currentAuthDTO) {
-        return ResultVO.ok(authService.register(currentAuthDTO));
+        return ResultVO.ok(userService.register(currentAuthDTO));
     }
 
     /**
@@ -151,7 +148,7 @@ public class UserController extends BaseController<User, UserDto> {
      */
     @GetMapping("/me")
     public ResultVO<CurrentAuthDTO> me(@RequestHeader("X-User-Id") @NotBlank(message = "用户ID不能为空") String userId) {
-        return ResultVO.ok(authService.currentUser(userId));
+        return ResultVO.ok(userService.currentUser(userId));
     }
 
     @Override
