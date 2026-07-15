@@ -41,7 +41,7 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     public ResultVO<AuthTokenDTO> refresh(HttpServletRequest request) {
-        String refreshToken = findRefreshTokenCookie(request);
+        String refreshToken = getRefreshTokenFromCookie(request);
         if (refreshToken == null) {
             return ResultVO.fail(ResultCode.PARAM_ERROR.getCode(), "refreshToken Cookie 不存在");
         }
@@ -59,7 +59,7 @@ public class AuthController {
      *
      * <p>refresh 接口允许未登录用户刷新登录页时没有 Cookie，此时返回 null 交给接口返回统一业务失败。</p>
      */
-    private String findRefreshTokenCookie(HttpServletRequest request) {
+    private String getRefreshTokenFromCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             return null;
