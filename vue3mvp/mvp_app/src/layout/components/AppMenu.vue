@@ -136,8 +136,9 @@ const menuRenderKey = computed(() => openedMenus.value.join('|') || 'empty-menu'
         :key="menuRenderKey"
         :default-active="activeMenu"
         :default-openeds="openedMenus"
-        text-color="#0687F1FF"
-        active-text-color="#f1e206"
+        background-color="#545c64"
+        text-color="#ffffff"
+        active-text-color="#0687F1FF"
         router
     >
       <AppMenuItem v-for="item in menuItems" :key="item.id" :menuItem="item"/>
