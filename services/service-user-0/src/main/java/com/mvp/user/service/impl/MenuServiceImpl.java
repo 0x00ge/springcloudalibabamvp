@@ -2,7 +2,6 @@ package com.mvp.user.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.mvp.common.uuidv7.UuidV7Util;
 import com.mvp.user.dto.MenuDto;
 import com.mvp.user.entity.Menu;
 import com.mvp.user.mapper.MenuMapper;
@@ -87,19 +86,6 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements Me
             menu.setDeletedAt(deletedAt);
             updateById(menu);
         }
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public List<MenuDto> resetDefault(String userId) {
-        remove(Wrappers.<Menu>lambdaQuery().eq(Menu::getUserId, userId));
-
-        String systemMenuId = UuidV7Util.generate();
-        Menu systemMenu = defaultMenu(systemMenuId, null, userId, "系统管理", "/home/system", null, ROOT_LEVEL, 1);
-        Menu userMenu = defaultMenu(UuidV7Util.generate(), systemMenuId, userId, "用户管理", "/home/user", null, ROOT_LEVEL + 1, 1);
-        Menu menuMenu = defaultMenu(UuidV7Util.generate(), systemMenuId, userId, "菜单管理", "/home/menu", null, ROOT_LEVEL + 1, 2);
-        saveBatch(List.of(systemMenu, userMenu, menuMenu));
-        return tree(userId);
     }
 
     private Menu getAliveMenu(String id, String userId) {
@@ -195,19 +181,6 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements Me
             childrenMap.computeIfAbsent(menu.getParentId(), key -> new ArrayList<>()).add(menu);
         }
         return childrenMap;
-    }
-
-    private Menu defaultMenu(String id, String parentId, String userId, String title, String path, String icon, Integer level, Integer sortOrder) {
-        Menu menu = new Menu();
-        menu.setId(id);
-        menu.setParentId(parentId);
-        menu.setUserId(userId);
-        menu.setTitle(title);
-        menu.setPath(path);
-        menu.setIcon(icon);
-        menu.setLevel(level);
-        menu.setSortOrder(sortOrder);
-        return menu;
     }
 
     private int safeLevel(Integer level) {

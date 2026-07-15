@@ -3,7 +3,7 @@ import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
 import {useRoute} from 'vue-router'
 import {ElMessage} from 'element-plus'
 
-import {getMenuTree, resetMenuTree} from '@/api/apiMenu.ts'
+import {getMenuTree} from '@/api/apiMenu.ts'
 import type {MenuItem} from '@/types/layoutTypes'
 import AppMenuItem from '@/layout/components/AppMenuItem.vue'
 
@@ -29,17 +29,10 @@ const activeMenu = computed(() => route.path)
 // 简单延迟工具，只用于菜单接口失败后的短暂重试。
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
 
-// 从后端加载菜单树：
-// 1. 优先读取 /menu/tree，这是用户当前真实菜单。
-// 2. 如果后端返回空数组，说明当前用户还没有初始化菜单，再调用 /menu/reset 创建默认菜单。
-// 3. 这里不 catch 错误，让外层 reloadMenus 统一处理 loading、重试和错误提示。
+// 从后端加载菜单树，只读取用户当前真实菜单。
+// 空数组表示当前用户没有可展示菜单，不再自动创建默认菜单。
 const loadMenusFromServer = async () => {
-  const menuTree = await getMenuTree()
-  if (menuTree.length > 0) {
-    return menuTree
-  }
-
-  return resetMenuTree()
+  return getMenuTree()
 }
 
 // 菜单加载重试：

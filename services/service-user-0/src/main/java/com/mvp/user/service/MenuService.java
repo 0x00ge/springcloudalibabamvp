@@ -29,9 +29,4 @@ public interface MenuService extends IService<Menu> {
      * 软删除菜单及其所有子菜单。
      */
     void softDelete(String id, String userId);
-
-    /**
-     * 重置指定用户默认菜单。
-     */
-    List<MenuDto> resetDefault(String userId);
 }

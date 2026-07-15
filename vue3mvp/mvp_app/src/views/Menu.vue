@@ -6,7 +6,6 @@ import {
   createMenu,
   deleteMenu,
   getMenuTree,
-  resetMenuTree,
   updateMenu,
 } from '@/api/apiMenu.ts'
 import type {MenuItem} from '@/types/layoutTypes.ts'
@@ -189,18 +188,6 @@ const handleDeleteMenu = async (menu: MenuItem) => {
   notifyMenuUpdated()
 }
 
-const handleResetDefaultMenus = async () => {
-  await ElMessageBox.confirm('确定恢复当前用户的默认菜单吗？现有菜单会被重置。', '恢复默认菜单', {
-    type: 'warning',
-    confirmButtonText: '恢复',
-    cancelButtonText: '取消',
-  })
-
-  menuList.value = await resetMenuTree()
-  ElMessage.success('默认菜单已恢复')
-  notifyMenuUpdated()
-}
-
 onMounted(handleSelectMenus)
 </script>
 
@@ -213,7 +200,6 @@ onMounted(handleSelectMenus)
       </div>
 
       <div class="actions">
-        <el-button @click="handleResetDefaultMenus">恢复默认</el-button>
         <el-button type="primary" @click="handleCreateRootMenu">新增根菜单</el-button>
       </div>
     </div>

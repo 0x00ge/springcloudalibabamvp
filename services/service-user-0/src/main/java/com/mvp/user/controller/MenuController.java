@@ -104,12 +104,6 @@ public class MenuController extends BaseController<Menu, MenuDto> {
         return ResultVO.ok();
     }
 
-    @PostMapping("/reset")
-    public ResultVO<List<MenuDto>> reset(@RequestParam(required = false) String userId,
-                                         @RequestHeader(value = "X-User-Id", required = false) String currentUserId) {
-        return ResultVO.ok(menuService.resetDefault(resolveUserId(userId, currentUserId)));
-    }
-
     private String resolveUserId(String userId, String currentUserId) {
         if (hasText(userId)) {
             return userId;
