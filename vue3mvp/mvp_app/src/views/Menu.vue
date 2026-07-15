@@ -10,7 +10,7 @@ import {
   updateMenu,
 } from '@/api/apiMenu.ts'
 import type {MenuItem} from '@/types/layoutTypes.ts'
-import type {MenuForm} from "@/types/appMenuTypes.ts";
+import type {MenuForm} from "@/types/menuTypes.ts";
 
 interface MenuOption {
   id: string

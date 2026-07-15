@@ -1,7 +1,7 @@
 import {del, get, post, postParams, put} from '@/utils/http/http.ts'
 
 import type { MenuItem } from '@/types/layoutTypes.ts'
-import type {MenuForm} from "@/types/appMenuTypes.ts";
+import type {MenuForm} from "@/types/menuTypes.ts";
 
 const toMenuItem =
     (menu: MenuItem): MenuItem => ({
