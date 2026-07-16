@@ -9,8 +9,8 @@ import type {UserForm, UserParams, UserQuery} from '@/types/userTypes'
 const userId = ref<string>('')
 const userList = ref<UserParams[]>([])
 
-// 查询输入区的临时表单值。用户在输入框里改值时，只先改这里，不立刻过滤表格。
-const queryForm = reactive<UserQuery>({
+// 查询表单。
+const userQuery = reactive<UserQuery>({
   name: '',
   phone: '',
   permission: '',
@@ -100,7 +100,7 @@ const handleQuery = async () => {
 
 // 清空查询条件，并重新请求后端列表。
 const handleClearQuery = async () => {
-  Object.assign(queryForm, {
+  Object.assign(userQuery, {
     name: '',
     phone: '',
     permission: '',
@@ -111,7 +111,7 @@ const handleClearQuery = async () => {
 }
 
 const handleSelectUsers = async () => {
-  userList.value = await selectUsers(queryForm)
+  userList.value = await selectUsers(userQuery)
 }
 
 const handleSaveUser = () => {
@@ -184,9 +184,9 @@ onMounted(async () => {
     <!-- 顶部操作区：左侧是多字段联合查询，右侧是新增入口。 -->
     <div class="page-header">
       <div class="query-panel">
-        <el-input v-model="queryForm.name" class="query-input" clearable placeholder="用户名" @keyup.enter="handleQuery"/>
-        <el-input v-model="queryForm.phone" class="query-input" clearable placeholder="手机号" @keyup.enter="handleQuery"/>
-        <el-select v-model="queryForm.permission" class="query-select" clearable placeholder="角色">
+        <el-input v-model="userQuery.name" class="query-input" clearable placeholder="用户名" @keyup.enter="handleQuery"/>
+        <el-input v-model="userQuery.phone" class="query-input" clearable placeholder="手机号" @keyup.enter="handleQuery"/>
+        <el-select v-model="userQuery.permission" class="query-select" clearable placeholder="角色">
           <el-option
               v-for="item in roleOptions"
               :key="item.value"
@@ -194,9 +194,9 @@ onMounted(async () => {
               :label="item.label"
           />
         </el-select>
-        <el-input v-model="queryForm.email" class="query-input" clearable placeholder="邮箱" @keyup.enter="handleQuery"/>
+        <el-input v-model="userQuery.email" class="query-input" clearable placeholder="邮箱" @keyup.enter="handleQuery"/>
         <!-- 状态查询：选项来自 fetchUserPageConfig，和表格 tag 颜色共用同一份字典。 -->
-        <el-select v-model="queryForm.status" class="query-select" clearable placeholder="状态">
+        <el-select v-model="userQuery.status" class="query-select" clearable placeholder="状态">
           <el-option
               v-for="item in statusOptions"
               :key="item.value"
