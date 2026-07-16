@@ -70,20 +70,6 @@ const statusTagTypeMap = computed(() =>
     }, {}),
 )
 
-// 加载用户管理页面配置：
-// - roleOptions：角色下拉选项。
-// - statusOptions：状态单选项和表格 tag 颜色。
-// - defaultUserForm：新增用户时的默认表单值。
-// 这些都走接口，后续接真实后端时只需要替换接口返回即可。
-const handleUserInfoConfig = async () => {
-  const config = await getUserInfoConfig()
-
-  roleOptions.value = config.roleOptions
-  statusOptions.value = config.statusOptions
-  Object.assign(defaultUserForm, config.defaultUserForm)
-  Object.assign(userForm, config.defaultUserForm)
-}
-
 // 重置弹窗表单：
 // 新增前、弹窗关闭后都会调用，保证上一次编辑的数据不会残留到下一次新增。
 const handleResetUserForm = () => {
@@ -169,6 +155,20 @@ const handleDeleteUser = async (user: UserParams) => {
 // 如果后端新增了别的状态但没给颜色，默认使用 info，避免页面报错。
 const getStatusTagType = (status: string) =>
     statusTagTypeMap.value[status] || 'info'
+
+// 加载用户管理页面配置：
+// - roleOptions：角色下拉选项。
+// - statusOptions：状态单选项和表格 tag 颜色。
+// - defaultUserForm：新增用户时的默认表单值。
+// 这些都走接口，后续接真实后端时只需要替换接口返回即可。
+const handleUserInfoConfig = async () => {
+  const config = await getUserInfoConfig()
+
+  roleOptions.value = config.roleOptions
+  statusOptions.value = config.statusOptions
+  Object.assign(defaultUserForm, config.defaultUserForm)
+  Object.assign(userForm, config.defaultUserForm)
+}
 
 // 页面挂载后先加载字典配置，再加载列表。
 // 这样表格状态颜色、弹窗默认值都能在数据展示前准备好。
