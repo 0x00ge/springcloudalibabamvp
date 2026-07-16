@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import {computed, onMounted, reactive, ref} from 'vue'
+import {computed, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
 
-import {createUser, deleteUser, getUserInfoConfig, selectUsers, updateUser} from '@/api/apiUser.js'
-import type {OptionItem} from '@/types/layoutTypes'
-import type {UserForm, UserParams, UserQuery} from '@/types/userTypes'
+import {createUser, deleteUser, selectUsers, updateUser} from '@/api/apiUser.js'
+import type {OptionItem, UserConfig, UserForm, UserParams, UserQuery} from '@/types/userTypes'
 
 const userId = ref<string>('')
 const userList = ref<UserParams[]>([])
+const isCreateOrUpdate = ref<boolean>()
+const titleOfCreateOrUpdate = computed(() => {
+  return isCreateOrUpdate.value ? '新增用户' : '编辑用户'
+})
+const isVisibleOfCreateOrUpdate = ref<boolean>()
+
+// Element Plus 表单实例，用于触发表单校验和清空校验状态。
+const formInstance = ref<FormInstance>()
 
 // 查询表单。
 const userQuery = reactive<UserQuery>({
@@ -18,21 +25,21 @@ const userQuery = reactive<UserQuery>({
   status: '',
 })
 
-const isCreateOrUpdate = ref<boolean>()
-const titleOfCreateOrUpdate = computed(() => {
-  return isCreateOrUpdate.value ? '新增用户' : '编辑用户'
+// 用户管理配置。
+const userConfig = ref<UserConfig>({
+  roleOptions: [
+    {value: '管理员', tagType: 'warning'},
+    {value: '普通用户', tagType: 'info'},
+  ],
+  statusOptions: [
+    {value: '正常', tagType: 'success'},
+    {value: '禁用', tagType: 'info'},
+    {value: '注销', tagType: 'danger'},
+  ],
 })
-const isVisibleOfCreateOrUpdate = ref<boolean>()
 
-// Element Plus 表单实例，用于触发表单校验和清空校验状态。
-const formInstance = ref<FormInstance>()
-// 角色下拉选项由 MockJS 配置接口返回，避免页面写死业务字典。
-const roleOptions = ref<OptionItem[]>([])
-// 状态选项同样来自配置接口，并携带 tagType 用来控制表格标签颜色。
-const statusOptions = ref<OptionItem[]>([])
-
-// defaultUserForm 是接口下发的默认表单模板，不直接绑定输入框，只用来重置 form。
-const defaultUserForm = reactive<UserForm>({
+// 重制表单。
+const resetUserForm = reactive<UserForm>({
   name: '',
   phone: '',
   permission: '',
@@ -41,14 +48,14 @@ const defaultUserForm = reactive<UserForm>({
   passwordHash: '',
 })
 
-// form 是真正绑定到输入框上的表单数据，用户在弹窗里输入或编辑时，修改的就是它。
+// 表单数据。
 const userForm = reactive<UserForm>({
   name: '',
   phone: '',
   permission: '',
   status: '',
   email: '',
-  passwordHash: '123456',
+  passwordHash: '',
 })
 
 // 表单校验规则集中维护，提交前通过 formInstance.validate() 统一触发。
@@ -61,38 +68,22 @@ const rules: FormRules<UserForm> = {
   passwordHash: [{required: true, message: '请输入初始密码', trigger: 'blur'}],
 }
 
-// 把接口返回的状态配置转换成 Map，表格渲染 tag 时可以快速按状态取颜色。
-const statusTagTypeMap = computed(() =>
-    statusOptions.value.reduce<Record<string, OptionItem['tagType']>>((map, item) => {
-      map[item.value] = item.tagType
-
-      return map
-    }, {}),
-)
-
-// 重置弹窗表单：
-// 新增前、弹窗关闭后都会调用，保证上一次编辑的数据不会残留到下一次新增。
+// 重置表单。新增前、弹窗关闭后都会调用，保证上一次编辑的数据不会残留到下一次新增。
 const handleResetUserForm = () => {
   isCreateOrUpdate.value = undefined
   userId.value = ''
-  Object.assign(userForm, defaultUserForm)
+  Object.assign(userForm, resetUserForm)
   formInstance.value?.clearValidate()
 }
 
 // 应用查询条件，请求后端 /user/page 按条件查询。
-const handleQuery = async () => {
+const handleQueryUsers = async () => {
   await handleSelectUsers()
 }
 
 // 清空查询条件，并重新请求后端列表。
-const handleClearQuery = async () => {
-  Object.assign(userQuery, {
-    name: '',
-    phone: '',
-    permission: '',
-    email: '',
-    status: '',
-  })
+const handleClearQueryUsers = async () => {
+  Object.assign(userQuery, resetUserForm)
   await handleSelectUsers()
 }
 
@@ -150,32 +141,6 @@ const handleDeleteUser = async (user: UserParams) => {
   ElMessage.success('用户删除成功')
   await handleSelectUsers()
 }
-
-// 状态颜色由配置中的 tagType 决定，页面不关心具体状态文案。
-// 如果后端新增了别的状态但没给颜色，默认使用 info，避免页面报错。
-const getStatusTagType = (status: string) =>
-    statusTagTypeMap.value[status] || 'info'
-
-// 加载用户管理页面配置：
-// - roleOptions：角色下拉选项。
-// - statusOptions：状态单选项和表格 tag 颜色。
-// - defaultUserForm：新增用户时的默认表单值。
-// 这些都走接口，后续接真实后端时只需要替换接口返回即可。
-const handleUserInfoConfig = async () => {
-  const config = await getUserInfoConfig()
-
-  roleOptions.value = config.roleOptions
-  statusOptions.value = config.statusOptions
-  Object.assign(defaultUserForm, config.defaultUserForm)
-  Object.assign(userForm, config.defaultUserForm)
-}
-
-// 页面挂载后先加载字典配置，再加载列表。
-// 这样表格状态颜色、弹窗默认值都能在数据展示前准备好。
-onMounted(async () => {
-  await handleUserInfoConfig()
-  await handleSelectUsers()
-})
 </script>
 
 <template>
@@ -184,28 +149,31 @@ onMounted(async () => {
     <!-- 顶部操作区：左侧是多字段联合查询，右侧是新增入口。 -->
     <div class="page-header">
       <div class="query-panel">
-        <el-input v-model="userQuery.name" class="query-input" clearable placeholder="用户名" @keyup.enter="handleQuery"/>
-        <el-input v-model="userQuery.phone" class="query-input" clearable placeholder="手机号" @keyup.enter="handleQuery"/>
+        <el-input v-model="userQuery.name" class="query-input" clearable placeholder="用户名"
+                  @keyup.enter="handleQueryUsers"/>
+        <el-input v-model="userQuery.phone" class="query-input" clearable placeholder="手机号"
+                  @keyup.enter="handleQueryUsers"/>
         <el-select v-model="userQuery.permission" class="query-select" clearable placeholder="角色">
           <el-option
-              v-for="item in roleOptions"
+              v-for="item in userConfig.roleOptions"
               :key="item.value"
               :value="item.value"
-              :label="item.label"
+              :label="item.value"
           />
         </el-select>
-        <el-input v-model="userQuery.email" class="query-input" clearable placeholder="邮箱" @keyup.enter="handleQuery"/>
+        <el-input v-model="userQuery.email" class="query-input" clearable placeholder="邮箱"
+                  @keyup.enter="handleQueryUsers"/>
         <!-- 状态查询：选项来自 fetchUserPageConfig，和表格 tag 颜色共用同一份字典。 -->
         <el-select v-model="userQuery.status" class="query-select" clearable placeholder="状态">
           <el-option
-              v-for="item in statusOptions"
+              v-for="item in userConfig.statusOptions"
               :key="item.value"
               :value="item.value"
-              :label="item.label"
+              :label="item.value"
           />
         </el-select>
-        <el-button type="primary" @click="handleQuery">查询</el-button>
-        <el-button @click="handleClearQuery">清空</el-button>
+        <el-button type="primary" @click="handleQueryUsers">查询</el-button>
+        <el-button @click="handleClearQueryUsers">清空</el-button>
       </div>
 
       <el-button type="primary" @click="handleSaveUser">新增</el-button>
@@ -219,7 +187,7 @@ onMounted(async () => {
       <el-table-column prop="email" label="邮箱" min-width="220"/>
       <el-table-column prop="status" label="状态" width="120">
         <template #default="{ row }">
-          <el-tag :type="getStatusTagType(row.status)">{{ row.status }}</el-tag>
+          <el-tag :type="row.status">{{ row.status }}</el-tag>
         </template>
       </el-table-column>
 
@@ -246,9 +214,9 @@ onMounted(async () => {
         <el-form-item label="角色" prop="permission">
           <el-select v-model="userForm.permission" placeholder="请选择角色">
             <el-option
-                v-for="item in roleOptions"
+                v-for="item in userConfig.roleOptions"
                 :key="item.value"
-                :label="item.label"
+                :label="item.value"
                 :value="item.value"
             />
           </el-select>
@@ -264,9 +232,9 @@ onMounted(async () => {
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="userForm.status">
             <el-radio-button
-                v-for="item in statusOptions"
+                v-for="item in userConfig.statusOptions"
                 :key="item.value"
-                :label="item.label"
+                :label="item.value"
                 :value="item.value"
             />
           </el-radio-group>

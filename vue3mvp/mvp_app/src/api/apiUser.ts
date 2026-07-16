@@ -4,7 +4,6 @@ import type { AuthTokenParams } from '@/types/authTypes.ts'
 import type {
     LoginParams,
     UserForm,
-    UserInfoConfig,
     UserParams,
     UserQuery,
 } from '@/types/userTypes.ts'
@@ -26,35 +25,13 @@ interface PageResult<T> {
     current: number
 }
 
-const roleMap: Record<string, string> = {
-    ADMIN: '管理员',
-    USER: '普通用户',
-}
-
-const statusMap: Record<number, string> = {
-    0: '禁用',
-    1: '正常',
-    2: '注销',
-}
-
-const roleValueMap: Record<string, string> = {
-    管理员: 'ADMIN',
-    普通用户: 'USER',
-}
-
-const statusValueMap: Record<string, number> = {
-    禁用: 0,
-    正常: 1,
-    注销: 2,
-}
-
 const toUserParams =
     (user: UserDto): UserParams => ({
         id: user.id || '',
         name: user.name,
         phone: user.phone,
-        permission: roleMap[user.permission || 'USER'] || user.permission || '普通用户',
-        status: statusMap[user.status ?? 1] || '正常',
+        permission: user.permission,
+        status: user.status,
         email: user.email || '',
         passwordHash: user.passwordHash,
     })
@@ -65,8 +42,8 @@ const toUserDto =
         phone: data.phone || '',
         email: data.email || undefined,
         passwordHash: data.passwordHash,
-        permission: data.permission ? roleValueMap[data.permission] || data.permission : 'USER',
-        status: data.status ? statusValueMap[data.status] ?? 1 : 1,
+        permission: data.permission,
+        status: data.status,
     })
 
 // 发送注册短信验证码：
@@ -129,28 +106,6 @@ export const refreshAccessToken =
 export const logout =
     () => postParams<void>('/user/logout')
 
-// 用户管理配置来自前端固定字典；用户列表和修改删除走真实后端 /user 接口。
-export const getUserInfoConfig =
-    async (): Promise<UserInfoConfig> => ({
-        roleOptions: [
-            {label: '管理员', value: '管理员', tagType: 'warning'},
-            {label: '普通用户', value: '普通用户', tagType: 'info'},
-        ],
-        statusOptions: [
-            {label: '正常', value: '正常', tagType: 'success'},
-            {label: '禁用', value: '禁用', tagType: 'info'},
-            {label: '注销', value: '注销', tagType: 'danger'},
-        ],
-        defaultUserForm: {
-            name: '',
-            phone: '',
-            permission: '普通用户',
-            status: '正常',
-            email: '',
-            passwordHash: '',
-        },
-    })
-
 export const selectUsers =
     async (query?: Partial<UserQuery>) => {
         const page = await get<PageResult<UserDto>>('/user/page', {
@@ -159,8 +114,8 @@ export const selectUsers =
             name: query?.name || undefined,
             phone: query?.phone || undefined,
             email: query?.email || undefined,
-            permission: query?.permission ? roleValueMap[query.permission] || query.permission : undefined,
-            status: query?.status ? statusValueMap[query.status] : undefined,
+            permission: query?.permission,
+            status: query?.status,
         })
         return page.records.map(toUserParams)
     }

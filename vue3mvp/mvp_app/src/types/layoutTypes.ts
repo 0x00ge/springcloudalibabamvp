@@ -1,17 +1,4 @@
 /**
- * 通用下拉/单选/状态选项。
- * 用户管理里的角色、状态都可以复用这个结构。
- */
-export interface OptionItem {
-    /** 页面上展示给用户看的文字。 */
-    label: string
-    /** 真正提交给接口或用于匹配的值。 */
-    value: string
-    /** Element Plus 的 el-tag 类型，用来控制状态标签颜色。 */
-    tagType?: '' | 'success' | 'info' | 'warning' | 'danger' | 'primary'
-}
-
-/**
  * 左侧菜单项
  */
 export interface MenuItem {
