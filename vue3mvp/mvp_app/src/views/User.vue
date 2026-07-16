@@ -134,7 +134,7 @@ const handleUpdateUser = (user: UserParams) => {
   isVisibleOfCreateOrUpdate.value = true
 }
 
-const handleSaveOrUpdateSubmit = async () => {
+const handleSaveOrUpdateUserSubmit = async () => {
   if (!formInstance.value) return
 
   await formInstance.value.validate()
@@ -184,27 +184,24 @@ onMounted(async () => {
     <!-- 顶部操作区：左侧是多字段联合查询，右侧是新增入口。 -->
     <div class="page-header">
       <div class="query-panel">
-        <el-input v-model="queryForm.name" class="query-input" clearable placeholder="用户名"
-                  @keyup.enter="handleQuery"/>
-        <el-input v-model="queryForm.phone" class="query-input" clearable placeholder="手机号"
-                  @keyup.enter="handleQuery"/>
+        <el-input v-model="queryForm.name" class="query-input" clearable placeholder="用户名" @keyup.enter="handleQuery"/>
+        <el-input v-model="queryForm.phone" class="query-input" clearable placeholder="手机号" @keyup.enter="handleQuery"/>
         <el-select v-model="queryForm.permission" class="query-select" clearable placeholder="角色">
           <el-option
               v-for="item in roleOptions"
               :key="item.value"
-              :label="item.label"
               :value="item.value"
+              :label="item.label"
           />
         </el-select>
-        <el-input v-model="queryForm.email" class="query-input" clearable placeholder="邮箱"
-                  @keyup.enter="handleQuery"/>
+        <el-input v-model="queryForm.email" class="query-input" clearable placeholder="邮箱" @keyup.enter="handleQuery"/>
         <!-- 状态查询：选项来自 fetchUserPageConfig，和表格 tag 颜色共用同一份字典。 -->
         <el-select v-model="queryForm.status" class="query-select" clearable placeholder="状态">
           <el-option
               v-for="item in statusOptions"
               :key="item.value"
-              :label="item.label"
               :value="item.value"
+              :label="item.label"
           />
         </el-select>
         <el-button type="primary" @click="handleQuery">查询</el-button>
@@ -278,7 +275,7 @@ onMounted(async () => {
 
       <template #footer>
         <el-button @click="isVisibleOfCreateOrUpdate = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveOrUpdateSubmit">提交</el-button>
+        <el-button type="primary" @click="handleSaveOrUpdateUserSubmit">提交</el-button>
       </template>
     </el-dialog>
 
