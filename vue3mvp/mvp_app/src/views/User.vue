@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, reactive, ref} from 'vue'
+import {computed, onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
 
 import {createUser, deleteUser, selectUsers, updateUser} from '@/api/apiUser.js'
@@ -22,7 +22,7 @@ const userQuery = reactive<UserQuery>({
   phone: '',
   permission: '',
   email: '',
-  status: '',
+  status: undefined,
 })
 
 // 用户管理配置。
@@ -43,7 +43,7 @@ const resetUserForm = reactive<UserForm>({
   name: '',
   phone: '',
   permission: '',
-  status: '',
+  status: undefined,
   email: '',
   passwordHash: '',
 })
@@ -53,7 +53,7 @@ const userForm = reactive<UserForm>({
   name: '',
   phone: '',
   permission: '',
-  status: '',
+  status: undefined,
   email: '',
   passwordHash: '',
 })
@@ -141,6 +141,10 @@ const handleDeleteUser = async (user: UserParams) => {
   ElMessage.success('用户删除成功')
   await handleSelectUsers()
 }
+
+onMounted(() => {
+  handleSelectUsers()
+})
 </script>
 
 <template>
