@@ -27,6 +27,7 @@ export interface MenuItem {
     icon?: string
     /** 菜单排序值，越小越靠前。 */
     sortOrder?: number
+    createdAt?: string
     /** 子菜单。 */
     children?: MenuItem[]
 }

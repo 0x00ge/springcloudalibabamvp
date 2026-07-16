@@ -9,23 +9,35 @@ import {
   updateMenu,
 } from '@/api/apiMenu.ts'
 import type {MenuItem} from '@/types/layoutTypes.ts'
-import type {MenuForm} from "@/types/menuTypes.ts";
+import type {MenuParams} from "@/types/menuTypes.ts";
 
+/** 父菜单下拉选项：扁平化树后的单条记录。 */
 interface MenuOption {
   id: string
+  /** 展示名；前缀用全角空格缩进，表达树层级。 */
   title: string
+  /** 编辑时禁止选自己及子孙，避免形成环。 */
   disabled: boolean
 }
 
-const menuList = ref<MenuItem[]>([])
+/** 后端 /menu/tree 返回的完整菜单树，表格与父级下拉共用。 */
+const menuItems = ref<MenuItem[]>([])
+/** 表格加载态。 */
 const loading = ref(false)
+/** 新增/编辑弹窗是否可见。 */
 const isVisibleOfCreateOrUpdate = ref(false)
+/**
+ * true = 新增，false = 编辑。
+ * 决定弹窗标题、提交走 create 还是 update，以及是否计算 disabledParentIds。
+ */
 const isCreateOrUpdate = ref(true)
+/** 当前正在编辑的菜单 id；新增时为空。 */
 const currentMenuId = ref('')
+/** el-form 实例，用于校验与清空校验态。 */
 const formInstance = ref<FormInstance>()
 
 // 菜单表单只维护后端 /menu 新增、编辑需要的字段。
-const menuForm = reactive<MenuForm>({
+const menuForm = reactive<MenuParams>({
   parentId: '',
   title: '',
   path: '',
@@ -34,7 +46,7 @@ const menuForm = reactive<MenuForm>({
 })
 
 // 菜单校验规则和后端 MenuDto 保持一致，提交前先在前端拦截明显错误。
-const rules: FormRules<MenuForm> = {
+const rules: FormRules<MenuParams> = {
   title: [
     {required: true, message: '请输入菜单名称', trigger: 'blur'},
     {max: 50, message: '菜单名称长度不能超过 50 位', trigger: 'blur'},
@@ -48,13 +60,22 @@ const rules: FormRules<MenuForm> = {
   sortOrder: [{type: 'number', min: 0, message: '排序值不能小于 0', trigger: 'change'}],
 }
 
+/** 弹窗标题：随新增/编辑模式切换。 */
 const titleOfCreateOrUpdate = computed(() => (isCreateOrUpdate.value ? '新增菜单' : '编辑菜单'))
 
+/**
+ * 编辑时不可选作「父菜单」的 id 集合。
+ *
+ * 包含当前菜单自身及其所有子孙：若把父级改成自己或子节点，会形成环，树无法正常展示。
+ * 新增模式或未选定编辑对象时返回空集，父级下拉全部可选。
+ */
 const disabledParentIds = computed(() => {
+  // 仅编辑场景需要禁用；新增时父级无环风险。
   if (isCreateOrUpdate.value || !currentMenuId.value) return new Set<string>()
 
   const ids = new Set<string>([currentMenuId.value])
 
+  // 只要 parentId 已在禁用集合中，则该节点及其子树也一并禁用。
   const collectChildren = (menus: MenuItem[]) => {
     for (const menu of menus) {
       if (ids.has(menu.parentId || '')) {
@@ -67,7 +88,7 @@ const disabledParentIds = computed(() => {
     }
   }
 
-  collectChildren(menuList.value)
+  collectChildren(menuItems.value)
 
   return ids
 })
@@ -76,6 +97,7 @@ const disabledParentIds = computed(() => {
 const parentOptions = computed<MenuOption[]>(() => {
   const options: MenuOption[] = []
 
+  // 深度优先遍历树，level 控制标题前的全角空格数量。
   const walk = (menus: MenuItem[], level = 0) => {
     for (const menu of menus) {
       options.push({
@@ -90,25 +112,32 @@ const parentOptions = computed<MenuOption[]>(() => {
     }
   }
 
-  walk(menuList.value)
+  walk(menuItems.value)
 
   return options
 })
 
+/**
+ * 通知布局侧栏等监听方：菜单数据已变更，需重新拉取侧栏菜单。
+ * 使用自定义 DOM 事件，避免与 pinia/路由强耦合。
+ */
 const notifyMenuUpdated = () => {
   window.dispatchEvent(new Event('mvp:menu-updated'))
 }
 
+/** 拉取完整菜单树并刷新表格。 */
 const handleSelectMenus = async () => {
   loading.value = true
 
   try {
-    menuList.value = await getMenuTree()
+    menuItems.value = await getMenuTree()
   } finally {
+    // 无论成功失败都结束 loading，避免表格一直转圈。
     loading.value = false
   }
 }
 
+/** 清空表单、当前编辑 id 与校验状态，供弹窗打开前/关闭后复用。 */
 const handleResetMenuForm = () => {
   currentMenuId.value = ''
   Object.assign(menuForm, {
@@ -121,20 +150,27 @@ const handleResetMenuForm = () => {
   formInstance.value?.clearValidate()
 }
 
+/** 打开「新增根菜单」弹窗：无父级、路径由用户填写。 */
 const handleCreateRootMenu = () => {
   handleResetMenuForm()
   isCreateOrUpdate.value = true
   isVisibleOfCreateOrUpdate.value = true
 }
 
+/**
+ * 打开「添加子菜单」弹窗。
+ * 预填 parentId 为当前行 id；路径预填为父 path + '/'，便于在子路径上继续编辑。
+ */
 const handleCreateChildMenu = (menu: MenuItem) => {
   handleResetMenuForm()
   isCreateOrUpdate.value = true
   menuForm.parentId = menu.id
+  // 保证子路径以父路径为前缀，且中间有分隔斜杠。
   menuForm.path = menu.path.endsWith('/') ? menu.path : `${menu.path}/`
   isVisibleOfCreateOrUpdate.value = true
 }
 
+/** 打开「编辑菜单」弹窗，把当前行数据回填到表单。 */
 const handleUpdateMenu = (menu: MenuItem) => {
   handleResetMenuForm()
   isCreateOrUpdate.value = false
@@ -149,12 +185,17 @@ const handleUpdateMenu = (menu: MenuItem) => {
   isVisibleOfCreateOrUpdate.value = true
 }
 
+/**
+ * 校验通过后提交：按 isCreateOrUpdate 走新增或更新接口。
+ * 成功后关闭弹窗、刷新表格，并广播菜单变更事件。
+ */
 const handleSubmit = async () => {
   if (!formInstance.value) return
 
   await formInstance.value.validate()
 
-  const payload: MenuForm = {
+  // 空字符串转 undefined：根菜单 parentId、可选 icon 不传给后端。
+  const payload: MenuParams = {
     parentId: menuForm.parentId || undefined,
     title: menuForm.title,
     path: menuForm.path,
@@ -175,6 +216,10 @@ const handleSubmit = async () => {
   notifyMenuUpdated()
 }
 
+/**
+ * 删除菜单（含后端级联的所有子菜单）。
+ * 先二次确认；取消时 ElMessageBox 会 reject，后续请求不会执行。
+ */
 const handleDeleteMenu = async (menu: MenuItem) => {
   await ElMessageBox.confirm(`确定删除菜单「${menu.title}」及其所有子菜单吗？`, '删除确认', {
     type: 'warning',
@@ -188,17 +233,16 @@ const handleDeleteMenu = async (menu: MenuItem) => {
   notifyMenuUpdated()
 }
 
+// 进入页面即加载菜单树。
 onMounted(handleSelectMenus)
 </script>
 
 <template>
   <div class="page-view">
-    <!-- 顶部操作区：菜单管理只做树形维护，不做分页。 -->
     <div class="page-header">
       <div>
         <h2>菜单管理</h2>
       </div>
-
       <div class="actions">
         <el-button type="primary" @click="handleCreateRootMenu">新增根菜单</el-button>
       </div>
@@ -207,16 +251,15 @@ onMounted(handleSelectMenus)
     <!-- 菜单树表：children 字段由后端 /menu/tree 返回，Element Plus 会自动渲染层级。 -->
     <el-table
         v-loading="loading"
-        :data="menuList"
+        :data="menuItems"
         row-key="id"
         stripe
         default-expand-all
     >
-      <el-table-column prop="title" label="菜单名称" min-width="180"/>
-      <el-table-column prop="path" label="路由路径" min-width="220"/>
-      <el-table-column prop="sortOrder" label="排序" width="100"/>
-      <el-table-column prop="id" label="菜单 ID" min-width="260"/>
-      <el-table-column label="操作" width="240" fixed="right">
+      <el-table-column prop="title" label="菜单名称" min-width="250"/>
+      <el-table-column prop="createdAt" label="创建时间" min-width="250"/>
+      <el-table-column prop="sortOrder" label="排序" width="250"/>
+      <el-table-column prop="" label="操作" width="250" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="handleCreateChildMenu(row)">添加子菜单</el-button>
           <el-button link type="primary" @click="handleUpdateMenu(row)">编辑</el-button>

@@ -1,7 +1,6 @@
 import {del, get, post, put} from '@/utils/http/http.ts'
 
-import type { MenuItem } from '@/types/layoutTypes.ts'
-import type {MenuForm} from "@/types/menuTypes.ts";
+import type {MenuItem} from '@/types/layoutTypes.ts'
 
 const toMenuItem =
     (menu: MenuItem): MenuItem => ({
@@ -11,6 +10,7 @@ const toMenuItem =
         path: menu.path,
         icon: menu.icon,
         sortOrder: menu.sortOrder ?? 0,
+        createdAt: menu.createdAt,
         children: menu.children?.length ? menu.children.map(toMenuItem) : undefined,
     })
 
@@ -22,7 +22,7 @@ export const getMenuTree =
     }
 
 const toMenuDto =
-    (data: MenuForm): Partial<MenuItem> => ({
+    (data: MenuItem): Partial<MenuItem> => ({
         parentId: data.parentId || undefined,
         title: data.title,
         path: data.path,
@@ -31,10 +31,10 @@ const toMenuDto =
     })
 
 export const createMenu =
-    (data: MenuForm) => post<string>('/menu', toMenuDto(data))
+    (data: MenuItem) => post<string>('/menu', toMenuDto(data))
 
 export const updateMenu =
-    (id: string, data: MenuForm) => put<void>('/menu/' + id, toMenuDto(data))
+    (id: string, data: MenuItem) => put<void>('/menu/' + id, toMenuDto(data))
 
 export const deleteMenu =
     (id: string) => del<void>('/menu/' + id)

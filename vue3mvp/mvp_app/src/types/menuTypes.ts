@@ -1,4 +1,4 @@
-export interface MenuForm {
+export interface MenuParams {
     parentId?: string
     title: string
     path: string
