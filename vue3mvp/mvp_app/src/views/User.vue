@@ -3,7 +3,7 @@ import {computed, onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
 
 import {createUser, deleteUser, selectUsers, updateUser} from '@/api/apiUser.js'
-import type {OptionItem, UserConfig, UserForm, UserParams, UserQuery} from '@/types/userTypes'
+import type {UserConfig, UserForm, UserParams, UserQuery} from '@/types/userTypes'
 
 const userId = ref<string>('')
 const userList = ref<UserParams[]>([])
