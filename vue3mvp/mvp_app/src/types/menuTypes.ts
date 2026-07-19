@@ -5,3 +5,5 @@ export interface MenuParams {
     icon?: string
     sortOrder?: number
 }
+
+export type MenuQuery = Partial<Pick<MenuParams, 'title' | 'path'>>

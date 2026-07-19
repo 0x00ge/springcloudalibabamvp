@@ -7,6 +7,7 @@ import type {UserConfig, UserForm, UserParams, UserQuery} from '@/types/userType
 
 const userId = ref<string>('')
 const userList = ref<UserParams[]>([])
+const loading = ref(false)
 const isCreateOrUpdate = ref<boolean>()
 const titleOfCreateOrUpdate = computed(() => {
   return isCreateOrUpdate.value ? '新增用户' : '编辑用户'
@@ -23,6 +24,12 @@ const userQuery = reactive<UserQuery>({
   permission: '',
   email: '',
   status: undefined,
+})
+
+const userPagination = reactive({
+  page: 1,
+  size: 10,
+  total: 0,
 })
 
 // 用户管理配置。
@@ -78,17 +85,49 @@ const handleResetUserForm = () => {
 
 // 应用查询条件，请求后端 /user/page 按条件查询。
 const handleQueryUsers = async () => {
+  userPagination.page = 1
   await handleSelectUsers()
 }
 
 // 清空查询条件，并重新请求后端列表。
 const handleClearQueryUsers = async () => {
-  Object.assign(userQuery, resetUserForm)
+  Object.assign(userQuery, {
+    name: '',
+    phone: '',
+    permission: '',
+    email: '',
+    status: undefined,
+  })
+  userPagination.page = 1
   await handleSelectUsers()
 }
 
 const handleSelectUsers = async () => {
-  userList.value = await selectUsers(userQuery)
+  loading.value = true
+
+  try {
+    const page = await selectUsers(userQuery, {
+      page: userPagination.page,
+      size: userPagination.size,
+    })
+    userList.value = page.records
+    userPagination.total = page.total
+    userPagination.page = page.current
+    userPagination.size = page.size
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleUserPageSizeChange = async (size: number) => {
+  userPagination.size = size
+  userPagination.page = 1
+  await handleSelectUsers()
+}
+
+const handleUserPageChange = async (page: number) => {
+  userPagination.page = page
+  await handleSelectUsers()
 }
 
 const handleSaveUser = () => {
@@ -184,7 +223,7 @@ onMounted(() => {
     </div>
 
     <!-- 用户表格：数据来自 userList，操作列调用同一个弹窗和删除流程。 -->
-    <el-table :data="userList" stripe>
+    <el-table v-loading="loading" :data="userList" stripe>
       <el-table-column prop="name" label="用户名" min-width="140"/>
       <el-table-column prop="phone" label="手机号" min-width="140"/>
       <el-table-column prop="permission" label="角色" min-width="140"/>
@@ -202,6 +241,17 @@ onMounted(() => {
         </template>
       </el-table-column>
     </el-table>
+
+    <el-pagination
+        v-model:current-page="userPagination.page"
+        v-model:page-size="userPagination.size"
+        class="pagination-bar"
+        :total="userPagination.total"
+        layout="prev, pager, next"
+        background="transparent"
+        @size-change="handleUserPageSizeChange"
+        @current-change="handleUserPageChange"
+    />
 
     <!-- 新增/编辑弹窗：通过 isCreateOrUpdate 区分模式，表单结构完全复用。 -->
     <el-dialog v-model="isVisibleOfCreateOrUpdate" :title="titleOfCreateOrUpdate" width="460px"
@@ -292,6 +342,10 @@ onMounted(() => {
   width: 128px;
 }
 
+.pagination-bar {
+  justify-content: flex-end;
+}
+
 @media (max-width: 768px) {
   .page-header {
     /* 小屏下改成纵向排列，避免按钮和输入框被挤压。 */
@@ -308,6 +362,10 @@ onMounted(() => {
   .query-select,
   .query-panel :deep(.el-button) {
     width: 100%;
+  }
+
+  .pagination-bar {
+    justify-content: flex-start;
   }
 }
 </style>

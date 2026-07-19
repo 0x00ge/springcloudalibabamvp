@@ -1,6 +1,7 @@
 import {del, get, post, postParams, put} from '@/utils/http/http.ts'
 
 import type { AuthTokenParams } from '@/types/authTypes.ts'
+import type {PageQuery, PageResult} from '@/types/pageTypes.ts'
 import type {
     LoginParams,
     UserForm,
@@ -16,13 +17,6 @@ interface UserDto {
     name: string
     permission?: 'ADMIN' | 'USER' | string
     status?: number
-}
-
-interface PageResult<T> {
-    records: T[]
-    total: number
-    size: number
-    current: number
 }
 
 const toUserParams =
@@ -107,17 +101,20 @@ export const logout =
     () => postParams<void>('/user/logout')
 
 export const selectUsers =
-    async (query?: Partial<UserQuery>) => {
+    async (query?: Partial<UserQuery>, pagination: PageQuery = {page: 1, size: 10}) => {
         const page = await get<PageResult<UserDto>>('/user/page', {
-            page: 1,
-            size: 100,
+            page: pagination.page,
+            size: pagination.size,
             name: query?.name || undefined,
             phone: query?.phone || undefined,
             email: query?.email || undefined,
             permission: query?.permission,
             status: query?.status,
         })
-        return page.records.map(toUserParams)
+        return {
+            ...page,
+            records: page.records.map(toUserParams),
+        }
     }
 
 export const createUser =

@@ -5,11 +5,12 @@ import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'elemen
 import {
   createMenu,
   deleteMenu,
+  getMenuPage,
   getMenuTree,
   updateMenu,
 } from '@/api/apiMenu.ts'
 import type {MenuItem} from '@/types/layoutTypes.ts'
-import type {MenuParams} from "@/types/menuTypes.ts";
+import type {MenuParams, MenuQuery} from "@/types/menuTypes.ts";
 
 /** 父菜单下拉选项：扁平化树后的单条记录。 */
 interface MenuOption {
@@ -22,6 +23,8 @@ interface MenuOption {
 
 /** 后端 /menu/tree 返回的完整菜单树，表格与父级下拉共用。 */
 const menuItems = ref<MenuItem[]>([])
+/** 父菜单下拉使用的完整菜单树。 */
+const menuTree = ref<MenuItem[]>([])
 /** 表格加载态。 */
 const loading = ref(false)
 /** 新增/编辑弹窗是否可见。 */
@@ -35,6 +38,17 @@ const isCreateOrUpdate = ref(true)
 const currentMenuId = ref('')
 /** el-form 实例，用于校验与清空校验态。 */
 const formInstance = ref<FormInstance>()
+
+const menuQuery = reactive<MenuQuery>({
+  title: '',
+  path: '',
+})
+
+const menuPagination = reactive({
+  page: 1,
+  size: 10,
+  total: 0,
+})
 
 // 菜单表单只维护后端 /menu 新增、编辑需要的字段。
 const menuForm = reactive<MenuParams>({
@@ -88,7 +102,7 @@ const disabledParentIds = computed(() => {
     }
   }
 
-  collectChildren(menuItems.value)
+  collectChildren(menuTree.value)
 
   return ids
 })
@@ -112,7 +126,7 @@ const parentOptions = computed<MenuOption[]>(() => {
     }
   }
 
-  walk(menuItems.value)
+  walk(menuTree.value)
 
   return options
 })
@@ -125,16 +139,53 @@ const notifyMenuUpdated = () => {
   window.dispatchEvent(new Event('mvp:menu-updated'))
 }
 
-/** 拉取完整菜单树并刷新表格。 */
+/** 拉取完整菜单树，供父菜单下拉使用。 */
+const handleSelectMenuTree = async () => {
+  menuTree.value = await getMenuTree()
+}
+
+/** 按分页参数刷新菜单表格。 */
 const handleSelectMenus = async () => {
   loading.value = true
 
   try {
-    menuItems.value = await getMenuTree()
+    const page = await getMenuPage(menuQuery, {
+      page: menuPagination.page,
+      size: menuPagination.size,
+    })
+    menuItems.value = page.records
+    menuPagination.total = page.total
+    menuPagination.page = page.current
+    menuPagination.size = page.size
   } finally {
     // 无论成功失败都结束 loading，避免表格一直转圈。
     loading.value = false
   }
+}
+
+const handleQueryMenus = async () => {
+  menuPagination.page = 1
+  await handleSelectMenus()
+}
+
+const handleClearQueryMenus = async () => {
+  Object.assign(menuQuery, {
+    title: '',
+    path: '',
+  })
+  menuPagination.page = 1
+  await handleSelectMenus()
+}
+
+const handleMenuPageSizeChange = async (size: number) => {
+  menuPagination.size = size
+  menuPagination.page = 1
+  await handleSelectMenus()
+}
+
+const handleMenuPageChange = async (page: number) => {
+  menuPagination.page = page
+  await handleSelectMenus()
 }
 
 /** 清空表单、当前编辑 id 与校验状态，供弹窗打开前/关闭后复用。 */
@@ -212,7 +263,7 @@ const handleSubmit = async () => {
   }
 
   isVisibleOfCreateOrUpdate.value = false
-  await handleSelectMenus()
+  await Promise.all([handleSelectMenus(), handleSelectMenuTree()])
   notifyMenuUpdated()
 }
 
@@ -229,19 +280,26 @@ const handleDeleteMenu = async (menu: MenuItem) => {
 
   await deleteMenu(menu.id)
   ElMessage.success('菜单删除成功')
-  await handleSelectMenus()
+  await Promise.all([handleSelectMenus(), handleSelectMenuTree()])
   notifyMenuUpdated()
 }
 
 // 进入页面即加载菜单树。
-onMounted(handleSelectMenus)
+onMounted(() => {
+  Promise.all([handleSelectMenus(), handleSelectMenuTree()])
+})
 </script>
 
 <template>
   <div class="page-view">
     <div class="page-header">
-      <div>
-        <h2>菜单管理</h2>
+      <div class="query-panel">
+        <el-input v-model="menuQuery.title" class="query-input" clearable placeholder="菜单名称"
+                  @keyup.enter="handleQueryMenus"/>
+        <el-input v-model="menuQuery.path" class="query-input" clearable placeholder="路由路径"
+                  @keyup.enter="handleQueryMenus"/>
+        <el-button type="primary" @click="handleQueryMenus">查询</el-button>
+        <el-button @click="handleClearQueryMenus">清空</el-button>
       </div>
       <div class="actions">
         <el-button type="primary" @click="handleCreateRootMenu">新增根菜单</el-button>
@@ -254,7 +312,6 @@ onMounted(handleSelectMenus)
         :data="menuItems"
         row-key="id"
         stripe
-        default-expand-all
     >
       <el-table-column prop="title" label="菜单名称" min-width="250"/>
       <el-table-column prop="createdAt" label="创建时间" min-width="250"/>
@@ -267,6 +324,18 @@ onMounted(handleSelectMenus)
         </template>
       </el-table-column>
     </el-table>
+
+    <el-pagination
+        v-model:current-page="menuPagination.page"
+        v-model:page-size="menuPagination.size"
+        class="pagination-bar"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="menuPagination.total"
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleMenuPageSizeChange"
+        @current-change="handleMenuPageChange"
+    />
 
     <!-- 新增/编辑弹窗：新增根菜单时父菜单为空，添加子菜单时自动带入 parentId。 -->
     <el-dialog
@@ -334,23 +403,24 @@ onMounted(handleSelectMenus)
   gap: 16px;
 }
 
-.page-header h2 {
-  margin: 0;
-  color: #111827;
-  font-size: 20px;
-  line-height: 1.4;
+.query-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.page-header p {
-  margin: 4px 0 0;
-  color: #64748b;
-  font-size: 14px;
+.query-input {
+  width: 180px;
 }
 
 .actions {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.pagination-bar {
+  justify-content: flex-end;
 }
 
 @media (max-width: 768px) {
@@ -362,6 +432,21 @@ onMounted(handleSelectMenus)
   .actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .query-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .query-input,
+  .query-panel :deep(.el-button),
+  .actions :deep(.el-button) {
+    width: 100%;
+  }
+
+  .pagination-bar {
+    justify-content: flex-start;
   }
 }
 </style>
