@@ -5,6 +5,12 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!--
+      kafka-demo：Spring Kafka 独立演示模块
+      - 父工程 Spring Boot 3.3.4 统一管理 spring-kafka / kafka-clients 版本
+      - 不写 version：spring-kafka ≈ 3.2.4，kafka-clients ≈ 3.7.1
+      - 本地 Broker 见 deploy/docker/kafka-cluster（apache/kafka:3.8.0）
+    -->
     <parent>
         <groupId>com.mvp</groupId>
         <artifactId>SpringCloudAlibabaMVP</artifactId>
@@ -15,31 +21,35 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Spring Boot Web -->
+        <!-- 提供演示用 HTTP 接口（OrderController） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Kafka -->
+        <!--
+          Spring Kafka：KafkaTemplate、@KafkaListener、NewTopic、ErrorHandler 等
+          版本由 spring-boot-dependencies 管理，勿擅自覆盖除非有明确兼容性需求
+        -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- 简化实体与日志（@Data、@Slf4j） -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- Test Dependencies -->
+        <!-- 单元 / 集成测试基础 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- 提供 EmbeddedKafka 等测试支持（本 Demo 以真实 Docker Kafka 为主） -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka-test</artifactId>
@@ -49,6 +59,7 @@
 
     <build>
         <plugins>
+            <!-- 可执行 jar：mvn -pl kafka-demo spring-boot:run -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

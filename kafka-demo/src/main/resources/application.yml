@@ -1,4 +1,15 @@
+# =============================================================================
+# kafka-demo 配置说明
+# =============================================================================
+# 启动前请确保本地 Kafka 已起来（项目 Docker）：
+#   cd deploy/docker/kafka-cluster
+#   docker compose -f docker-compose-kafka-cluster.yml up -d
+# Broker：127.0.0.1:9092
+# UI：   http://127.0.0.1:8083
+# =============================================================================
+
 server:
+  # 本 Demo 独立端口，避免与网关 8001、业务服务 82xx 冲突
   port: 8091
 
 spring:
@@ -6,35 +17,56 @@ spring:
     name: kafka-demo
 
   kafka:
+    # 宿主机访问 Docker 映射端口（与 deploy/docker/kafka-cluster 一致）
     bootstrap-servers: 127.0.0.1:9092
 
     admin:
+      # true：启动时根据 NewTopic Bean（见 KafkaConfig）自动创建 Topic
+      # 生产环境通常关闭，由运维预建 Topic
       auto-create: true
 
     producer:
+      # Key 用字符串（orderId）；Value 用 JSON 序列化 OrderDTO
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+      # all：所有 ISR 副本确认才算成功（最强；单节点时等价于 leader 写入成功）
       acks: all
+      # 可重试错误的发送重试次数（配合幂等使用）
       retries: 3
       properties:
+        # 幂等生产者：防止网络重试导致 Broker 侧重复消息（需 acks=all 等条件）
         enable.idempotence: true
+        # 单连接未完成请求上限；与幂等配合时需满足 Kafka 约束（常见为 ≤5）
         max.in.flight.requests.per.connection: 5
 
     consumer:
+      # 消费组无提交位点时从最早消息开始（Demo 方便重放）；生产常用 latest
       auto-offset-reset: earliest
+      # 关闭自动提交，改由 listener ack-mode 控制，避免「处理失败却已提交」
       enable-auto-commit: false
+
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # 外层 ErrorHandlingDeserializer：反序列化失败可走错误处理，而不是直接打挂 listener
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
+        # 真正的 JSON 反序列化器
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        # 仅信任业务 DTO 包，降低反序列化安全风险
         spring.json.trusted.packages: com.demo.dto
+        # 默认把 JSON 转成 OrderDTO（无类型头时）
         spring.json.value.default.type: com.demo.dto.OrderDTO
 
     listener:
+      # 每条消息处理成功后提交该条 offset（与 enable-auto-commit:false 配合）
+      # 方法抛异常则不提交，进入 DefaultErrorHandler 重试 / DLT
       ack-mode: record
 
 logging:
   level:
+    # Demo 业务日志
     com.demo: DEBUG
+    # Spring Kafka 框架
     org.springframework.kafka: INFO
+    # 原生客户端（排查协议问题时可临时调 DEBUG）
     org.apache.kafka: INFO
