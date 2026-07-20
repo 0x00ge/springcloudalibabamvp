@@ -2,59 +2,166 @@
 # Kafka 本地开发集群 - Docker Compose 配置文件（单节点 KRaft 模式）
 # ============================================================================
 #
-# 架构说明：
-#   本地开发使用 1 个 Kafka 节点同时承担 broker/controller 角色。
-#   宿主机应用通过 127.0.0.1:9092 访问 Kafka。
+# 【架构说明】
+#   - 本地开发使用 1 个 Kafka 节点，同时承担 broker + controller 两种角色
+#   - 不再依赖 Zookeeper（KRaft 模式，Kafka 3.3+ 官方推荐的本地/新集群方式）
+#   - 宿主机 Java 应用（如 kafka-demo）通过 127.0.0.1:9092 访问
+#   - 同一 Docker 网络内的其它容器通过 kafka:29092 访问（INTERNAL 监听）
 #
-# Web 控制台：
-#   http://127.0.0.1:8083
+# 【网络约定】（与 deploy/docker/LOCAL-NETWORK.md 一致）
+#   - 宿主机 → 容器中间件：127.0.0.1 + 端口映射
+#   - 容器 → 宿主机 Java：host.docker.internal（本文件 Kafka 不访问宿主机）
+#   - 容器 ↔ 容器：服务名 + 内部端口（kafka:29092）
+#   - mvp-network 为 external，需先由 redis-cluster/init-redis-cluster.sh 等创建
 #
+# 【版本约定】
+#   - 镜像：apache/kafka:3.8.0
+#   - 与 Spring Boot 3.3.4 托管的 kafka-clients 3.7.1 协议兼容，可直接联调
+#   - kafka-demo 中 spring.kafka.bootstrap-servers: 127.0.0.1:9092
+#
+# 【Web 控制台】
+#   - Kafka UI：http://127.0.0.1:8083
+#
+# 【常用命令】
+#   启动：
+#     cd deploy/docker/kafka-cluster
+#     docker compose -f docker-compose-kafka-cluster.yml up -d
+#   停止：
+#     docker compose -f docker-compose-kafka-cluster.yml down
+#   看日志：
+#     docker logs -f mvp-kafka
+#     docker logs -f mvp-kafka-ui
+#   进容器列 Topic：
+#     docker exec -it mvp-kafka /opt/kafka/bin/kafka-topics.sh \
+#       --bootstrap-server localhost:9092 --list
+#
+# 【数据持久化】
+#   - 消息与元数据目录挂载到宿主机：
+#     /Users/zhongtao/.my_docker/kafka-cluster/kafka/data
+#   - 首次启动前请确保该目录存在且可写；down -v 不会删这个 bind mount
+#
+# 【注意】
+#   - 单节点 replicas 只能为 1，生产勿照搬副本相关环境变量
+#   - 本配置无 SASL/SSL，仅限本机开发，勿对公网暴露 9092/8083
 # ============================================================================
 
 services:
 
+  # --------------------------------------------------------------------------
+  # Kafka Broker + Controller（KRaft 单节点）
+  # --------------------------------------------------------------------------
   kafka:
+    # 官方 Apache Kafka 镜像（非 Bitnami）；3.8.0 含 KRaft，无需额外 ZK 容器
     image: apache/kafka:3.8.0
+    # 固定容器名，方便 docker logs / docker exec
     container_name: mvp-kafka
+    # 容器主机名：其它容器用 hostname「kafka」解析到本服务（见 ADVERTISED INTERNAL）
     hostname: kafka
+    # 异常退出后自动重启；手动 stop 后不会拉起
     restart: unless-stopped
+
     ports:
+      # 宿主机 9092 → 容器 PLAINTEXT 监听 9092
+      # 宿主机上的 kafka-demo / 命令行客户端用 127.0.0.1:9092
       - "9092:9092"
+      # 9093（CONTROLLER）、29092（INTERNAL）不映射到宿主机：
+      # - CONTROLLER 仅集群内部控制面使用
+      # - INTERNAL 仅 Docker 网络内其它容器使用（如 kafka-ui）
+
     environment:
+      # -------- KRaft 节点身份 --------
+      # 当前节点在集群中的唯一 ID（单节点固定为 1 即可）
       KAFKA_NODE_ID: 1
+      # 本进程同时扮演：broker（存消息）+ controller（元数据/选主，替代 ZK）
       KAFKA_PROCESS_ROLES: broker,controller
+      # Controller 法定人数投票成员列表：nodeId@host:controllerPort
+      # 单节点：只有自己 1@kafka:9093
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+      # -------- 监听器（容器内 bind 地址）--------
+      # 格式：NAME://bind-host:port，多个用逗号分隔
+      # - PLAINTEXT  : 给「宿主机客户端」用的入口（再经 ports 映射出去）
+      # - INTERNAL   : 给「Docker 内其它容器」用（kafka-ui 等）
+      # - CONTROLLER : KRaft 控制器通信，不对业务客户端开放
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+
+      # -------- 对外广播地址（客户端真正拿到并回连的地址）--------
+      # 关键：ADVERTISED 必须是「客户端网络可达」的地址，而不是 0.0.0.0
+      # - PLAINTEXT://127.0.0.1:9092
+      #     宿主机应用 bootstrap 连 127.0.0.1:9092 后，元数据里也是 127.0.0.1，
+      #     后续生产/消费仍走宿主机映射端口（正确）
+      # - INTERNAL://kafka:29092
+      #     容器内客户端（kafka-ui）用服务名 kafka 解析，走 Docker 网络
+      # 若误把 PLAINTEXT 写成 kafka:9092，宿主机应用会连不上（解析不到 kafka）
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:9092,INTERNAL://kafka:29092
+
+      # 监听器名称 → 安全协议映射；本地全用 PLAINTEXT（明文，无认证）
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      # 哪个监听器名称专用于 Controller（必须与 LISTENERS 里 CONTROLLER 对应）
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      # Broker 之间互连使用哪个监听器；单节点几乎无 inter-broker 流量，仍需声明
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      # -------- 单节点副本相关（生产请改大）--------
+      # 消费组 offset 内部 Topic 的副本数；单节点只能为 1
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # 事务状态日志副本数；单节点为 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      # 事务状态日志最小 ISR；单节点为 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      # 新消费组首次 rebalance 前的延迟（毫秒）
+      # 设为 0：Demo 启动后更快开始消费，少等几秒；生产可保持默认以减少抖动
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+      # 自动创建 Topic 时的默认分区数（kafka-demo 的 NewTopic 也会显式指定 3）
+      # 多分区便于观察 key 路由；本地单节点足够
       KAFKA_NUM_PARTITIONS: 3
+
+      # 容器时区，日志时间与宿主机东八区一致
       TZ: Asia/Shanghai
+
     volumes:
+      # 持久化 Kafka 日志目录（消息 segment、部分元数据）
+      # 宿主机路径按本机约定；换机器时请改成你的目录并先 mkdir
+      # 容器内路径 /tmp/kafka-logs 为该官方镜像常用数据目录
       - /Users/zhongtao/.my_docker/kafka-cluster/kafka/data:/tmp/kafka-logs
+
     networks:
+      # 加入项目统一网络，才能与 kafka-ui、（将来）其它中间件互通
       - mvp-network
 
+  # --------------------------------------------------------------------------
+  # Kafka UI（Web 管理台：Topic / 消息 / Consumer Group）
+  # --------------------------------------------------------------------------
   kafka-ui:
+    # 开源 Kafka Web UI（provectuslabs）；版本锁定避免 UI 突然变版
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: mvp-kafka-ui
     restart: unless-stopped
+    # 等 kafka 容器创建后再启动（不保证 Kafka 进程已完全就绪；若 UI 报错可稍后刷新）
     depends_on:
       - kafka
     ports:
+      # 浏览器访问：http://127.0.0.1:8083
+      # 容器内 UI 服务监听 8080
       - "8083:8080"
     environment:
+      # 在 UI 里显示的集群名字（可随意，仅展示）
       KAFKA_CLUSTERS_0_NAME: local
+      # UI 在 Docker 网络内连 Kafka，必须用 INTERNAL 广播地址：kafka:29092
+      # 不要写 127.0.0.1:9092：在 UI 容器里 127.0.0.1 是 UI 自己，不是 Broker
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       TZ: Asia/Shanghai
     networks:
       - mvp-network
 
+# --------------------------------------------------------------------------
+# 网络：复用项目已有 mvp-network，不在此文件内新建
+# 若 up 报 network mvp-network declared as external but could not be found：
+#   先执行 redis-cluster 的 init 脚本，或：
+#   docker network create mvp-network
+# --------------------------------------------------------------------------
 networks:
   mvp-network:
     name: mvp-network
