@@ -42,6 +42,24 @@ export const routes: RouteRecordRaw[] = [
           title: '菜单管理',
         },
       },
+      {
+        path: 'goods',
+        component: () => import('@/views/Goods.vue'),
+        name: 'Goods',
+        meta: {
+          requireAuth: true,
+          title: '商品管理',
+        },
+      },
+      {
+        path: 'order',
+        component: () => import('@/views/Order.vue'),
+        name: 'Order',
+        meta: {
+          requireAuth: true,
+          title: '订单管理',
+        },
+      },
     ],
   },
   {

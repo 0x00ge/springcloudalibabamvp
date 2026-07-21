@@ -1,17 +1,24 @@
 package com.mvp.order.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mvp.common.enums.ResultCode;
 import com.mvp.common.vo.ResultVO;
 import com.mvp.order.dto.GoodsInfoDto;
 import com.mvp.order.dto.OrderRequestDto;
 import com.mvp.order.dto.OrderResultDto;
+import com.mvp.order.entity.Order;
 import com.mvp.order.feign.GoodsStockClient;
 import com.mvp.order.mq.producer.OrderEventProducer;
 import com.mvp.order.service.OrderService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -158,5 +165,47 @@ public class OrderController {
     public ResultVO<OrderResultDto> result(@RequestHeader("X-User-Id") @NotBlank(message = "用户ID不能为空") String userId,
                                            @RequestParam String goodsId) {
         return ResultVO.ok(orderService.queryResult(userId, goodsId));
+    }
+
+    /**
+     * 管理端：分页查询订单列表。
+     *
+     * <p>支持按用户、商品、订单状态过滤，供前端订单管理页使用。
+     * 秒杀结果轮询仍走 {@code /order/result}，与本接口职责分离。</p>
+     *
+     * @param page    页码，从 1 开始
+     * @param size    每页条数
+     * @param userId  可选，按下单用户过滤
+     * @param goodsId 可选，按商品过滤
+     * @param status  可选，订单状态：0-待支付 1-已支付 2-已取消
+     */
+    @GetMapping("/page")
+    public ResultVO<IPage<Order>> page(@RequestParam(defaultValue = "1") Long page,
+                                       @RequestParam(defaultValue = "10") Long size,
+                                       @RequestParam(required = false) String userId,
+                                       @RequestParam(required = false) String goodsId,
+                                       @RequestParam(required = false) Integer status) {
+        Page<Order> query = new Page<>(page, size);
+        IPage<Order> result = orderService.page(query, Wrappers.<Order>lambdaQuery()
+                .eq(StringUtils.hasText(userId), Order::getUserId, userId)
+                .eq(StringUtils.hasText(goodsId), Order::getGoodsId, goodsId)
+                .eq(status != null, Order::getStatus, status)
+                .orderByDesc(Order::getCreatedAt));
+        return ResultVO.ok(result);
+    }
+
+    /**
+     * 管理端：按主键查询订单详情。
+     *
+     * <p>路径使用 {@code /order/detail/{id}}，避免与 {@code /order/result}、{@code /order/page}
+     * 等固定路径冲突，也避免被误当成业务动作名。</p>
+     */
+    @GetMapping("/detail/{id}")
+    public ResultVO<Order> detail(@PathVariable String id) {
+        Order order = orderService.getById(id);
+        if (order == null) {
+            return ResultVO.build(ResultCode.NOT_FOUND);
+        }
+        return ResultVO.ok(order);
     }
 }

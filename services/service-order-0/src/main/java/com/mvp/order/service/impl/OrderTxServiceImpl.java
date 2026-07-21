@@ -3,7 +3,7 @@ package com.mvp.order.service.impl;
 import com.mvp.order.dto.GoodsInfoDto;
 import com.mvp.order.dto.OrderResultDto;
 import com.mvp.order.entity.Order;
-import com.mvp.order.service.OrderService;
+import com.mvp.order.mapper.OrderMapper;
 import com.mvp.order.service.OrderTxService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -16,17 +16,21 @@ import java.math.BigDecimal;
  *
  * <p>承接真正需要事务保护的订单落库操作。单独拆成 Bean 是为了避免在同一个类内自调用
  * {@code @Transactional} 导致事务代理失效。</p>
+ *
+ * <p>注意：本类只依赖 {@link OrderMapper} 落库，不注入 {@code OrderService}。
+ * 若注入 OrderService，会与 {@code OrderServiceImpl → OrderTxService} 形成循环依赖，
+ * 在 Spring Boot 2.6+ 默认禁止循环引用时导致启动失败。</p>
  */
 @Service
 public class OrderTxServiceImpl implements OrderTxService {
 
     /**
-     * 订单 Service，用于保存订单记录。
+     * 订单 Mapper，直接写库，避免再依赖 OrderService 造成 Bean 环。
      */
-    private final OrderService orderService;
+    private final OrderMapper orderMapper;
 
-    public OrderTxServiceImpl(OrderService orderService) {
-        this.orderService = orderService;
+    public OrderTxServiceImpl(OrderMapper orderMapper) {
+        this.orderMapper = orderMapper;
     }
 
     /**
@@ -48,7 +52,8 @@ public class OrderTxServiceImpl implements OrderTxService {
         order.setStatus(Order.STATUS_PENDING_PAY);
 
         try {
-            orderService.save(order);
+            // 使用 Mapper 插入；MyBatis-Plus 会按实体主键策略生成 UUIDv7
+            orderMapper.insert(order);
         } catch (DuplicateKeyException ex) {
             // 唯一索引兜底：同一用户对同一商品只能成功下单一次。
             throw new IllegalArgumentException("您已秒杀成功，请勿重复下单", ex);
