@@ -17,7 +17,10 @@
 
 使用 **bridge 网络 + 端口映射**：
 - 容器之间通过服务名互通，例如 `namesrv-1:9876`、`broker-master1:10912`
-- Broker 对宿主机注册地址固定为 `127.0.0.1`，宿主机应用通过映射端口直连 Broker
+- Broker 注册地址使用 `brokerIP1=docker.for.mac.localhost`（**不要**写成 `127.0.0.1`）
+  - 宿主机应用：该主机名解析为 `127.0.0.1`，再走 compose 端口映射
+  - Dashboard 等同网络容器：解析为 Docker 网关，回宿主机映射端口
+  - 若写成 `127.0.0.1`，Dashboard 会连到「自己容器内」的端口 → `RemotingConnectException: connect to 127.0.0.1:109xx failed`
 - 不使用家庭、公司或公共网络里的局域网 IP，避免电脑切换网络后 Broker 路由失效
 - `mvp-network` 是外部 Docker 网络，先运行 Redis 集群初始化脚本创建并校验固定网段
 
@@ -127,7 +130,7 @@ docker ps | grep rocketmq
    ```bash
    docker logs mvp-rocketmq-broker-master1 | grep "boot success"
    ```
-   应该看到：`127.0.0.1:10911`
+   应该看到：`docker.for.mac.localhost:10911`（不要是 `127.0.0.1:10911`，否则容器内 Dashboard 会连失败）
 
 2. 确认应用配置
   ```yaml
@@ -135,6 +138,27 @@ docker ps | grep rocketmq
     name-server: 127.0.0.1:9876;127.0.0.1:9877
     access-channel: LOCAL
   ```
+
+### 问题3：Dashboard 报 `RemotingConnectException: connect to 127.0.0.1:10929 failed`
+
+**原因：** Broker 的 `brokerIP1=docker.for.mac.localhost`。NameServer 把该地址下发给 Dashboard；Dashboard 在容器内访问 `127.0.0.1` 等于访问自己，不是 Broker。`10929` 是 master2 的 VIP 端口（listenPort-2）。
+
+**处理：**
+1. 四个 `broker-*.conf` 中设置 `brokerIP1=docker.for.mac.localhost`
+2. 同步到挂载目录并重启 Broker / Dashboard：
+   ```bash
+   cp deploy/docker/rocketmq-cluster/config/broker-*.conf \
+      /Users/zhongtao/.my_docker/rocketmq-cluster/config/
+   cd deploy/docker/rocketmq-cluster
+   docker compose -f docker-compose-rocketmq-cluster.yml up -d --force-recreate \
+     broker-master1 broker-slave1 broker-master2 broker-slave2 dashboard
+   ```
+3. 验证：
+   ```bash
+   docker logs mvp-rocketmq-broker-master2 | grep "boot success"
+   # 期望：docker.for.mac.localhost:10931
+   curl -sS 'http://127.0.0.1:8082/cluster/list.query' | head -c 200
+   ```
 
 ### 问题2：Slave 无法同步
 
@@ -192,7 +216,7 @@ docker ps | grep rocketmq
 - 集群镜像：Broker / NameServer 使用 `apache/rocketmq:5.3.2`，Dashboard 使用 `apacherocketmq/rocketmq-dashboard:2.1.0`。
 - 网络：全部容器加入外部 Docker 网络 `mvp-network`。
 - NameServer：`namesrv-1` 映射宿主机 `9876`，`namesrv-2` 容器内仍是 `9876`，映射到宿主机 `9877`。
-- Broker 注册地址：所有 Broker 的 `brokerIP1=127.0.0.1`，适配宿主机应用直连本机端口映射。
+- Broker 注册地址：所有 Broker 的 `brokerIP1=docker.for.mac.localhost`（宿主机与 Dashboard 容器均可达；勿用 `127.0.0.1`）。
 - 主从关系：
   - `broker-group1`：`broker-master1` + `broker-slave1`，Slave 连接 `broker-master1:10912`。
   - `broker-group2`：`broker-master2` + `broker-slave2`，Slave 连接 `broker-master2:10932`。
@@ -213,7 +237,9 @@ docker ps | grep rocketmq
 #   应用配置示例（见 service-order-0 application.yml）：
 #     rocketmq.name-server: 127.0.0.1:9876;127.0.0.1:9877
 #   无需再手写 Broker 地址；Broker 地址由 NameServer 返回（需与 broker.conf 中
-#   brokerIP1 / 监听端口 一致，否则宿主机连不上）。
+#   brokerIP1 / 监听端口 一致，否则客户端连不上）。
+#   brokerIP1 使用 docker.for.mac.localhost（勿写 127.0.0.1）：
+#     宿主机应用解析为 127.0.0.1；Dashboard 等容器经 Docker 网关回宿主机映射端口。
 #
 # 集群拓扑：
 #   ┌─────────────────────────────────────────────────────┐
@@ -484,8 +510,11 @@ services:
       - broker-master1
       - broker-master2
     environment:
-      # Dashboard 在容器内通过容器名访问 Broker
-      JAVA_OPTS: "-Drocketmq.namesrv.addr=namesrv-1:9876;namesrv-2:9876"
+      # NameServer 走容器网；Broker 地址由 NS 下发（brokerIP1=docker.for.mac.localhost）
+      # 关闭 VIP 通道，直连 Remoting 端口（10911/10921/10931/10941），避免误连 VIP
+      JAVA_OPTS: >-
+        -Drocketmq.namesrv.addr=namesrv-1:9876;namesrv-2:9876
+        -Drocketmq.client.useVIPChannel=false
       TZ: Asia/Shanghai
     ports:
       - "8082:8082"
@@ -555,10 +584,13 @@ flushDiskType=ASYNC_FLUSH
 # NameServer：容器网络内用服务名；与 compose 中 namesrv-1/2 一致
 namesrvAddr=namesrv-1:9876;namesrv-2:9876
 
-# 注册到 NameServer、再下发给宿主机客户端的 Broker 地址。
-# 本地直连模式固定 127.0.0.1，配合 compose 端口映射，避免局域网 IP 变化。
+# 注册到 NameServer、再下发给客户端的 Broker 地址。
+# 使用 docker.for.mac.localhost（不要用 127.0.0.1）：
+#   · 宿主机应用：解析为 127.0.0.1 → 走 compose 端口映射
+#   · 同网络容器（Dashboard）：解析为 Docker 网关 → 回宿主机映射端口
+#   · 若写成 127.0.0.1，Dashboard 会连到「自己容器内」的端口而失败
 # 注意：容器之间主从复制不要用 brokerIP1，Slave 用 haMasterAddress 容器名。
-brokerIP1=127.0.0.1
+brokerIP1=docker.for.mac.localhost
 
 # Remoting 主端口（生产/消费/管理 RPC）
 listenPort=10911
@@ -636,8 +668,8 @@ flushDiskType=ASYNC_FLUSH
 
 namesrvAddr=namesrv-1:9876;namesrv-2:9876
 
-# 下发给宿主机客户端的地址（与 Master 一样用 127.0.0.1 + 端口映射）
-brokerIP1=127.0.0.1
+# 与 Master 一致：docker.for.mac.localhost + 端口映射（勿用 127.0.0.1，见 master1 注释）
+brokerIP1=docker.for.mac.localhost
 
 # Remoting：与 Master1(10911)、group2 端口错开
 listenPort=10921
@@ -718,8 +750,9 @@ flushDiskType=ASYNC_FLUSH
 
 namesrvAddr=namesrv-1:9876;namesrv-2:9876
 
-# 本地直连：注册 127.0.0.1，由 compose 映射 Remoting 给宿主机应用
-brokerIP1=127.0.0.1
+# 本地直连：docker.for.mac.localhost（宿主机→127.0.0.1，Dashboard 容器→Docker 网关）
+# 勿用 127.0.0.1，否则容器内 Dashboard 会连到自己
+brokerIP1=docker.for.mac.localhost
 
 # 与 group1（10911/10912）错开，避免端口冲突
 listenPort=10931
@@ -784,7 +817,7 @@ flushDiskType=ASYNC_FLUSH
 # ----------------------------------------------------------------------------
 
 namesrvAddr=namesrv-1:9876;namesrv-2:9876
-brokerIP1=127.0.0.1
+brokerIP1=docker.for.mac.localhost
 
 # 与 Master2(10931/10932)、group1 全部端口错开
 listenPort=10941

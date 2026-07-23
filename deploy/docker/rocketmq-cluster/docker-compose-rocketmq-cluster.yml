@@ -7,7 +7,9 @@
 #   应用配置示例（见 service-order-0 application.yml）：
 #     rocketmq.name-server: 127.0.0.1:9876;127.0.0.1:9877
 #   无需再手写 Broker 地址；Broker 地址由 NameServer 返回（需与 broker.conf 中
-#   brokerIP1 / 监听端口 一致，否则宿主机连不上）。
+#   brokerIP1 / 监听端口 一致，否则客户端连不上）。
+#   brokerIP1 使用 docker.for.mac.localhost（勿写 127.0.0.1）：
+#     宿主机应用解析为 127.0.0.1；Dashboard 等容器经 Docker 网关回宿主机映射端口。
 #
 # 集群拓扑：
 #   ┌─────────────────────────────────────────────────────┐
@@ -278,8 +280,11 @@ services:
       - broker-master1
       - broker-master2
     environment:
-      # Dashboard 在容器内通过容器名访问 Broker
-      JAVA_OPTS: "-Drocketmq.namesrv.addr=namesrv-1:9876;namesrv-2:9876"
+      # NameServer 走容器网；Broker 地址由 NS 下发（brokerIP1=docker.for.mac.localhost）
+      # 关闭 VIP 通道，直连 Remoting 端口（10911/10921/10931/10941），避免误连 VIP
+      JAVA_OPTS: >-
+        -Drocketmq.namesrv.addr=namesrv-1:9876;namesrv-2:9876
+        -Drocketmq.client.useVIPChannel=false
       TZ: Asia/Shanghai
     ports:
       - "8082:8082"
