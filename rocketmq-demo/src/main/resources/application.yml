@@ -1,23 +1,85 @@
+# ============================================================================
+# rocketmq-demo — Spring Boot 应用配置
+# ============================================================================
+#
+# 依赖集群：deploy/docker/rocketmq-cluster（传统直连模式，非 Proxy）
+#   NameServer 宿主机：127.0.0.1:9876 / 127.0.0.1:9877
+#   Broker 由 NameServer 下发路由（brokerIP1=docker.for.mac.localhost）
+#   宿主机上该主机名解析为 127.0.0.1，再经 compose 端口映射进容器
+#
+# 启动集群（示例）：
+#   cd deploy/docker/redis-cluster && ./init-redis-cluster.sh   # 创建 mvp-network
+#   cd deploy/docker/rocketmq-cluster
+#   docker compose -f docker-compose-rocketmq-cluster.yml up -d
+#
+# Dashboard：http://127.0.0.1:8082
+#
+# ============================================================================
+
 server:
-  port: 8090  # 改为 8090，避免与其他服务冲突
+  # 本 demo HTTP 端口；8090 避开 Nacos(8848)/Dashboard(8082)/Nginx(8000) 等常用端口
+  port: 8090
 
 spring:
   application:
+    # 应用名：日志、监控、Spring 上下文标识；与 RocketMQ 生产者/消费者组名无关
     name: rocketmq-demo
 
+# ----------------------------------------------------------------------------
+# RocketMQ（rocketmq-spring-boot-starter）
+# ----------------------------------------------------------------------------
+# 客户端工作流（直连模式）：
+#   1) 应用连接 name-server，拉取 Topic 路由与 Broker 地址
+#   2) 生产/消费时直连 Broker Remoting 端口（10911/10921/10931/10941 等）
+#   3) 不要在此文件手写 Broker IP；地址以 NameServer 返回为准
+#
+# 与 Docker 集群的对应关系：
+#   应用（宿主机）          NameServer 映射           Broker 映射
+#   127.0.0.1:9876    ←→   namesrv-1:9876
+#   127.0.0.1:9877    ←→   namesrv-2:9876（容器内仍是 9876）
+#   docker.for.mac.localhost:109xx（NS 下发）
+#                     → 宿主机解析 127.0.0.1:109xx → compose 端口映射 → Broker 容器
+#
+# 注意：
+#   · 本应用跑在宿主机，name-server 必须用 127.0.0.1，不能用 namesrv-1 服务名
+#   · 若改成 Proxy 模式，应使用 proxy.endpoints，而不是下面的 name-server
+# ----------------------------------------------------------------------------
 rocketmq:
-  # 直连模式：应用通过 NameServer 获取 Broker 地址，然后直连 Broker
-  # 这是最稳定可靠的方式，适合开发和生产环境
+  # NameServer 地址列表（分号分隔，建议配齐双 NS 做冗余）
+  # 与 docker-compose 宿主机端口一致：9876 → namesrv-1，9877 → namesrv-2
   name-server: 127.0.0.1:9876;127.0.0.1:9877
+
+  # 接入通道：
+  #   LOCAL  — 传统 NameServer + 直连 Broker（当前本地集群）
+  #   CLOUD  — 云上托管通道（本 demo 不用）
   access-channel: LOCAL
 
-  # 生产者配置
+  # 生产者
   producer:
+    # 生产者组名：同一业务逻辑共用一个 group；集群内需唯一语义清晰即可
     group: demo-producer-group
+    # 同步发送超时（毫秒）；本地 Docker 一般 3000 足够，网络差可调大
     send-message-timeout: 3000
+    # 同步发送失败时的重试次数（不含首次）；总尝试 ≈ 1 + 该值
     retry-times-when-send-failed: 2
+    # 是否启用 VIP 通道（默认 true）
+    #   VIP 端口 = Broker listenPort - 2（如 10931 → 10929）
+    #   当前 compose 已映射 VIP 端口，开/关都能连
+    #   本地开发建议 false：直连 Remoting，少一层端口/排障干扰
+    #   （与 com.demo.config.RocketMQConfig 注释一致）
+    vip-channel-enabled: false
 
+  # 消费者（全局默认；@RocketMQMessageListener 可再覆盖部分行为）
+  consumer:
+    # 与生产者同样建议关闭 VIP，统一走 Remoting 主端口
+    vip-channel-enabled: false
+
+# ----------------------------------------------------------------------------
+# 日志
+# ----------------------------------------------------------------------------
 logging:
   level:
+    # 业务包：DEBUG 便于看收发消息、订单演示日志
     com.demo: DEBUG
+    # RocketMQ 客户端：INFO 足够；排路由/连不上时可临时改为 DEBUG
     org.apache.rocketmq: INFO

@@ -64,8 +64,10 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- RocketMQ Spring Boot Starter：封装 RocketMQTemplate 生产者和 @RocketMQMessageListener 消费者，
-            2.3.x 起支持 Proxy gRPC 模式（rocketmq.proxy.grpc-endpoints），当前使用 Proxy 连接 RocketMQ 集群。 -->
+            <!-- RocketMQ Spring Boot Starter（2.3.4）：封装 RocketMQTemplate 与 @RocketMQMessageListener。
+                 版本含义：Spring 客户端集成库版本，与 Docker 中 Broker 镜像 apache/rocketmq:5.3.2 不是同一套号。
+                 当前集群为传统直连模式：应用配 rocketmq.name-server，经 NameServer 取路由后直连 Broker；
+                 2.3.x 也支持 Proxy gRPC（rocketmq.proxy.grpc-endpoints），本仓库本地未启用 Proxy。 -->
             <dependency>
                 <groupId>org.apache.rocketmq</groupId>
                 <artifactId>rocketmq-spring-boot-starter</artifactId>
