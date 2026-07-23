@@ -3,7 +3,11 @@
 # ============================================================================
 #
 # 架构说明：
-#   采用直连模式，宿主机应用通过 NameServer 发现 Broker 后直连
+#   采用直连模式：宿主机应用先连 NameServer 拉取路由，再直连 Broker 的 Remoting 端口。
+#   应用配置示例（见 service-order-0 application.yml）：
+#     rocketmq.name-server: 127.0.0.1:9876;127.0.0.1:9877
+#   无需再手写 Broker 地址；Broker 地址由 NameServer 返回（需与 broker.conf 中
+#   brokerIP1 / 监听端口 一致，否则宿主机连不上）。
 #
 # 集群拓扑：
 #   ┌─────────────────────────────────────────────────────┐
@@ -15,31 +19,118 @@
 #           ┌──────────┴───────────┐
 #           ▼                      ▼
 #      NameServer-1           NameServer-2
-#      (9876)                 (9877)
+#      :9876                  :9877
 #           │                      │
 #           └──────────┬───────────┘
 #                      │
 #           ┌──────────┴───────────┐
 #           │                      │
-#      broker-group1          broker-group2
-#           │                      │
-#       ┌───┴───┐              ┌───┴───┐
-#       │       │              │       │
-#   Master1 Slave1        Master2 Slave2
-#   (内网)  (内网)        (内网)  (内网)
+#      broker-group1                         broker-group2
+#           │                                     │
+#       ┌───┴────┐                            ┌───┴────┐
+#       │        │                            │        │
+#   Master1    Slave1                     Master2    Slave2
+#   Remoting   Remoting                   Remoting   Remoting
+#   :10911     :10921                     :10931     :10941
+#   VIP:10909  VIP:10919                  VIP:10929  VIP:10939
+#   HA:10912   HA:10922                   HA:10932   HA:10942
+#       │          ▲                          │          ▲
+#       │   HA复制  │                          │   HA复制  │
+#       └──────────┘                          └──────────┘
+#    Slave 主动连 Master.HA                  Slave 主动连 Master.HA
+#    (group1: :10922 → :10912)             (group2: :10942 → :10932)
 #
 #
-# 端口映射（所有 Broker 均暴露 Remoting 端口供宿主机直连）：
-#   宿主机端口 → 容器端口
-#   9876        → namesrv-1:9876
-#   9877        → namesrv-2:9876
-#   10911       → broker-master1:10911
-#   10912       → broker-master1:10912
-#   10921       → broker-slave1:10921
-#   10931       → broker-master2:10931
-#   10932       → broker-master2:10932
-#   10941       → broker-slave2:10941
-#   8082        → dashboard:8082    (Web 控制台)
+# --------------------------------------------------------------------------
+# 端口使用说明（用途分类）
+# --------------------------------------------------------------------------
+#
+# 1) NameServer 端口（路由发现，应用启动时配置）
+#    ┌────────────┬─────────────────┬──────────────────────────────────────┐
+#    │ 宿主机端口  │ 容器 / 服务      │ 用途                                 │
+#    ├────────────┼─────────────────┼──────────────────────────────────────┤
+#    │ 9876       │ namesrv-1:9876  │ NameServer-1 客户端接入端口           │
+#    │ 9877       │ namesrv-2:9876  │ NameServer-2（映射到容器内默认 9876） │
+#    └────────────┴─────────────────┴──────────────────────────────────────┘
+#    · 谁用：Producer / Consumer / Dashboard 的 namesrv 地址列表
+#    · 作用：注册与发现 Topic 路由、Broker 存活；本身不存业务消息
+#    · 应用只需配 NameServer，不必配下面的 Broker 端口
+#
+# 2) Broker Remoting 端口（收发消息主通道，NameServer 下发给客户端后直连）
+#    ┌────────────┬──────────────────────┬─────────────────────────────────┐
+#    │ 宿主机端口  │ 容器 / 服务           │ 用途                            │
+#    ├────────────┼──────────────────────┼─────────────────────────────────┤
+#    │ 10911      │ broker-master1:10911 │ Master1 主通信（生产/消费/管理）  │
+#    │ 10921      │ broker-slave1:10921  │ Slave1  主通信（读、HA 复制相关） │
+#    │ 10931      │ broker-master2:10931 │ Master2 主通信                   │
+#    │ 10941      │ broker-slave2:10941  │ Slave2  主通信                   │
+#    └────────────┴──────────────────────┴─────────────────────────────────┘
+#    · 谁用：客户端在拿到路由后自动连接；宿主机直连模式必须映射出来
+#    · 若只映射 NameServer、不映射 Remoting，容器内路由返回的端口在宿主机不可达
+#
+# 3) Broker HA 端口（主从复制；conf 里 haListenPort，主从各自有）
+#    ┌────────────┬──────────────────────┬─────────────────────────────────┐
+#    │ HA 端口     │ 节点                 │ 角色说明                         │
+#    ├────────────┼──────────────────────┼─────────────────────────────────┤
+#    │ 10912      │ broker-master1       │ Master1 监听：接受 Slave1 连入    │
+#    │ 10922      │ broker-slave1        │ Slave1  本机 HA（conf haListenPort）│
+#    │ 10932      │ broker-master2       │ Master2 监听：接受 Slave2 连入    │
+#    │ 10942      │ broker-slave2        │ Slave2  本机 HA（conf haListenPort）│
+#    └────────────┴──────────────────────┴─────────────────────────────────┘
+#    · 复制方向：Slave 主动连接「本 Master 的 haListenPort」做同步（Docker 内网）
+#        group1: Slave1 → Master1:10912
+#        group2: Slave2 → Master2:10932
+#    · 业务应用不直连任何 HA 端口
+#    · 本 compose 将 Master/Slave 的 HA 都映射到宿主机，仅为端口对齐、本机探测
+#      （如 nc 127.0.0.1 10912）；主从复制不依赖这些宿主机映射，删掉也能复制
+#
+# 4) Broker VIP 通道端口（默认 listenPort - 2，部分客户端/快速通道）
+#    ┌────────────┬──────────────────────┬─────────────────────────────────┐
+#    │ 宿主机端口  │ 容器 / 服务           │ 用途                            │
+#    ├────────────┼──────────────────────┼─────────────────────────────────┤
+#    │ 10909      │ broker-master1:10909 │ Master1 VIP（10911-2）           │
+#    │ 10919      │ broker-slave1:10919  │ Slave1  VIP（10921-2）           │
+#    │ 10929      │ broker-master2:10929 │ Master2 VIP（10931-2）           │
+#    │ 10939      │ broker-slave2:10939  │ Slave2  VIP（10941-2）           │
+#    └────────────┴──────────────────────┴─────────────────────────────────┘
+#    · 谁用：开启 VIP 通道时的客户端；未开启时映射也非业务必需
+#    · 约定：vip 端口 = remoting 端口 - 2
+#
+# 5) Dashboard（运维控制台）
+#    ┌────────────┬──────────────────────┬─────────────────────────────────┐
+#    │ 宿主机端口  │ 容器 / 服务           │ 用途                            │
+#    ├────────────┼──────────────────────┼─────────────────────────────────┤
+#    │ 8082       │ dashboard:8082       │ RocketMQ Dashboard Web UI       │
+#    └────────────┴──────────────────────┴─────────────────────────────────┘
+#    · 浏览器访问：http://127.0.0.1:8082
+#    · 容器内通过 namesrv-1:9876;namesrv-2:9876 连集群（见 dashboard 环境变量）
+#
+# --------------------------------------------------------------------------
+# 端口映射一览（宿主机 → 容器，与下方 services.ports 一致）
+# --------------------------------------------------------------------------
+#   【必选 · 业务直连】
+#   9876  → namesrv-1:9876          NameServer-1
+#   9877  → namesrv-2:9876          NameServer-2
+#   10911 → broker-master1:10911    Master1 Remoting（生产/消费）
+#   10921 → broker-slave1:10921     Slave1  Remoting
+#   10931 → broker-master2:10931    Master2 Remoting
+#   10941 → broker-slave2:10941     Slave2  Remoting
+#   8082  → dashboard:8082          Web 控制台
+#
+#   【可选 · 非业务必需；映射仅为端口对齐 / 本机探测 / VIP 兼容】
+#   10912 → broker-master1:10912    Master1 HA（复制走容器网，不依赖本映射）
+#   10922 → broker-slave1:10922     Slave1  HA（同上，非复制对端）
+#   10932 → broker-master2:10932    Master2 HA
+#   10942 → broker-slave2:10942     Slave2  HA
+#   10909 → broker-master1:10909    Master1 VIP（listenPort-2）
+#   10919 → broker-slave1:10919     Slave1  VIP
+#   10929 → broker-master2:10929    Master2 VIP
+#   10939 → broker-slave2:10939     Slave2  VIP
+#
+# 快速记忆：
+#   · 应用配置只记 9876 / 9877；收发消息用 Remoting 10911/10921/10931/10941
+#   · HA/VIP 已全部映射，但主从复制与日常业务都不依赖「宿主机上的 HA/VIP」
+#   · 复制：容器内 Slave → Master.HA（10912/10932）；删掉 HA 的 ports 一般仍可复制
 #
 # Web 控制台：
 #   http://127.0.0.1:8082
@@ -92,9 +183,13 @@ services:
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-master1.conf
     ports:
-      - "10911:10911"  # Remoting 端口
-      - "10912:10912"  # HA 端口
-      - "10909:10909"  # VIP 通道端口（10911-2）
+      # Remoting（listenPort）：宿主机应用直连收发消息，本地直连模式建议保留。
+      - "10911:10911"
+      # HA（haListenPort）：复制时 Slave 在 Docker 网内连 broker-master1:10912，不依赖本映射。
+      # 映射到宿主机：非必须，仅为端口对齐/本机探测（如 nc 127.0.0.1 10912）；业务不连此口。
+      - "10912:10912"
+      # VIP（listenPort-2）：非必须；仅客户端开启 VIP 通道时使用，便于与 conf 对照。
+      - "10909:10909"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-master1.conf:/home/rocketmq/conf/broker-master1.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master1/store:/home/rocketmq/store
@@ -114,8 +209,13 @@ services:
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-slave1.conf
     ports:
-      - "10921:10921"  # Remoting 端口
-      - "10919:10919"  # VIP 通道端口（10921-2）
+      # Remoting：读流量/客户端；宿主机直连时建议保留。
+      - "10921:10921"
+      # HA（conf haListenPort=10922）：复制方向是本节点 → Master:10912，不依赖本映射。
+      # 映射到宿主机：非必须，仅为对齐 conf、本机探测。
+      - "10922:10922"
+      # VIP（listenPort-2）：非必须，便于对照与 VIP 客户端兼容。
+      - "10919:10919"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-slave1.conf:/home/rocketmq/conf/broker-slave1.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave1/store:/home/rocketmq/store
@@ -134,9 +234,12 @@ services:
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-master2.conf
     ports:
-      - "10931:10931"  # Remoting 端口
-      - "10932:10932"  # HA 端口
-      - "10929:10929"  # VIP 通道端口（10931-2）
+      # Remoting：宿主机应用直连收发，本地直连模式建议保留。
+      - "10931:10931"
+      # HA：复制走 Docker 网 broker-master2:10932，不依赖本映射；宿主机映射非必须（探测/对照）。
+      - "10932:10932"
+      # VIP：非必须，listenPort-2。
+      - "10929:10929"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-master2.conf:/home/rocketmq/conf/broker-master2.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-master2/store:/home/rocketmq/store
@@ -156,8 +259,12 @@ services:
       TZ: Asia/Shanghai
     command: sh mqbroker -c /home/rocketmq/conf/broker-slave2.conf
     ports:
-      - "10941:10941"  # Remoting 端口
-      - "10939:10939"  # VIP 通道端口（10941-2）
+      # Remoting：读流量/客户端；宿主机直连时建议保留。
+      - "10941:10941"
+      # HA（conf haListenPort=10942）：复制是本节点 → Master:10932，不依赖本映射；映射非必须。
+      - "10942:10942"
+      # VIP：非必须，listenPort-2。
+      - "10939:10939"
     volumes:
       - /Users/zhongtao/.my_docker/rocketmq-cluster/config/broker-slave2.conf:/home/rocketmq/conf/broker-slave2.conf:ro
       - /Users/zhongtao/.my_docker/rocketmq-cluster/broker-slave2/store:/home/rocketmq/store
