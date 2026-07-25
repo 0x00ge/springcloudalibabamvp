@@ -1,28 +1,8 @@
-# ============================================================================
-# rocketmq-demo — Spring Boot 应用配置
-# ============================================================================
-#
-# 依赖集群：deploy/docker/rocketmq-cluster（传统直连模式，非 Proxy）
-#   NameServer 宿主机：127.0.0.1:9876 / 127.0.0.1:9877
-#   Broker 由 NameServer 下发路由（brokerIP1=docker.for.mac.localhost）
-#   宿主机上该主机名解析为 127.0.0.1，再经 compose 端口映射进容器
-#
-# 启动集群（示例）：
-#   cd deploy/docker/redis-cluster && ./init-redis-cluster.sh   # 创建 mvp-network
-#   cd deploy/docker/rocketmq-cluster
-#   docker compose -f docker-compose-rocketmq-cluster.yml up -d
-#
-# Dashboard：http://127.0.0.1:8082
-#
-# ============================================================================
-
 server:
-  # 本 demo HTTP 端口；8090 避开 Nacos(8848)/Dashboard(8082)/Nginx(8000) 等常用端口
   port: 8090
 
 spring:
   application:
-    # 应用名：日志、监控、Spring 上下文标识；与 RocketMQ 生产者/消费者组名无关
     name: rocketmq-demo
 
 # ----------------------------------------------------------------------------
@@ -55,6 +35,10 @@ rocketmq:
   access-channel: LOCAL
 
   # 生产者
+  # 注意：rocketmq-spring-boot 2.3.x 的 RocketMQProperties.Producer 不支持
+  # rocketmq.producer.vip-channel-enabled（写了会 IDE 红线 / ignore-unknown=false 时启动失败）。
+  # VIP 由客户端 ClientConfig 控制，5.3.x 默认 vipChannelEnabled=false，一般无需配置。
+  # 若必须改：-Dcom.rocketmq.sendMessageWithVIPChannel=false，或代码 producer.setVipChannelEnabled(false)
   producer:
     # 生产者组名：同一业务逻辑共用一个 group；集群内需唯一语义清晰即可
     group: demo-producer-group
@@ -62,17 +46,9 @@ rocketmq:
     send-message-timeout: 3000
     # 同步发送失败时的重试次数（不含首次）；总尝试 ≈ 1 + 该值
     retry-times-when-send-failed: 2
-    # 是否启用 VIP 通道（默认 true）
-    #   VIP 端口 = Broker listenPort - 2（如 10931 → 10929）
-    #   当前 compose 已映射 VIP 端口，开/关都能连
-    #   本地开发建议 false：直连 Remoting，少一层端口/排障干扰
-    #   （与 com.demo.config.RocketMQConfig 注释一致）
-    vip-channel-enabled: false
 
   # 消费者（全局默认；@RocketMQMessageListener 可再覆盖部分行为）
-  consumer:
-    # 与生产者同样建议关闭 VIP，统一走 Remoting 主端口
-    vip-channel-enabled: false
+  # 同样没有 rocketmq.consumer.vip-channel-enabled 这个绑定属性
 
 # ----------------------------------------------------------------------------
 # 日志
