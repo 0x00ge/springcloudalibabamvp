@@ -12,12 +12,14 @@
         <option value="$PROJECT_DIR$/services/service-user-0/pom.xml" />
         <option value="$PROJECT_DIR$/mvp-gateway-1/pom.xml" />
         <option value="$PROJECT_DIR$/services/service-ai-agent/pom.xml" />
+        <option value="$PROJECT_DIR$/mybatis-demo/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
       <set>
         <option value="$PROJECT_DIR$/model/src/pom.xml" />
         <option value="$PROJECT_DIR$/mvp-gateway-1/pom.xml" />
+        <option value="$PROJECT_DIR$/mybatis-demo/pom.xml" />
         <option value="$PROJECT_DIR$/services/service-ai-agent/pom.xml" />
         <option value="$PROJECT_DIR$/services/service-seckill-local-0/pom.xml" />
       </set>

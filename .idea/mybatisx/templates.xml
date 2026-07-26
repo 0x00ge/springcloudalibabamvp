@@ -6,7 +6,7 @@
         <option name="generateConfig">
           <GenerateConfig>
             <option name="annotationType" value="MYBATIS_PLUS3" />
-            <option name="basePackage" value="com.mvp.entity.user" />
+            <option name="basePackage" value="com.mvp.mybatis" />
             <option name="basePath" value="src/main/java" />
             <option name="classNameStrategy" value="camel" />
             <option name="encoding" value="UTF-8" />
@@ -69,8 +69,24 @@
             <option name="tableUIInfoList">
               <list>
                 <TableUIInfo>
+                  <option name="className" value="Goods" />
+                  <option name="tableName" value="t_goods" />
+                </TableUIInfo>
+                <TableUIInfo>
                   <option name="className" value="Menu" />
                   <option name="tableName" value="t_menu" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="Order" />
+                  <option name="tableName" value="t_order" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="OrderMessageProcessed" />
+                  <option name="tableName" value="t_order_message_processed" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="User" />
+                  <option name="tableName" value="t_user" />
                 </TableUIInfo>
               </list>
             </option>

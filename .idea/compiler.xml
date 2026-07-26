@@ -12,6 +12,7 @@
         <module name="mvp-gateway-0" />
         <module name="rocketmq-demo" />
         <module name="kafka-demo" />
+        <module name="mybatis-demo" />
         <module name="service-order-0" />
         <module name="service-iot-0" />
         <module name="service-goods-0" />
@@ -21,6 +22,7 @@
     <bytecodeTargetLevel>
       <module name="model" target="17" />
       <module name="mvp-gateway-1" target="17" />
+      <module name="mybatis-demo" target="17" />
       <module name="service-ai-agent" target="1.5" />
       <module name="service-product-0" target="17" />
       <module name="service-seckill-local-0" target="17" />
@@ -33,6 +35,7 @@
       <module name="model" options="-parameters" />
       <module name="mvp-gateway-0" options="-parameters" />
       <module name="mvp-gateway-1" options="-parameters" />
+      <module name="mybatis-demo" options="-parameters" />
       <module name="redisson-demo" options="-parameters" />
       <module name="rocketmq-demo" options="-parameters" />
       <module name="service-goods-0" options="-parameters" />
